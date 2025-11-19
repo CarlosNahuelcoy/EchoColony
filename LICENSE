@@ -1,0 +1,69 @@
+MIT License with Player2 Integration Requirements
+
+Copyright (c) 2025 CarlosNahuelcoy
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+ADDITIONAL REQUIREMENTS FOR DERIVATIVE WORKS AND MODIFICATIONS:
+
+Any person or entity creating derivative works, modifications, forks, or 
+redistributions of this Software MUST comply with the following mandatory 
+requirements:
+
+1. PLAYER2 INTEGRATION PRESERVATION:
+   - Player2 must remain available as an AI provider option
+   - The original Player2 implementation must be maintained and functional
+   - Player2 cannot be removed, disabled, or made non-functional
+
+2. GAME CLIENT ID REQUIREMENT:
+   - Must use the exact Game Client ID: "019a8368-b00b-72bc-b367-2825079dc6fb"
+   - This ID cannot be changed, modified, or substituted
+   - This ID must be used for all Player2 API communications
+
+3. HEALTH CHECK IMPLEMENTATION:
+   - Must implement automated health check calls to Player2 API
+   - Health checks must occur every 60 seconds when Player2 is active
+   - Health check functionality cannot be disabled or removed
+
+4. AUTHENTICATION PRESERVATION:
+   - Original Player2 authentication methods must be preserved
+   - Authentication flow must remain compatible with Player2 specifications
+   - Cannot modify or break Player2's authentication mechanism
+
+5. ATTRIBUTION REQUIREMENT:
+   - Must include prominent credit to the original author (CarlosNahuelcoy)
+   - Attribution must be visible in user-facing documentation and interfaces
+   - Cannot claim original authorship of Player2 integration components
+
+6. API COMPLIANCE:
+   - Must maintain compliance with Player2 API requirements
+   - Cannot modify API calls in ways that break Player2 functionality
+   - Must preserve all Player2-specific headers and request formats
+
+ENFORCEMENT:
+Failure to comply with ANY of these additional requirements constitutes a 
+material breach of this license and terminates all rights granted herein.
+Legal action may be taken to enforce compliance with these terms.
+
+PERMITTED ACTIVITIES:
+- Adding new AI providers alongside Player2
+- Improving existing functionality while preserving Player2
+- Bug fixes that don't remove Player2 requirements
+- UI/UX improvements that maintain Player2 access
+- Performance optimizations that preserve Player2 functionality
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
