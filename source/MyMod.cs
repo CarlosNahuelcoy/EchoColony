@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System;
 using UnityEngine.Networking;
 using RimWorld;
+using System.Linq;
 
 namespace EchoColony
 {
@@ -12,7 +13,7 @@ namespace EchoColony
         public static GeminiSettings Settings;
         private Vector2 scrollPos = Vector2.zero;
 
-        // 🧠 Guardar el modelo anterior para restaurarlo al desmarcar Player2
+        // Guardar el modelo anterior para restaurarlo al desmarcar Player2
         private ModelSource previousModelSource = ModelSource.Gemini;
 
         private static bool pingInProgress = false;
@@ -20,6 +21,10 @@ namespace EchoColony
         public MyMod(ModContentPack content) : base(content)
         {
             Settings = GetSettings<GeminiSettings>();
+            
+            // Asegurar que modelPreferences existe
+            if (Settings.modelPreferences == null)
+                Settings.modelPreferences = new GeminiModelPreferences();
         }
 
         public override string SettingsCategory() => "EchoColony";
@@ -29,10 +34,10 @@ namespace EchoColony
             Listing_Standard list = new Listing_Standard();
             list.Begin(inRect);
 
+            // Configuración básica (siempre visible)
             list.CheckboxLabeled("EchoColony.EnableSocialAffectsPersonality".Translate(), ref Settings.enableSocialAffectsPersonality);
             list.CheckboxLabeled("EchoColony.EnableRoleplayResponses".Translate(), ref Settings.enableRoleplayResponses);
             
-            // 🎯 NUEVA OPCIÓN: Ignorar peligros en conversaciones
             list.CheckboxLabeled(
                 "EchoColony.IgnoreDangers".Translate(), 
                 ref Settings.ignoreDangersInConversations,
@@ -41,7 +46,18 @@ namespace EchoColony
             
             list.GapLine();
 
-            // Player2 Toggle (visual) - reflejo directo del modelSource
+            // Global Prompt - siempre visible en la parte superior
+            list.Label("EchoColony.GlobalPrompt".Translate());
+            float areaHeight = 80f;
+            Rect scrollOut = list.GetRect(areaHeight);
+            Rect scrollView = new Rect(0, 0, scrollOut.width - 16f, areaHeight * 2);
+            Widgets.BeginScrollView(scrollOut, ref scrollPos, scrollView);
+            Settings.globalPrompt = Widgets.TextArea(scrollView, Settings.globalPrompt);
+            Widgets.EndScrollView();
+            
+            list.GapLine();
+
+            // Player2 Toggle
             bool isPlayer2 = Settings.modelSource == ModelSource.Player2;
             bool checkboxState = isPlayer2;
 
@@ -53,8 +69,6 @@ namespace EchoColony
                 {
                     previousModelSource = Settings.modelSource;
                     Settings.modelSource = ModelSource.Player2;
-
-                    // Verificar si Player2 está activo
                     CheckPlayer2AvailableAndWarn();
                 }
                 else
@@ -127,30 +141,13 @@ namespace EchoColony
                 }
                 else // Gemini
                 {
-                    list.Label("EchoColony.GeminiAPIKey".Translate());
-                    Settings.apiKey = list.TextEntry(Settings.apiKey);
-
-                    list.Label("EchoColony.Model".Translate());
-                    Rect modelRect = list.GetRect(25f);
-                    TooltipHandler.TipRegion(modelRect, "EchoColony.GeminiTooltip".Translate());
-                    if (Widgets.RadioButtonLabeled(modelRect, "gemini flash", !Settings.useAdvancedModel))
-                        Settings.useAdvancedModel = false;
-                    if (Widgets.RadioButtonLabeled(list.GetRect(25f), "gemini pro", Settings.useAdvancedModel))
-                        Settings.useAdvancedModel = true;
+                    DrawGeminiSettings(list);
                 }
             }
 
             list.GapLine();
 
-            list.Label("EchoColony.GlobalPrompt".Translate());
-            float areaHeight = 100f;
-            Rect scrollOut = list.GetRect(areaHeight);
-            Rect scrollView = new Rect(0, 0, scrollOut.width - 16f, areaHeight * 2);
-            Widgets.BeginScrollView(scrollOut, ref scrollPos, scrollView);
-            Settings.globalPrompt = Widgets.TextArea(scrollView, Settings.globalPrompt);
-            Widgets.EndScrollView();
-
-            list.Gap();
+            // Controles finales (compactos)
             if (Settings.modelSource != ModelSource.Player2)
             {
                 list.Label("EchoColony.MaxResponseLength".Translate(Settings.maxResponseLength));
@@ -162,9 +159,162 @@ namespace EchoColony
             list.End();
         }
 
+        // ✅ SIMPLIFICADO: Configuración directa de modelos Gemini (sin refresh)
+        private void DrawGeminiSettings(Listing_Standard list)
+        {
+            // API Key
+            list.Label("EchoColony.GeminiAPIKey".Translate());
+            Settings.apiKey = list.TextEntry(Settings.apiKey);
+
+            if (string.IsNullOrEmpty(Settings.apiKey))
+            {
+                GUI.color = Color.yellow;
+                list.Label("⚠️ Enter your Gemini API key to configure models");
+                GUI.color = Color.white;
+                return;
+            }
+
+            list.Gap();
+
+            // Configuración directa y simple
+            GUI.color = Color.cyan;
+            list.Label("🎯 Model Configuration:");
+            GUI.color = Color.white;
+
+            // Mostrar modelo actual
+            string currentModel = GetCurrentModelInUse();
+            list.Label($"Current model: {currentModel}");
+
+            list.Gap();
+
+            // Botón principal para elegir modelo
+            if (list.ButtonText("📋 Choose Specific Model"))
+            {
+                ShowSimpleModelSelectionMenu();
+            }
+
+            // Información útil
+            GUI.color = Color.gray;
+            list.Label("💡 Flash models: Faster, cheaper");
+            list.Label("💡 Pro models: Better quality, more expensive");
+            list.Label($"💎 Available: 5 Flash, 3 Pro models");
+            GUI.color = Color.white;
+        }
+
+        // ✅ FINAL: Menú organizado con los 8 modelos más relevantes (hardcodeado)
+        private void ShowSimpleModelSelectionMenu()
+        {
+            List<FloatMenuOption> options = new List<FloatMenuOption>();
+
+            // Opción automática
+            options.Add(new FloatMenuOption("🤖 Automatic (gemini-2.0-flash-001)", () =>
+            {
+                Settings.modelPreferences.useAutoSelection = true;
+                Settings.modelPreferences.preferredFastModel = "";
+                Settings.modelPreferences.preferredAdvancedModel = "";
+            }));
+
+            options.Add(new FloatMenuOption("──────────────", null) { Disabled = true });
+
+            // Los 8 modelos directos
+            options.Add(new FloatMenuOption("gemini-2.5-flash", () =>
+            {
+                SetSpecificModel("gemini-2.5-flash", false);
+            }));
+
+            options.Add(new FloatMenuOption("gemini-2.5-flash-lite", () =>
+            {
+                SetSpecificModel("gemini-2.5-flash-lite", false);
+            }));
+
+            options.Add(new FloatMenuOption("gemini-2.5-flash-preview-09-2025", () =>
+            {
+                SetSpecificModel("gemini-2.5-flash-preview-09-2025", false);
+            }));
+
+            options.Add(new FloatMenuOption("gemini-2.0-flash-001 ⭐", () =>
+            {
+                SetSpecificModel("gemini-2.0-flash-001", false);
+            }));
+
+            options.Add(new FloatMenuOption("gemini-2.0-flash-lite-001", () =>
+            {
+                SetSpecificModel("gemini-2.0-flash-lite-001", false);
+            }));
+
+            options.Add(new FloatMenuOption("gemini-2.5-pro", () =>
+            {
+                SetSpecificModel("gemini-2.5-pro", true);
+            }));
+
+            options.Add(new FloatMenuOption("gemini-2.0-flash-thinking-exp", () =>
+            {
+                SetSpecificModel("gemini-2.0-flash-thinking-exp", true);
+            }));
+
+            options.Add(new FloatMenuOption("gemini-2.0-pro-exp", () =>
+            {
+                SetSpecificModel("gemini-2.0-pro-exp", true);
+            }));
+
+            Find.WindowStack.Add(new FloatMenu(options));
+        }
+        
+        // Método para configurar un modelo específico
+        private void SetSpecificModel(string modelName, bool isAdvanced)
+        {
+            Settings.modelPreferences.useAutoSelection = false;
+            
+            if (isAdvanced)
+            {
+                Settings.modelPreferences.preferredAdvancedModel = modelName;
+                Settings.modelPreferences.preferredFastModel = ""; // Limpiar el otro
+                Settings.useAdvancedModel = true;
+            }
+            else
+            {
+                Settings.modelPreferences.preferredFastModel = modelName;
+                Settings.modelPreferences.preferredAdvancedModel = ""; // Limpiar el otro
+                Settings.useAdvancedModel = false;
+            }
+        }
+
+        // Método para mostrar el modelo actual
+        private string GetCurrentModelInUse()
+        {
+            try
+            {
+                if (Settings.modelPreferences.useAutoSelection)
+                {
+                    string autoModel = GeminiAPI.GetBestAvailableModel(Settings.ShouldUseAdvancedModel());
+                    string type = Settings.ShouldUseAdvancedModel() ? "Pro" : "Flash";
+                    return $"{autoModel} (Auto {type})";
+                }
+                else
+                {
+                    string manualModel = Settings.ShouldUseAdvancedModel() ? 
+                        Settings.modelPreferences.preferredAdvancedModel : 
+                        Settings.modelPreferences.preferredFastModel;
+                    
+                    if (!string.IsNullOrEmpty(manualModel))
+                    {
+                        // Mostrar versión acortada para que sea legible
+                        string shortName = manualModel.Replace("gemini-", "").Replace("-preview-09-2025", "-preview");
+                        return $"{shortName} (Manual)";
+                    }
+                    else
+                        return "None selected";
+                }
+            }
+            catch
+            {
+                return "Unknown";
+            }
+        }
+
         public static void CheckPlayer2AvailableAndWarn()
         {
-            if (pingInProgress) return; // Evita múltiples llamadas simultáneas
+            if (pingInProgress) return;
 
             pingInProgress = true;
 
