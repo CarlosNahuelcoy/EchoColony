@@ -12,8 +12,41 @@ using System.Collections.Generic;
 
 namespace EchoColony
 {
+    // ✅ Estructura simple para los modelos hardcodeados
+    public class GeminiModelInfo
+    {
+        public string Name { get; set; }
+        public bool IsAdvanced { get; set; }
+        
+        public GeminiModelInfo(string name, bool isAdvanced = false)
+        {
+            Name = name;
+            IsAdvanced = isAdvanced;
+        }
+    }
+
     public static class GeminiAPI
     {
+        // ✅ SIMPLIFICADO: Solo los 8 modelos hardcodeados (no más API calls)
+        private static readonly List<GeminiModelInfo> availableModels = new List<GeminiModelInfo>
+        {
+            // Gemini 2.5 (Fast)
+            new GeminiModelInfo("gemini-2.5-flash", false),
+            new GeminiModelInfo("gemini-2.5-flash-lite", false),
+            new GeminiModelInfo("gemini-2.5-flash-preview-09-2025", false),
+            
+            // Gemini 2.0 (Fast)
+            new GeminiModelInfo("gemini-2.0-flash-001", false),  // ✅ El que sabemos que funciona
+            new GeminiModelInfo("gemini-2.0-flash-lite-001", false),
+            
+            // Gemini 2.5 (Advanced)
+            new GeminiModelInfo("gemini-2.5-pro", true),
+            
+            // Gemini 2.0 (Advanced)
+            new GeminiModelInfo("gemini-2.0-flash-thinking-exp", true),
+            new GeminiModelInfo("gemini-2.0-pro-exp", true)
+        };
+
         public static IEnumerator GetResponseFromModel(Pawn pawn, string prompt, Action<string> onResponse)
         {
             if (MyMod.Settings == null)
@@ -22,7 +55,6 @@ namespace EchoColony
                 yield break;
             }
 
-            // Solo si Player2 NO está activado, usar otros modelos
             switch (MyMod.Settings.modelSource)
             {
                 case ModelSource.Player2:
@@ -44,9 +76,85 @@ namespace EchoColony
             }
         }
 
+        // ✅ SIMPLIFICADO: Obtener el mejor modelo de la lista hardcodeada
+        public static string GetBestAvailableModel(bool useAdvanced)
+        {
+            // Si el usuario tiene preferencia específica, usarla
+            if (MyMod.Settings?.modelPreferences != null && !MyMod.Settings.modelPreferences.useAutoSelection)
+            {
+                string preferredModel = useAdvanced ? 
+                    MyMod.Settings.modelPreferences.preferredAdvancedModel : 
+                    MyMod.Settings.modelPreferences.preferredFastModel;
+                    
+                if (!string.IsNullOrEmpty(preferredModel))
+                {
+                    var preferredExists = availableModels.Any(m => m.Name == preferredModel && m.IsAdvanced == useAdvanced);
+                    
+                    if (preferredExists)
+                    {
+                        if (MyMod.Settings?.debugMode == true)
+                        {
+                            LogDebugResponse("ModelSelection", $"Using user preferred model: {preferredModel}");
+                        }
+                        return preferredModel;
+                    }
+                }
+            }
+
+            // Selección automática con prioridades
+            var candidateModels = availableModels.Where(m => m.IsAdvanced == useAdvanced).ToList();
+            
+            if (candidateModels.Count == 0)
+            {
+                // Si no hay modelos de la categoría, usar cualquiera
+                candidateModels = availableModels.ToList();
+            }
+
+            return SelectBestModel(candidateModels, useAdvanced);
+        }
+
+        // ✅ Prioridades para selección automática
+        private static string SelectBestModel(List<GeminiModelInfo> candidates, bool preferAdvanced)
+        {
+            var modelPriorities = new Dictionary<string, int>
+            {
+                // Fast models
+                ["gemini-2.0-flash-001"] = 105,                    // ✅ PRIORIDAD MÁXIMA - El que funciona
+                ["gemini-2.5-flash"] = 100,                        // Latest stable
+                ["gemini-2.5-flash-lite"] = 95,                    // Latest budget
+                ["gemini-2.5-flash-preview-09-2025"] = 90,         // Latest experimental
+                ["gemini-2.0-flash-lite-001"] = 80,                // Proven budget
+
+                // Advanced models
+                ["gemini-2.5-pro"] = 100,                          // Latest advanced
+                ["gemini-2.0-flash-thinking-exp"] = 95,            // Advanced reasoning
+                ["gemini-2.0-pro-exp"] = 90,                       // High performance
+            };
+
+            var sortedCandidates = candidates
+                .OrderByDescending(m => modelPriorities.ContainsKey(m.Name) ? modelPriorities[m.Name] : 0)
+                .ThenByDescending(m => m.Name)
+                .ToList();
+
+            string selectedModel = sortedCandidates.First().Name;
+            
+            if (MyMod.Settings?.debugMode == true)
+            {
+                LogDebugResponse("ModelSelection", $"Auto-selected model: {selectedModel} (Advanced: {preferAdvanced}) from {candidates.Count} candidates");
+            }
+            
+            return selectedModel;
+        }
+
+        // ✅ SIMPLIFICADO: Obtener lista de modelos (ya no necesita refresh)
+        public static List<GeminiModelInfo> GetAvailableModels()
+        {
+            return new List<GeminiModelInfo>(availableModels);
+        }
+
         public static IEnumerator SendRequestToPlayer2(Pawn pawn, string userInput, Action<string> onResponse)
         {
-            // ✅ Health check primero
+            // Health check primero
             string healthCheckUrl = "http://127.0.0.1:4315/v1/health";
             UnityWebRequest healthRequest = UnityWebRequest.Get(healthCheckUrl);
             healthRequest.timeout = 2;
@@ -54,7 +162,7 @@ namespace EchoColony
             yield return healthRequest.SendWebRequest();
 
 #if UNITY_2020_2_OR_NEWER
-    if (healthRequest.result != UnityWebRequest.Result.Success)
+            if (healthRequest.result != UnityWebRequest.Result.Success)
 #else
             if (healthRequest.isNetworkError || healthRequest.isHttpError)
 #endif
@@ -70,7 +178,6 @@ namespace EchoColony
                 yield break;
             }
 
-            // ✅ Preparar el request
             string endpoint = "http://127.0.0.1:4315/v1/chat/completions";
 
             RebuildMemoryFromChat(pawn);
@@ -82,23 +189,23 @@ namespace EchoColony
             if (!string.IsNullOrWhiteSpace(systemPrompt))
             {
                 messages.Add(new Dictionary<string, string> {
-            { "role", "system" },
-            { "content", systemPrompt }
-        });
+                    { "role", "system" },
+                    { "content", systemPrompt }
+                });
             }
 
             foreach (var entry in EchoMemory.GetRecentTurns())
             {
                 messages.Add(new Dictionary<string, string> {
-            { "role", entry.Item1 },
-            { "content", entry.Item2 }
-        });
+                    { "role", entry.Item1 },
+                    { "content", entry.Item2 }
+                });
             }
 
             messages.Add(new Dictionary<string, string> {
-        { "role", "user" },
-        { "content", userMessage }
-    });
+                { "role", "user" },
+                { "content", userMessage }
+            });
 
             var jsonPayload = new JSONObject();
             var jsonMessages = new JSONArray();
@@ -117,9 +224,8 @@ namespace EchoColony
             if (MyMod.Settings?.debugMode == true)
                 LogPlayer2Debug("REQUEST", jsonBody);
 
-            // ✅ Sistema de reintentos con backoff exponencial (IGUAL QUE GEMINI)
             int maxRetries = 3;
-            float retryDelay = 1f; // ✅ CAMBIADO: Mismo tiempo que Gemini porque usa APIs web
+            float retryDelay = 1f;
 
             for (int attempt = 0; attempt < maxRetries; attempt++)
             {
@@ -137,12 +243,11 @@ namespace EchoColony
                 string responseText = request.downloadHandler.text;
 
 #if UNITY_2020_2_OR_NEWER
-        bool hasError = request.result != UnityWebRequest.Result.Success;
+                bool hasError = request.result != UnityWebRequest.Result.Success;
 #else
                 bool hasError = request.isNetworkError || request.isHttpError;
 #endif
 
-                // ✅ Si fue exitoso, procesar y retornar
                 if (!hasError)
                 {
                     if (MyMod.Settings?.debugMode == true)
@@ -162,23 +267,21 @@ namespace EchoColony
                     yield break;
                 }
 
-                // ✅ Si es error 500, 503 o 429, reintentar
                 if (request.responseCode == 429 || request.responseCode == 500 || request.responseCode == 503)
                 {
-                    if (attempt < maxRetries - 1) // No es el último intento
+                    if (attempt < maxRetries - 1)
                     {
                         if (MyMod.Settings?.debugMode == true)
                         {
-                            LogPlayer2Debug("RETRY", $"Attempt {attempt + 1}/{maxRetries} failed with code {request.responseCode}. Retrying in {retryDelay}s...\nReason: Player2 uses web APIs internally and may be rate-limited.\n{responseText}");
+                            LogPlayer2Debug("RETRY", $"Attempt {attempt + 1}/{maxRetries} failed with code {request.responseCode}. Retrying in {retryDelay}s...\n{responseText}");
                         }
 
                         yield return new WaitForSeconds(retryDelay);
-                        retryDelay *= 2f; // ✅ CAMBIADO: Backoff exponencial igual que Gemini: 1s, 2s, 4s
+                        retryDelay *= 2f;
                         continue;
                     }
                 }
 
-                // ✅ Si llegamos aquí, falló definitivamente
                 if (MyMod.Settings?.debugMode == true)
                     LogPlayer2Debug("ERROR_RESPONSE", $"Status: {request.responseCode}\n{responseText}");
 
@@ -231,7 +334,6 @@ namespace EchoColony
 
             string text = ParseStandardLLMResponse(responseText);
             text = TrimTextAfterHashtags(text);
-            // ✅ FIX: Reemplazado ExtractLongestQuotedSegment con CleanResponse
             text = CleanResponse(text);
 
             LogDebugResponse("LocalModel", text);
@@ -246,13 +348,13 @@ namespace EchoColony
                 yield break;
             }
 
-            string model = MyMod.Settings.useAdvancedModel ? "gemini-2.5-pro-preview-06-05" : "gemini-2.5-flash-preview-05-20";
+            // ✅ SIMPLIFICADO: Usar modelo de la lista hardcodeada
+            string model = GetBestAvailableModel(MyMod.Settings.ShouldUseAdvancedModel());
             string apiKey = MyMod.Settings.apiKey;
             string endpoint = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
 
             string requestJson = CreateGeminiRequestJson(prompt);
 
-            // ✅ Sistema de reintentos con backoff exponencial
             int maxRetries = 3;
             float retryDelay = 1f;
 
@@ -270,27 +372,26 @@ namespace EchoColony
                 string responseText = request.downloadHandler.text;
 
 #if UNITY_2020_2_OR_NEWER
-        bool hasError = request.result != UnityWebRequest.Result.Success;
+                bool hasError = request.result != UnityWebRequest.Result.Success;
 #else
                 bool hasError = request.isNetworkError || request.isHttpError;
 #endif
 
-                // ✅ Si fue exitoso, procesar y retornar
                 if (!hasError)
                 {
                     string reply = ParseGeminiReply(responseText);
                     reply = TrimTextAfterHashtags(reply);
                     reply = CleanResponse(reply);
 
-                    LogDebugResponse("GeminiAPI", reply);
+                    LogDebugResponse("GeminiAPI", $"Used model: {model}\nReply: {reply}");
                     onResponse?.Invoke(reply);
                     yield break;
                 }
 
-                // ✅ Si es error 429 (rate limit), 500 o 503 (server error), reintentar
+                // ✅ SIMPLIFICADO: Sin manejo especial de 404, ya que los modelos están hardcodeados
                 if (request.responseCode == 429 || request.responseCode == 500 || request.responseCode == 503)
                 {
-                    if (attempt < maxRetries - 1) // No es el último intento
+                    if (attempt < maxRetries - 1)
                     {
                         if (MyMod.Settings?.debugMode == true)
                         {
@@ -298,26 +399,22 @@ namespace EchoColony
                         }
 
                         yield return new WaitForSeconds(retryDelay);
-                        retryDelay *= 2f; // Backoff exponencial: 1s, 2s, 4s
+                        retryDelay *= 2f;
                         continue;
                     }
                 }
 
-                // ✅ Si llegamos aquí, falló definitivamente
-                LogDebugResponse("GeminiAPI_ERROR", $"Status: {request.responseCode}\n{responseText}");
-                onResponse?.Invoke($"❌ Failed to contact Gemini after {maxRetries} attempts: {request.error}");
+                LogDebugResponse("GeminiAPI_ERROR", $"Status: {request.responseCode}\nModel: {model}\nResponse: {responseText}");
+                onResponse?.Invoke($"❌ Failed to contact Gemini after {maxRetries} attempts using model {model}: {request.error}");
                 yield break;
             }
         }
 
-// ✅ FIX: Mejorar el método CreateGeminiRequestJson para manejar caracteres especiales
-private static string CreateGeminiRequestJson(string prompt)
-{
-    // Escapar el prompt para JSON
-    string escapedPrompt = EscapeJson(prompt);
-    
-    // Crear el JSON manualmente para tener control total
-    string json = $@"{{
+        private static string CreateGeminiRequestJson(string prompt)
+        {
+            string escapedPrompt = EscapeJson(prompt);
+            
+            string json = $@"{{
   ""contents"": [
     {{
       ""parts"": [
@@ -329,8 +426,8 @@ private static string CreateGeminiRequestJson(string prompt)
   ]
 }}";
 
-    return json;
-}
+            return json;
+        }
 
         public static IEnumerator SendRequestToOpenRouter(string prompt, Action<string> onResponse)
         {
@@ -363,7 +460,6 @@ private static string CreateGeminiRequestJson(string prompt)
 
             string text = ParseStandardLLMResponse(responseText);
             text = TrimTextAfterHashtags(text);
-            // ✅ FIX: Reemplazado ExtractLongestQuotedSegment con CleanResponse
             text = CleanResponse(text);
 
             LogDebugResponse("OpenRouter", text);
@@ -375,12 +471,71 @@ private static string CreateGeminiRequestJson(string prompt)
             try
             {
                 var parsed = JSON.Parse(json);
-                return parsed["candidates"][0]["content"]["parts"][0]["text"];
+                
+                // ✅ CORREGIDO: Manejo más robusto del parsing
+                if (parsed["candidates"] != null && parsed["candidates"].AsArray.Count > 0)
+                {
+                    var candidate = parsed["candidates"][0];
+                    if (candidate["content"] != null && candidate["content"]["parts"] != null)
+                    {
+                        var parts = candidate["content"]["parts"].AsArray;
+                        if (parts.Count > 0 && parts[0]["text"] != null)
+                        {
+                            return parts[0]["text"].Value;
+                        }
+                    }
+                }
+                
+                // ✅ FALLBACK: Si no encuentra la estructura esperada, buscar texto en cualquier parte
+                if (parsed["text"] != null)
+                    return parsed["text"].Value;
+                    
+                // ✅ ÚLTIMO RECURSO: Si hay algún "text" en cualquier lugar del JSON
+                var textNodes = FindTextInJSON(parsed);
+                if (textNodes.Count > 0)
+                    return textNodes[0];
+                
+                return "❌ No text found in Gemini response.";
             }
-            catch
+            catch (Exception ex)
             {
+                LogDebugResponse("ParseGemini_ERROR", $"JSON: {json}\nError: {ex.Message}");
                 return "❌ Error parsing Gemini response.";
             }
+        }
+        
+        // ✅ NUEVO: Método auxiliar para buscar texto en cualquier parte del JSON
+        private static List<string> FindTextInJSON(JSONNode node)
+        {
+            var results = new List<string>();
+            
+            if (node.IsString && !string.IsNullOrEmpty(node.Value) && node.Value.Length > 10)
+            {
+                results.Add(node.Value);
+            }
+            else if (node.IsArray)
+            {
+                foreach (JSONNode item in node.AsArray)
+                {
+                    results.AddRange(FindTextInJSON(item));
+                }
+            }
+            else if (node.IsObject)
+            {
+                foreach (var kvp in node.AsObject)
+                {
+                    if (kvp.Key == "text" && kvp.Value.IsString && !string.IsNullOrEmpty(kvp.Value.Value))
+                    {
+                        results.Add(kvp.Value.Value);
+                    }
+                    else
+                    {
+                        results.AddRange(FindTextInJSON(kvp.Value));
+                    }
+                }
+            }
+            
+            return results;
         }
 
         public static class EchoMemory
@@ -396,7 +551,7 @@ private static string CreateGeminiRequestJson(string prompt)
             public static void AddTurn(string role, string text)
             {
                 recentTurns.Add(Tuple.Create(role, text));
-                if (recentTurns.Count > 20) // Máximo 10 interacciones (10 user + 10 assistant)
+                if (recentTurns.Count > 20)
                     recentTurns.RemoveAt(0);
             }
 
@@ -432,8 +587,6 @@ private static string CreateGeminiRequestJson(string prompt)
                 if (parsed["text"] != null)
                 {
                     string fullText = parsed["text"];
-                    // ✅ FIX: No extraer automáticamente contenido entre comillas
-                    // Solo hacerlo si TODA la respuesta está entre comillas Y es muy corta
                     if (fullText.StartsWith("\"") && fullText.EndsWith("\"") && fullText.Length < 50)
                     {
                         return fullText.Substring(1, fullText.Length - 2);
@@ -441,7 +594,6 @@ private static string CreateGeminiRequestJson(string prompt)
                     return fullText;
                 }
                 
-                // ✅ FIX: Solo como último recurso, buscar comillas, pero con longitud mínima mayor
                 var quoted = Regex.Match(json, "\"([^\"]{100,})\"");
                 if (quoted.Success)
                     return quoted.Groups[1].Value;
@@ -454,14 +606,31 @@ private static string CreateGeminiRequestJson(string prompt)
             }
         }
 
-        // ✅ NUEVO MÉTODO: Limpieza inteligente sin cortar contenido válido
         private static string CleanResponse(string text)
         {
             if (string.IsNullOrWhiteSpace(text))
                 return text;
 
-            // Limpiar espacios en blanco extra
             text = text.Trim();
+
+            // ✅ NUEVO: Remover nombres de colonistas duplicados al inicio
+            // Buscar patrones como "Nombre: Nombre: texto" o "Nombre: texto"
+            var colonistNamePattern = @"^([A-Za-z]+):\s*\1:\s*(.*)$"; // "Nombre: Nombre: texto"
+            var match = System.Text.RegularExpressions.Regex.Match(text, colonistNamePattern);
+            if (match.Success)
+            {
+                text = match.Groups[2].Value.Trim();
+            }
+            else
+            {
+                // Buscar patrón simple "Nombre: texto"
+                var simpleNamePattern = @"^([A-Za-z]+):\s*(.*)$";
+                var simpleMatch = System.Text.RegularExpressions.Regex.Match(text, simpleNamePattern);
+                if (simpleMatch.Success)
+                {
+                    text = simpleMatch.Groups[2].Value.Trim();
+                }
+            }
 
             // Solo remover comillas si la ENTERA respuesta está envuelta en comillas
             // Y parece ser un wrapper artificial (muy corto o contiene caracteres extraños)
@@ -470,15 +639,12 @@ private static string CreateGeminiRequestJson(string prompt)
                 string unwrapped = text.Substring(1, text.Length - 2);
                 
                 // Solo desenvolver si parece un wrapper artificial
-                if (text.Length < 30 || // Muy corto, probablemente wrapped
-                    !unwrapped.Contains(" ") || // Una sola palabra wrapped
-                    unwrapped.Split(' ').Length < 3) // Menos de 3 palabras
+                if (text.Length < 30 || 
+                    !unwrapped.Contains(" ") || 
+                    unwrapped.Split(' ').Length < 3)
                 {
                     return unwrapped.Trim();
                 }
-                
-                // Si es una frase larga entre comillas, mantener las comillas
-                // porque probablemente es diálogo intencional del colono
             }
 
             // Remover prefijos comunes de IA que pueden aparecer
@@ -548,9 +714,6 @@ private static string CreateGeminiRequestJson(string prompt)
             return hashtagIndex > 0 ? text.Substring(0, hashtagIndex).Trim() : text;
         }
 
-        // ✅ MÉTODO PROBLEMÁTICO ELIMINADO: ExtractLongestQuotedSegment
-        // Este método causaba que se cortaran las respuestas cuando tenían comillas
-
         private static void LogDebugResponse(string sourceName, string responseText)
         {
             if (MyMod.Settings?.debugMode != true)
@@ -570,7 +733,6 @@ private static string CreateGeminiRequestJson(string prompt)
             }
         }
 
-        // 🔧 Nueva función específica para logging de Player2
         private static void LogPlayer2Debug(string type, string content)
         {
             if (MyMod.Settings?.debugMode != true)
