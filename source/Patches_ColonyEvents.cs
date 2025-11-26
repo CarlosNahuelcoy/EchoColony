@@ -14,6 +14,10 @@ public static class Patch_DamageDealt
 {
     public static void Postfix(Pawn_HealthTracker __instance, DamageInfo dinfo)
     {
+        // ✅ Verificar que estemos en juego y que la facción del jugador exista
+        if (Current.Game == null || Faction.OfPlayer == null)
+            return;
+
         // Accedemos al pawn afectado
         Pawn target = Traverse.Create(__instance).Field("pawn").GetValue<Pawn>();
 
@@ -46,6 +50,10 @@ public static class Patch_DamageDealt
     {
         public static void Postfix(JobDriver_Hunt __instance)
         {
+            // ✅ Verificar que estemos en juego y que la facción del jugador exista
+            if (Current.Game == null || Faction.OfPlayer == null)
+                return;
+
             var pawn = __instance.pawn;
             var target = __instance.job.targetA.Thing as Pawn;
             
@@ -63,6 +71,10 @@ public static class Patch_DamageDealt
     {
         public static void Postfix(Projectile __instance, Thing launcher)
         {
+            // ✅ Verificar que estemos en juego y que la facción del jugador exista
+            if (Current.Game == null || Faction.OfPlayer == null)
+                return;
+
             Pawn shooter = launcher as Pawn;
             if (shooter?.Faction == Faction.OfPlayer)
             {
@@ -77,6 +89,10 @@ public static class Patch_DamageDealt
     {
         public static void Postfix(Pawn __instance, DamageInfo? dinfo)
         {
+            // ✅ Verificar que estemos en juego y que la facción del jugador exista
+            if (Current.Game == null || Faction.OfPlayer == null)
+                return;
+
             if (!__instance.Spawned || __instance.Faction == null) return;
 
             Pawn killer = dinfo?.Instigator as Pawn;
@@ -93,6 +109,10 @@ public static class Patch_DamageDealt
     {
         public static void Postfix(Pawn __instance, DestroyMode mode)
         {
+            // ✅ Verificar que estemos en juego y que la facción del jugador exista
+            if (Current.Game == null || Faction.OfPlayer == null)
+                return;
+
             if (__instance.RaceProps.IsMechanoid && mode == DestroyMode.KillFinalize)
             {
                 // Buscar quién causó la destrucción
@@ -111,6 +131,10 @@ public static class Patch_DamageDealt
     {
         public static void Postfix(Pawn ___pawn)
         {
+            // ✅ Verificar que estemos en juego y que la facción del jugador exista
+            if (Current.Game == null || Faction.OfPlayer == null)
+                return;
+
             if (___pawn.Faction == Faction.OfPlayer && ___pawn.Downed)
             {
                 EventLogger.LogEvent($"{___pawn.LabelShortCap} has been downed in combat.");
@@ -124,6 +148,10 @@ public static class Patch_DamageDealt
     {
         public static void Postfix(Pawn __instance, Faction newFaction, Pawn recruiter)
         {
+            // ✅ Verificar que estemos en juego y que la facción del jugador exista
+            if (Current.Game == null || Faction.OfPlayer == null)
+                return;
+
             if (newFaction == Faction.OfPlayer && __instance.IsPrisoner)
             {
                 EventLogger.LogEvent($"{__instance.LabelShortCap} has been captured as prisoner.");
@@ -137,6 +165,14 @@ public static class Patch_DamageDealt
     {
         public static void Postfix(Hediff_MissingPart __instance)
         {
+            // ✅ Verificar que estemos en juego y que la facción del jugador exista
+            if (Current.Game == null || Faction.OfPlayer == null)
+                return;
+                
+            // ✅ Verificar que el pawn y sus propiedades sean válidos
+            if (__instance?.pawn?.Faction == null)
+                return;
+                
             if (__instance.pawn.Faction == Faction.OfPlayer)
             {
                 EventLogger.LogEvent($"{__instance.pawn.LabelShortCap} lost {__instance.Part.Label}.");
@@ -150,6 +186,10 @@ public static class Patch_DamageDealt
     {
         public static void Postfix(Fire __instance)
         {
+            // ✅ Verificar que estemos en juego antes de acceder a propiedades
+            if (Current.Game == null)
+                return;
+
             // Verificar que el fuego y el mapa existan antes de acceder a sus propiedades
             if (__instance?.Map != null && 
                 __instance.Spawned && 
@@ -167,6 +207,10 @@ public static class Patch_DamageDealt
     {
         public static void Postfix(JobDriver_Slaughter __instance)
         {
+            // ✅ Verificar que estemos en juego y que la facción del jugador exista
+            if (Current.Game == null || Faction.OfPlayer == null)
+                return;
+
             var butcher = __instance.pawn;
             var animal = __instance.job.targetA.Thing as Pawn;
             
@@ -183,6 +227,10 @@ public static class Patch_DamageDealt
     {
         public static void Postfix(MentalState __instance)
         {
+            // ✅ Verificar que estemos en juego y que la facción del jugador exista
+            if (Current.Game == null || Faction.OfPlayer == null)
+                return;
+
             if (__instance.pawn.Faction == Faction.OfPlayer)
             {
                 EventLogger.LogEvent($"{__instance.pawn.LabelShortCap} had a mental break: {__instance.def.label}.");
@@ -196,6 +244,10 @@ public static class Patch_DamageDealt
     {
         public static void Postfix(Inspiration __instance)
         {
+            // ✅ Verificar que estemos en juego y que la facción del jugador exista
+            if (Current.Game == null || Faction.OfPlayer == null)
+                return;
+
             if (__instance.pawn.Faction == Faction.OfPlayer)
             {
                 EventLogger.LogEvent($"{__instance.pawn.LabelShortCap} se sintió inspirado: {__instance.def.label}.");
