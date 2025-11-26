@@ -42,6 +42,9 @@ namespace EchoColony
         public bool enableSocialAffectsPersonality = true;
         public bool enableRoleplayResponses = true;
 
+        // ✅ NUEVO: Sistema de memorias opcional
+        public bool enableMemorySystem = true;
+
         // Fuente del modelo
         public ModelSource modelSource = ModelSource.Player2;
 
@@ -110,6 +113,10 @@ namespace EchoColony
             Scribe_Values.Look(ref maxResponseLength, "MaxResponseLength", 300);
             Scribe_Values.Look(ref enableSocialAffectsPersonality, "EnableSocialAffectsPersonality", true);
             Scribe_Values.Look(ref enableRoleplayResponses, "EnableRoleplayResponses", true);
+            
+            // ✅ NUEVO: Guardar configuración de memorias
+            Scribe_Values.Look(ref enableMemorySystem, "EnableMemorySystem", true);
+            
             Scribe_Values.Look(ref modelSource, "ModelSource", ModelSource.Player2);
 
             Scribe_Values.Look(ref localModelEndpoint, "LocalModelEndpoint", "http://localhost:11434/api/generate");
