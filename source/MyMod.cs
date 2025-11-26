@@ -44,6 +44,34 @@ namespace EchoColony
                 "EchoColony.IgnoreDangersTooltip".Translate()
             );
             
+            // ✅ NUEVO: Toggle para sistema de memorias
+            bool oldMemorySystemState = Settings.enableMemorySystem;
+            list.CheckboxLabeled(
+                "EchoColony.EnableMemorySystem".Translate(), 
+                ref Settings.enableMemorySystem,
+                "EchoColony.EnableMemorySystemTooltip".Translate()
+            );
+
+            // ✅ NUEVO: Verificar si cambió el estado y aplicar cambios
+            if (oldMemorySystemState != Settings.enableMemorySystem)
+            {
+                OnMemorySystemToggled(Settings.enableMemorySystem);
+            }
+
+            // ✅ NUEVO: Información sobre el estado del sistema de memorias
+            if (Settings.enableMemorySystem)
+            {
+                GUI.color = Color.green;
+                list.Label("💾 " + "EchoColony.MemorySystemEnabled".Translate());
+                GUI.color = Color.white;
+            }
+            else
+            {
+                GUI.color = Color.yellow;
+                list.Label("🚫 " + "EchoColony.MemorySystemDisabled".Translate());
+                GUI.color = Color.white;
+            }
+
             list.GapLine();
 
             // Global Prompt - siempre visible en la parte superior
@@ -156,7 +184,88 @@ namespace EchoColony
 
             list.CheckboxLabeled("EchoColony.DebugModeLabel".Translate(), ref Settings.debugMode, "EchoColony.DebugModeTooltip".Translate());
 
+            // ✅ NUEVO: Botones de debug para memorias (solo en modo debug)
+            if (Settings.debugMode)
+            {
+                list.GapLine();
+                GUI.color = Color.cyan;
+                list.Label("🔧 " + "EchoColony.MemoryDebugTools".Translate());
+                GUI.color = Color.white;
+
+                if (list.ButtonText("🔍 " + "EchoColony.CheckMemoryState".Translate()))
+                {
+                    CheckMemorySystemState();
+                }
+
+                if (list.ButtonText("🗑️ " + "EchoColony.ForceCleanMemories".Translate()))
+                {
+                    ForceCleanAllMemories();
+                }
+            }
+
             list.End();
+        }
+
+        // ✅ NUEVO: Maneja el cambio en el toggle de memorias
+        private void OnMemorySystemToggled(bool newState)
+        {
+            if (newState)
+            {
+                Log.Message("[EchoColony] 💾 Sistema de memorias habilitado por usuario");
+                Messages.Message("EchoColony: Sistema de memorias habilitado - las conversaciones futuras se recordarán", MessageTypeDefOf.PositiveEvent);
+            }
+            else
+            {
+                Log.Message("[EchoColony] 🚫 Sistema de memorias deshabilitado por usuario");
+                
+                // Preguntar si quiere limpiar memorias existentes
+                Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+                    "EchoColony.DisableMemorySystemConfirm".Translate(),
+                    () => {
+                        // Limpiar memorias existentes
+                        var memoryManager = MyStoryModComponent.Instance?.ColonistMemoryManager;
+                        if (memoryManager != null)
+                        {
+                            memoryManager.ForceCleanMemories();
+                        }
+                        Messages.Message("EchoColony: Memorias existentes eliminadas", MessageTypeDefOf.TaskCompletion);
+                    }));
+            }
+        }
+
+        // ✅ NUEVO: Método de debug para verificar estado del sistema de memorias
+        private void CheckMemorySystemState()
+        {
+            var memoryManager = MyStoryModComponent.Instance?.ColonistMemoryManager;
+            if (memoryManager == null)
+            {
+                Messages.Message("❌ MemoryManager no disponible", MessageTypeDefOf.RejectInput);
+                return;
+            }
+
+            memoryManager.DebugPrintMemoryState();
+            bool integrity = memoryManager.ValidateMemoryIntegrity();
+            
+            string status = integrity ? "✅ Sistema funcionando correctamente" : "⚠️ Problemas detectados";
+            Messages.Message($"EchoColony: {status}", integrity ? MessageTypeDefOf.PositiveEvent : MessageTypeDefOf.CautionInput);
+        }
+
+        // ✅ NUEVO: Método de debug para limpiar todas las memorias
+        private void ForceCleanAllMemories()
+        {
+            Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+                "EchoColony.ForceCleanMemoriesConfirm".Translate(),
+                () => {
+                    var memoryManager = MyStoryModComponent.Instance?.ColonistMemoryManager;
+                    if (memoryManager != null)
+                    {
+                        memoryManager.ForceCleanMemories();
+                    }
+                    else
+                    {
+                        Messages.Message("❌ MemoryManager no disponible", MessageTypeDefOf.RejectInput);
+                    }
+                }));
         }
 
         // ✅ SIMPLIFICADO: Configuración directa de modelos Gemini (sin refresh)
