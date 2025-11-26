@@ -181,7 +181,6 @@ namespace EchoColony
             Text.Font = GameFont.Small;
 
             // 📜 Chat log scrollable
-            // 📜 Chat log scrollable
             float chatHeight = inRect.height - 110f;
             Rect scrollRect = new Rect(0, 45f, inRect.width - 20f, chatHeight);
 
@@ -190,17 +189,17 @@ namespace EchoColony
             Text.Anchor = TextAnchor.UpperLeft;
             Text.WordWrap = true;
 
-            // ✅ CALCULAR alturas considerando separadores de fecha
-foreach (string msg in chatLog)
-{
-    float width = msg.StartsWith("[DATE_SEPARATOR]") ? scrollRect.width - 16f : scrollRect.width - 200f;
-    
-    string actualDisplayText = GetDisplayMessage(msg);
-    
-    float height = Text.CalcHeight(actualDisplayText, width) + 15f; // ✅ +5f padding top + 5f extra
-    heights.Add(height);
-    viewHeight += height + 15f; // ✅ Mantener separación entre mensajes
-}
+            // ✅ FIXED: Calculate heights with consistent spacing
+            foreach (string msg in chatLog)
+            {
+                float width = msg.StartsWith("[DATE_SEPARATOR]") ? scrollRect.width - 16f : scrollRect.width - 200f;
+                
+                string actualDisplayText = GetDisplayMessage(msg);
+                
+                float height = Text.CalcHeight(actualDisplayText, width) + 10f; // Consistent padding
+                heights.Add(height);
+                viewHeight += height + 10f; // Match the rendering spacing exactly
+            }
 
             Rect viewRect = new Rect(0, 0, scrollRect.width - 16f, viewHeight);
             Widgets.BeginScrollView(scrollRect, ref scrollPos, viewRect);
@@ -226,7 +225,7 @@ foreach (string msg in chatLog)
                     DrawRegularMessage(new Rect(0, y, viewRect.width, heights[i]), msg, i, viewRect.width);
                 }
 
-                y += heights[i] + 10f;
+                y += heights[i] + 10f; // ✅ FIXED: Now matches the calculation above
             }
 
             Widgets.EndScrollView();
@@ -936,7 +935,7 @@ foreach (string msg in chatLog)
     if (msg.StartsWith("[DATE_SEPARATOR]"))
         return msg.Substring("[DATE_SEPARATOR]".Length).Trim();
     else if (msg.StartsWith("[USER]"))
-        return msg.Substring(6); // ✅ AGREGAR "You:" para claridad
+        return msg.Substring(6); // AGREGAR "You:" para claridad
     else
         return msg; // ✅ MANTENER nombre del colono
 }
