@@ -10,31 +10,28 @@ namespace EchoColony
         private Dictionary<string, ColonistMemoryTracker> memoryPerPawn = new Dictionary<string, ColonistMemoryTracker>();
         private DailyGroupMemoryTracker groupMemoryTracker = new DailyGroupMemoryTracker();
 
-        // ✅ NUEVO: Flag para controlar si el sistema está habilitado
+        // Flag to control if the system is enabled
         public static bool IsMemorySystemEnabled
         {
             get { return MyMod.Settings?.enableMemorySystem ?? false; }
         }
 
-        // ✅ NUEVO: Tracking para detectar cambios de partida
-        private string lastGameWorldName = "";
-
-        // ✅ Constructor sin parámetros (REQUERIDO para la serialización de RimWorld)
+        // Constructor without parameters (required for RimWorld serialization)
         public ColonistMemoryManager()
         {
         }
 
-        // Constructor con Game (mantener para compatibilidad)
+        // Constructor with Game (maintain for compatibility)
         public ColonistMemoryManager(Game game)
         {
         }
 
         public ColonistMemoryTracker GetTrackerFor(Pawn pawn)
         {
-            // ✅ Si el sistema está deshabilitado, devolver tracker vacío NO persistente
+            // If system is disabled, return empty non-persistent tracker
             if (!IsMemorySystemEnabled)
             {
-                return new ColonistMemoryTracker(pawn); // Tracker temporal que no se guarda
+                return new ColonistMemoryTracker(pawn); // Temporary tracker that doesn't get saved
             }
 
             string id = pawn.ThingID;
@@ -45,109 +42,61 @@ namespace EchoColony
             }
             else
             {
-                // ✅ Asegurar que el pawn esté asignado después de cargar
+                // Ensure pawn is assigned after loading
                 memoryPerPawn[id].SetPawn(pawn);
             }
             return memoryPerPawn[id];
         }
 
-        // Getter para las memorias grupales
+        // Getter for group memories
         public DailyGroupMemoryTracker GetGroupMemoryTracker()
         {
-            // ✅ Si el sistema está deshabilitado, devolver tracker vacío NO persistente
+            // If system is disabled, return empty non-persistent tracker
             if (!IsMemorySystemEnabled)
             {
-                return new DailyGroupMemoryTracker(); // Tracker temporal que no se guarda
+                return new DailyGroupMemoryTracker(); // Temporary tracker that doesn't get saved
             }
 
             return groupMemoryTracker;
         }
 
-        // ✅ CRÍTICO: GameComponentTick para detectar cambios de partida
-        public override void GameComponentTick()
-        {
-            // Solo verificar cada 60 ticks (1 segundo) para no impactar rendimiento
-            if (Find.TickManager.TicksGame % 60 == 0)
-            {
-                CheckForGameChange();
-            }
-        }
-
-        private void CheckForGameChange()
-        {
-            string currentWorldName = Current.Game?.World?.info?.name ?? "";
-            
-            // ✅ DETECTAR cambio de partida por nombre del mundo
-            if (!string.IsNullOrEmpty(lastGameWorldName) && lastGameWorldName != currentWorldName)
-            {
-                Log.Message($"[EchoColony] 🔄 Cambio de partida detectado: '{lastGameWorldName}' -> '{currentWorldName}'");
-                
-                // ✅ LIMPIAR memorias de la partida anterior
-                memoryPerPawn = new Dictionary<string, ColonistMemoryTracker>();
-                groupMemoryTracker = new DailyGroupMemoryTracker();
-                
-                Log.Message("[EchoColony] 🧹 Memorias limpiadas para nueva partida");
-            }
-            
-            lastGameWorldName = currentWorldName;
-        }
-
-        // ✅ CORREGIDO: ExposeData que maneja correctamente la persistencia
+        // Simplified ExposeData - let RimWorld handle the lifecycle automatically
         public override void ExposeData()
         {
-            // ✅ TRACKING: Guardar nombre del mundo actual
-            string currentWorldName = Current.Game?.World?.info?.name ?? "";
-            
-            if (Scribe.mode == LoadSaveMode.Saving)
-            {
-                Log.Message($"[EchoColony] 💾 Guardando memorias para mundo '{currentWorldName}'");
-            }
-
-            // ✅ Inicialización segura siempre
-            if (memoryPerPawn == null)
-                memoryPerPawn = new Dictionary<string, ColonistMemoryTracker>();
-            
-            if (groupMemoryTracker == null)
-                groupMemoryTracker = new DailyGroupMemoryTracker();
-
-            // ✅ GUARDAR/CARGAR independientemente de configuración
-            // Esto permite cargar memorias existentes incluso si el sistema está deshabilitado
+            // Save/Load independently of configuration
+            // This allows loading existing memories even if system is disabled
             Scribe_Collections.Look(ref memoryPerPawn, "memoryPerPawn", LookMode.Value, LookMode.Deep);
             Scribe_Deep.Look(ref groupMemoryTracker, "groupMemoryTracker");
-            Scribe_Values.Look(ref lastGameWorldName, "lastGameWorldName", "");
 
-            // ✅ POST-LOAD: Verificación y limpieza condicional
+            // Post-load initialization and cleanup
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
-                // Verificar integridad de datos
+                // Data integrity verification
                 if (memoryPerPawn == null)
                     memoryPerPawn = new Dictionary<string, ColonistMemoryTracker>();
                 
                 if (groupMemoryTracker == null)
                     groupMemoryTracker = new DailyGroupMemoryTracker();
 
-                Log.Message($"[EchoColony] 📖 Memorias cargadas para '{currentWorldName}': {memoryPerPawn.Count} colonos");
+                Log.Message($"[EchoColony] Memories loaded: {memoryPerPawn.Count} colonists");
 
-                // ✅ Re-asignar referencias de pawns después de cargar
+                // Re-assign pawn references after loading
                 ReassignPawnReferences();
 
-                // ✅ Si el sistema está deshabilitado, limpiar memorias cargadas
+                // If system is disabled, clean loaded memories
                 if (!IsMemorySystemEnabled)
                 {
                     if (memoryPerPawn.Count > 0)
                     {
-                        Log.Message("[EchoColony] 🚫 Sistema de memorias deshabilitado - limpiando memorias cargadas");
+                        Log.Message("[EchoColony] Memory system disabled - cleaning loaded memories");
                         memoryPerPawn = new Dictionary<string, ColonistMemoryTracker>();
                         groupMemoryTracker = new DailyGroupMemoryTracker();
                     }
                 }
-
-                // ✅ Actualizar tracking de mundo
-                lastGameWorldName = currentWorldName;
             }
         }
 
-        // ✅ NUEVO: Método para re-asignar referencias de pawns
+        // Re-assign pawn references after loading
         private void ReassignPawnReferences()
         {
             if (memoryPerPawn == null || memoryPerPawn.Count == 0)
@@ -170,37 +119,36 @@ namespace EchoColony
 
             if (reassigned > 0)
             {
-                Log.Message($"[EchoColony] 🔗 Re-asignados {reassigned} colonos a sus trackers de memoria");
+                Log.Message($"[EchoColony] Re-assigned {reassigned} colonists to their memory trackers");
             }
         }
 
-        // ✅ NUEVO: Método de debug para verificar estado
+        // Debug method to verify state
         public void DebugPrintMemoryState()
         {
             string worldName = Current.Game?.World?.info?.name ?? "Unknown";
-            Log.Message($"[EchoColony] 🔍 DEBUG Estado del sistema de memorias:");
-            Log.Message($"[EchoColony]   - Mundo actual: '{worldName}'");
-            Log.Message($"[EchoColony]   - Último mundo conocido: '{lastGameWorldName}'");
-            Log.Message($"[EchoColony]   - Sistema habilitado: {IsMemorySystemEnabled}");
-            Log.Message($"[EchoColony]   - Colonos con memorias: {memoryPerPawn?.Count ?? 0}");
+            Log.Message($"[EchoColony] DEBUG Memory system state:");
+            Log.Message($"[EchoColony]   - Current world: '{worldName}'");
+            Log.Message($"[EchoColony]   - System enabled: {IsMemorySystemEnabled}");
+            Log.Message($"[EchoColony]   - Colonists with memories: {memoryPerPawn?.Count ?? 0}");
             
             if (groupMemoryTracker != null)
             {
                 var groupCount = groupMemoryTracker.GetAllGroupMemories()?.Count ?? 0;
-                Log.Message($"[EchoColony]   - Grupos con memorias: {groupCount}");
+                Log.Message($"[EchoColony]   - Groups with memories: {groupCount}");
             }
 
             if (memoryPerPawn != null && memoryPerPawn.Count > 0)
             {
-                foreach (var kvp in memoryPerPawn.Take(3)) // Mostrar solo los primeros 3
+                foreach (var kvp in memoryPerPawn.Take(3)) // Show only first 3
                 {
                     var stats = kvp.Value?.GetMemoryStats();
-                    Log.Message($"[EchoColony]     - {kvp.Key}: {stats?.total ?? 0} memorias");
+                    Log.Message($"[EchoColony]     - {kvp.Key}: {stats?.total ?? 0} memories");
                 }
             }
         }
 
-        // ✅ NUEVO: Método para forzar limpieza manual (útil para debugging)
+        // Method to force manual cleanup (useful for debugging)
         public void ForceCleanMemories()
         {
             int colonistCount = memoryPerPawn?.Count ?? 0;
@@ -208,25 +156,24 @@ namespace EchoColony
 
             memoryPerPawn = new Dictionary<string, ColonistMemoryTracker>();
             groupMemoryTracker = new DailyGroupMemoryTracker();
-            lastGameWorldName = "";
 
-            Log.Message($"[EchoColony] 🗑️ Limpieza forzada completada: {colonistCount} colonos, {groupCount} grupos");
-            Messages.Message($"EchoColony: Memorias limpiadas ({colonistCount} colonos, {groupCount} grupos)", 
+            Log.Message($"[EchoColony] Forced cleanup completed: {colonistCount} colonists, {groupCount} groups");
+            Messages.Message($"EchoColony: Memories cleaned ({colonistCount} colonists, {groupCount} groups)", 
                            MessageTypeDefOf.TaskCompletion);
         }
 
-        // ✅ NUEVO: Validar integridad del sistema
+        // Validate system integrity
         public bool ValidateMemoryIntegrity()
         {
             try
             {
                 if (memoryPerPawn == null || groupMemoryTracker == null)
                 {
-                    Log.Warning("[EchoColony] ⚠️ Referencias de memoria nulas detectadas");
+                    Log.Warning("[EchoColony] Null memory references detected");
                     return false;
                 }
 
-                // Verificar que las referencias de pawn no sean nulas
+                // Verify tracker references are not null
                 int invalidTrackers = 0;
                 foreach (var tracker in memoryPerPawn.Values)
                 {
@@ -238,16 +185,16 @@ namespace EchoColony
 
                 if (invalidTrackers > 0)
                 {
-                    Log.Warning($"[EchoColony] ⚠️ {invalidTrackers} trackers inválidos encontrados");
+                    Log.Warning($"[EchoColony] {invalidTrackers} invalid trackers found");
                     return false;
                 }
 
-                Log.Message("[EchoColony] ✅ Integridad del sistema de memorias verificada");
+                Log.Message("[EchoColony] Memory system integrity verified");
                 return true;
             }
             catch (System.Exception ex)
             {
-                Log.Error($"[EchoColony] ❌ Error verificando integridad de memorias: {ex.Message}");
+                Log.Error($"[EchoColony] Error verifying memory integrity: {ex.Message}");
                 return false;
             }
         }
