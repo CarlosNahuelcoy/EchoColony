@@ -11,72 +11,126 @@ namespace EchoColony
     public class ColonistMemoryTracker : IExposable
     {
         private Dictionary<int, string> memories = new Dictionary<int, string>();
-        private Pawn pawn; // Referencia para logging
+        private Pawn pawn; // Reference for logging
 
-        // ✅ Constructor sin parámetros (REQUERIDO para la serialización de RimWorld)
+        // Constructor without parameters (required for RimWorld serialization)
         public ColonistMemoryTracker()
         {
             this.pawn = null;
         }
 
-        // Constructor para asignar el pawn
+        // Constructor to assign the pawn
         public ColonistMemoryTracker(Pawn pawn)
         {
             this.pawn = pawn;
         }
 
+        // Calculate simple edit distance between two strings
+        private int CalculateEditDistance(string s1, string s2)
+        {
+            if (string.IsNullOrEmpty(s1)) return s2?.Length ?? 0;
+            if (string.IsNullOrEmpty(s2)) return s1?.Length ?? 0;
+
+            int[,] dp = new int[s1.Length + 1, s2.Length + 1];
+
+            for (int i = 0; i <= s1.Length; i++)
+                dp[i, 0] = i;
+            for (int j = 0; j <= s2.Length; j++)
+                dp[0, j] = j;
+
+            for (int i = 1; i <= s1.Length; i++)
+            {
+                for (int j = 1; j <= s2.Length; j++)
+                {
+                    int cost = s1[i - 1] == s2[j - 1] ? 0 : 1;
+                    dp[i, j] = Math.Min(Math.Min(dp[i - 1, j] + 1, dp[i, j - 1] + 1), dp[i - 1, j - 1] + cost);
+                }
+            }
+
+            return dp[s1.Length, s2.Length];
+        }
+
+        private string GetCurrentDateHeader()
+        {
+            string fechaCompleta = GenDate.DateFullStringWithHourAt(GenTicks.TicksGame, new Vector2(0, 0));
+            string[] partes = fechaCompleta.Split(' ');
+            return partes.Length >= 3
+                ? partes[0] + " " + partes[1] + " " + partes[2]
+                : fechaCompleta;
+        }
+
         /// <summary>
-        /// ✅ MEJORADO: Guarda una memoria optimizada usando IA para resumir cuando hay contenido previo
+        /// Improved: Saves optimized memory using AI to summarize when there's existing content
         /// </summary>
         public void SaveMemoryForDay(int day, string newSummary)
         {
             if (string.IsNullOrWhiteSpace(newSummary))
             {
-                Log.Warning($"[EchoColony] ⚠️ Intento de guardar memoria vacía para {pawn?.LabelShort ?? "Unknown"} día {day}");
+                Log.Warning($"[EchoColony] Attempt to save empty memory for {pawn?.LabelShort ?? "Unknown"} day {day}");
                 return;
             }
 
-            string fechaCompleta = GenDate.DateFullStringWithHourAt(GenTicks.TicksGame, new Vector2(0, 0));
-            string[] partes = fechaCompleta.Split(' ');
+            string fechaSinHora = GetCurrentDateHeader();
 
-            // Nos aseguramos de no fallar si el formato cambia
-            string fechaSinHora = partes.Length >= 3
-                ? partes[0] + " " + partes[1] + " " + partes[2]
-                : fechaCompleta;
-
-            // Si ya existe una memoria para este día, usar IA para combinar y resumir
+            // If memory already exists for this day, use AI to combine and summarize
             if (memories.ContainsKey(day))
             {
                 string existingMemory = memories[day];
                 
-                // Extraer el contenido sin fecha de la memoria existente
+                // Extract content without date from existing memory
                 string existingContent = existingMemory.Contains("]\n") 
                     ? existingMemory.Substring(existingMemory.IndexOf("]\n") + 2)
                     : existingMemory;
 
-                // ✅ Verificar si el contenido nuevo ya está incluido (evitar duplicados)
-                string newContentTruncated = newSummary.Length > 50 ? newSummary.Substring(0, 50) : newSummary;
-                if (existingContent.ToLowerInvariant().Contains(newContentTruncated.ToLowerInvariant()))
+                // Improved validation before using AI
+                if (existingContent.Trim().Equals(newSummary.Trim(), StringComparison.OrdinalIgnoreCase))
                 {
-                    Log.Message($"[EchoColony] ⚠️ Memoria similar ya existe para {pawn?.LabelShort ?? "Unknown"} día {day}, omitiendo");
+                    Log.Message($"[EchoColony] Identical memory detected for {pawn?.LabelShort ?? "Unknown"} day {day}, skipping AI");
+                    return; // Don't do anything if identical
+                }
+
+                // Check for minimal changes (less than 10 characters difference)
+                int editDistance = CalculateEditDistance(existingContent.Trim(), newSummary.Trim());
+                if (editDistance < 10)
+                {
+                    Log.Message($"[EchoColony] Minor change ({editDistance} chars) for {pawn?.LabelShort ?? "Unknown"} day {day}, updating directly");
+                    // Update directly without AI for minor changes
+                    memories[day] = $"[{fechaSinHora}]\n{newSummary}";
                     return;
                 }
 
-                Log.Message($"[EchoColony] 🧠 Combinando memorias para {pawn?.LabelShort ?? "Unknown"} día {day} usando IA...");
+                // Check if new content is already included (avoid duplicates)
+                string newContentTruncated = newSummary.Length > 50 ? newSummary.Substring(0, 50) : newSummary;
+                if (existingContent.ToLowerInvariant().Contains(newContentTruncated.ToLowerInvariant()))
+                {
+                    Log.Message($"[EchoColony] Similar memory already exists for {pawn?.LabelShort ?? "Unknown"} day {day}, skipping");
+                    return;
+                }
+
+                // Check percentage of similarity
+                double similarity = 1.0 - (double)editDistance / Math.Max(existingContent.Length, newSummary.Length);
+                if (similarity > 0.85) // More than 85% similar
+                {
+                    Log.Message($"[EchoColony] High similarity ({similarity:P0}) detected for {pawn?.LabelShort ?? "Unknown"} day {day}, updating directly");
+                    memories[day] = $"[{fechaSinHora}]\n{newSummary}";
+                    return;
+                }
+
+                Log.Message($"[EchoColony] Combining memories for {pawn?.LabelShort ?? "Unknown"} day {day} using AI...");
                 
-                // ✅ Usar IA para crear un resumen único optimizado
+                // Use AI to create a unique optimized summary
                 CombineMemoriesWithAI(day, existingContent, newSummary, fechaSinHora);
             }
             else
             {
-                // Primera memoria del día
+                // First memory of the day
                 memories[day] = $"[{fechaSinHora}]\n{newSummary}";
-                Log.Message($"[EchoColony] 💾 Nueva memoria guardada para {pawn?.LabelShort ?? "Unknown"} día {day}");
+                Log.Message($"[EchoColony] New memory saved for {pawn?.LabelShort ?? "Unknown"} day {day}");
             }
         }
 
         /// <summary>
-        /// ✅ NUEVO: Combina memorias usando IA para crear un resumen único y optimizado
+        /// Combines memories using AI to create a unique and optimized summary
         /// </summary>
         private void CombineMemoriesWithAI(int day, string existingContent, string newContent, string dateHeader)
         {
@@ -89,45 +143,45 @@ namespace EchoColony
             
             string fullPrompt = promptForSummary + "\n\n" + combinedInput;
 
-            // Callback para manejar la respuesta de la IA
+            // Callback to handle AI response
             System.Action<string> summaryCallback = (aiSummary) =>
             {
                 if (string.IsNullOrWhiteSpace(aiSummary))
                 {
-                    // Fallback: combinación simple sin IA
-                    Log.Warning($"[EchoColony] ⚠️ IA devolvió resumen vacío, usando combinación simple para {pawn?.LabelShort ?? "Unknown"}");
+                    // Fallback: simple combination without AI
+                    Log.Warning($"[EchoColony] AI returned empty summary, using simple combination for {pawn?.LabelShort ?? "Unknown"}");
                     memories[day] = $"[{dateHeader}]\n{existingContent} {newContent}";
                 }
                 else
                 {
-                    // ✅ Usar el resumen generado por IA
+                    // Use AI-generated summary
                     string cleanedSummary = aiSummary.Trim();
                     memories[day] = $"[{dateHeader}]\n{cleanedSummary}";
-                    Log.Message($"[EchoColony] ✅ Memoria optimizada por IA para {pawn?.LabelShort ?? "Unknown"} día {day}");
+                    Log.Message($"[EchoColony] Memory optimized by AI for {pawn?.LabelShort ?? "Unknown"} day {day}");
                 }
             };
 
-            // ✅ Enviar solicitud a IA usando el modelo configurado
+            // Send request to AI using configured model
             try
             {
                 GenerateOptimizedMemory(fullPrompt, summaryCallback);
             }
             catch (Exception ex)
             {
-                Log.Error($"[EchoColony] ❌ Error generando memoria optimizada: {ex.Message}");
-                // Fallback: combinación simple
+                Log.Error($"[EchoColony] Error generating optimized memory: {ex.Message}");
+                // Fallback: simple combination
                 memories[day] = $"[{dateHeader}]\n{existingContent} {newContent}";
             }
         }
 
         /// <summary>
-        /// ✅ NUEVO: Genera memoria optimizada usando el modelo de IA configurado
+        /// Generates optimized memory using the configured AI model
         /// </summary>
         private void GenerateOptimizedMemory(string prompt, System.Action<string> callback)
         {
             if (MyStoryModComponent.Instance == null)
             {
-                Log.Error("[EchoColony] ❌ MyStoryModComponent.Instance es null, no se puede optimizar memoria");
+                Log.Error("[EchoColony] MyStoryModComponent.Instance is null, cannot optimize memory");
                 callback?.Invoke("");
                 return;
             }
@@ -144,39 +198,39 @@ namespace EchoColony
             {
                 string koboldPrompt = KoboldPromptBuilder.Build(pawn, prompt);
                 memoryCoroutine = GeminiAPI.SendRequestToLocalModel(koboldPrompt, callback);
-                Log.Message("[EchoColony] 🚀 Optimizando memoria con KoboldAI");
+                Log.Message("[EchoColony] Optimizing memory with KoboldAI");
             }
             else if (isLMStudio)
             {
                 string lmPrompt = LMStudioPromptBuilder.Build(pawn, prompt);
                 memoryCoroutine = GeminiAPI.SendRequestToLocalModel(lmPrompt, callback);
-                Log.Message("[EchoColony] 🚀 Optimizando memoria con LMStudio");
+                Log.Message("[EchoColony] Optimizing memory with LMStudio");
             }
             else if (MyMod.Settings.modelSource == ModelSource.Local)
             {
                 memoryCoroutine = GeminiAPI.SendRequestToLocalModel(prompt, callback);
-                Log.Message("[EchoColony] 🚀 Optimizando memoria con modelo local");
+                Log.Message("[EchoColony] Optimizing memory with local model");
             }
             else if (MyMod.Settings.modelSource == ModelSource.Player2)
             {
                 memoryCoroutine = GeminiAPI.SendRequestToPlayer2(pawn, prompt, callback);
-                Log.Message("[EchoColony] 🚀 Optimizando memoria con Player2");
+                Log.Message("[EchoColony] Optimizing memory with Player2");
             }
             else if (MyMod.Settings.modelSource == ModelSource.OpenRouter)
             {
                 memoryCoroutine = GeminiAPI.SendRequestToOpenRouter(prompt, callback);
-                Log.Message("[EchoColony] 🚀 Optimizando memoria con OpenRouter");
+                Log.Message("[EchoColony] Optimizing memory with OpenRouter");
             }
-            else // Gemini (por defecto)
+            else // Gemini (default)
             {
-                // Para Gemini, necesitamos crear el JSON apropiado
+                // For Gemini, need to create appropriate JSON
                 var tempHistory = new List<GeminiMessage>
                 {
                     new GeminiMessage("user", prompt)
                 };
                 string jsonPrompt = BuildGeminiChatJson(tempHistory);
                 memoryCoroutine = GeminiAPI.SendRequestToGemini(jsonPrompt, callback);
-                Log.Message("[EchoColony] 🚀 Optimizando memoria con Gemini");
+                Log.Message("[EchoColony] Optimizing memory with Gemini");
             }
 
             if (memoryCoroutine != null)
@@ -185,13 +239,13 @@ namespace EchoColony
             }
             else
             {
-                Log.Error("[EchoColony] ❌ No se pudo crear coroutine para optimizar memoria");
+                Log.Error("[EchoColony] Could not create coroutine to optimize memory");
                 callback?.Invoke("");
             }
         }
 
         /// <summary>
-        /// ✅ NUEVO: Clase para mensajes de Gemini (local para evitar dependencias)
+        /// Class for Gemini messages (local to avoid dependencies)
         /// </summary>
         public class GeminiMessage
         {
@@ -206,7 +260,7 @@ namespace EchoColony
         }
 
         /// <summary>
-        /// ✅ NUEVO: Helper para construir JSON de Gemini
+        /// Helper to build Gemini JSON
         /// </summary>
         private string BuildGeminiChatJson(List<GeminiMessage> history)
         {
@@ -230,7 +284,7 @@ namespace EchoColony
         }
 
         /// <summary>
-        /// ✅ NUEVO: Helper para escapar JSON
+        /// Helper to escape JSON
         /// </summary>
         private static string EscapeJson(string text)
         {
@@ -242,7 +296,7 @@ namespace EchoColony
         }
 
         /// <summary>
-        /// Obtiene la memoria de un día específico
+        /// Gets memory for a specific day
         /// </summary>
         public string GetMemoryForDay(int day)
         {
@@ -251,25 +305,25 @@ namespace EchoColony
         }
 
         /// <summary>
-        /// Elimina la memoria de un día específico
+        /// Removes memory for a specific day
         /// </summary>
         public bool RemoveMemoryForDay(int day)
         {
             if (memories.ContainsKey(day))
             {
                 memories.Remove(day);
-                Log.Message($"[EchoColony] 🗑️ Memoria del día {day} eliminada para {pawn?.LabelShort ?? "Unknown"}");
+                Log.Message($"[EchoColony] Memory for day {day} removed for {pawn?.LabelShort ?? "Unknown"}");
                 return true;
             }
             else
             {
-                Log.Warning($"[EchoColony] ⚠️ No se encontró memoria del día {day} para eliminar para {pawn?.LabelShort ?? "Unknown"}");
+                Log.Warning($"[EchoColony] No memory found for day {day} to remove for {pawn?.LabelShort ?? "Unknown"}");
                 return false;
             }
         }
 
         /// <summary>
-        /// Obtiene todas las memorias del colono
+        /// Gets all memories of the colonist
         /// </summary>
         public Dictionary<int, string> GetAllMemories()
         {
@@ -277,14 +331,14 @@ namespace EchoColony
         }
 
         /// <summary>
-        /// Obtiene las últimas N memorias, ordenadas por día (más recientes primero)
+        /// Gets the last N memories, ordered by day (most recent first)
         /// </summary>
         public List<string> GetLastMemories(int count = 10)
         {
             List<string> recentMemories = new List<string>();
 
             List<int> sortedDays = new List<int>(memories.Keys);
-            sortedDays.Sort((a, b) => b.CompareTo(a)); // Descendente (más reciente primero)
+            sortedDays.Sort((a, b) => b.CompareTo(a)); // Descending (most recent first)
 
             for (int i = 0; i < sortedDays.Count && i < count; i++)
             {
@@ -295,7 +349,7 @@ namespace EchoColony
         }
 
         /// <summary>
-        /// Obtiene memorias de los últimos N días
+        /// Gets memories from the last N days
         /// </summary>
         public List<string> GetRecentMemories(int lastNDays = 7)
         {
@@ -311,7 +365,7 @@ namespace EchoColony
                 }
             }
 
-            // Ordenar por día (más reciente primero)
+            // Sort by day (most recent first)
             recentMemories = recentMemories
                 .OrderByDescending(m => ExtractDayFromMemory(m))
                 .ToList();
@@ -320,11 +374,11 @@ namespace EchoColony
         }
 
         /// <summary>
-        /// Extrae el número de día de una memoria formateada
+        /// Extracts day number from a formatted memory
         /// </summary>
         private int ExtractDayFromMemory(string memory)
         {
-            // Buscar en memories.Keys la memoria que coincida
+            // Look in memories.Keys for the memory that matches
             foreach (var kvp in memories)
             {
                 if (kvp.Value == memory)
@@ -334,17 +388,17 @@ namespace EchoColony
         }
 
         /// <summary>
-        /// Elimina todas las memorias del colono
+        /// Removes all memories of the colonist
         /// </summary>
         public void ClearAllMemories()
         {
             int count = memories.Count;
             memories.Clear();
-            Log.Message($"[EchoColony] 🗑️ {count} memorias eliminadas para {pawn?.LabelShort ?? "Unknown"}");
+            Log.Message($"[EchoColony] {count} memories removed for {pawn?.LabelShort ?? "Unknown"}");
         }
 
         /// <summary>
-        /// Elimina memorias anteriores a una fecha específica
+        /// Removes memories older than a specific date
         /// </summary>
         public void ClearOldMemories(int keepLastNDays = 30)
         {
@@ -364,12 +418,12 @@ namespace EchoColony
 
             if (keysToRemove.Count > 0)
             {
-                Log.Message($"[EchoColony] 🧹 {keysToRemove.Count} memorias antiguas eliminadas para {pawn?.LabelShort ?? "Unknown"}");
+                Log.Message($"[EchoColony] {keysToRemove.Count} old memories removed for {pawn?.LabelShort ?? "Unknown"}");
             }
         }
 
         /// <summary>
-        /// Obtiene el día de la memoria más reciente
+        /// Gets the day of the most recent memory
         /// </summary>
         public int GetLastMemoryDay()
         {
@@ -378,7 +432,7 @@ namespace EchoColony
         }
 
         /// <summary>
-        /// Obtiene estadísticas de las memorias
+        /// Gets memory statistics
         /// </summary>
         public (int total, int individual, int grupal, int recent) GetMemoryStats()
         {
@@ -390,14 +444,14 @@ namespace EchoColony
 
             foreach (var memory in memories.Values)
             {
-                // Contar tipos
+                // Count types
                 if (memory.StartsWith("[Conversación grupal") || memory.Contains("conversación grupal"))
                     grupal++;
                 else
                     individual++;
             }
 
-            // Contar recientes (últimos 7 días)
+            // Count recent (last 7 days)
             foreach (var day in memories.Keys)
             {
                 if (currentDay - day <= 7)
@@ -408,7 +462,7 @@ namespace EchoColony
         }
 
         /// <summary>
-        /// Busca memorias que contengan un texto específico
+        /// Searches for memories containing specific text
         /// </summary>
         public List<(int day, string memory)> SearchMemories(string searchText)
         {
@@ -431,24 +485,24 @@ namespace EchoColony
         }
 
         /// <summary>
-        /// Debug: Imprime todas las memorias en los logs
+        /// Debug: Prints all memories in logs
         /// </summary>
         public void PrintAllMemories()
         {
-            Log.Message($"[EchoColony] 🗂️ === MEMORIAS DE {pawn?.LabelShort ?? "Unknown"} ===");
-            Log.Message($"[EchoColony] Total: {memories.Count} memorias");
+            Log.Message($"[EchoColony] === MEMORIES OF {pawn?.LabelShort ?? "Unknown"} ===");
+            Log.Message($"[EchoColony] Total: {memories.Count} memories");
 
             foreach (var kvp in memories.OrderByDescending(m => m.Key))
             {
                 int day = kvp.Key;
                 string memory = kvp.Value;
                 string preview = memory.Length > 100 ? memory.Substring(0, 100) + "..." : memory;
-                string type = memory.StartsWith("[Conversación grupal") ? "GRUPAL" : "INDIVIDUAL";
+                string type = memory.StartsWith("[Conversación grupal") ? "GROUP" : "INDIVIDUAL";
                 
-                Log.Message($"[EchoColony] Día {day} ({type}): {preview}");
+                Log.Message($"[EchoColony] Day {day} ({type}): {preview}");
             }
             
-            Log.Message($"[EchoColony] 🗂️ === FIN MEMORIAS ===");
+            Log.Message($"[EchoColony] === END MEMORIES ===");
         }
 
         public void ExposeData()
@@ -458,22 +512,22 @@ namespace EchoColony
                 Scribe_Collections.Look(ref memories, "memories", LookMode.Value, LookMode.Value);
             }
 
-            // Inicialización segura
+            // Safe initialization
             if (memories == null)
             {
                 memories = new Dictionary<int, string>();
-                Log.Message($"[EchoColony] 📖 Inicializadas memorias para {pawn?.LabelShort ?? "Unknown"}");
+                Log.Message($"[EchoColony] Initialized memories for {pawn?.LabelShort ?? "Unknown"}");
             }
             
-            // Log de carga
+            // Load log
             if (Scribe.mode == LoadSaveMode.LoadingVars && memories.Count > 0)
             {
-                Log.Message($"[EchoColony] 📖 Cargadas {memories.Count} memorias para {pawn?.LabelShort ?? "Unknown"}");
+                Log.Message($"[EchoColony] Loaded {memories.Count} memories for {pawn?.LabelShort ?? "Unknown"}");
             }
         }
 
         /// <summary>
-        /// Asigna la referencia del pawn (útil después de la carga)
+        /// Assigns the pawn reference (useful after loading)
         /// </summary>
         public void SetPawn(Pawn pawn)
         {
