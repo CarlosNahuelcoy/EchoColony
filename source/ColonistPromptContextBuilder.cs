@@ -343,8 +343,37 @@ namespace EchoColony
             
             items.AddRange(weapons);
             items.AddRange(armor);
-            
-            return items.Any() ? "*Key equipment:* " + string.Join(", ", items.Take(6)) : "*Equipment:* None";
+
+            // --- NUEVA LÓGICA DE DESNUDEZ / COBERTURA ---
+            bool cubrePecho = false;
+            bool cubreGenitales = false;
+
+            if (pawn.apparel != null)
+            {
+                foreach (var apparel in pawn.apparel.WornApparel)
+                {
+                    // Verificamos si la prenda cubre el Torso (Pecho)
+                    if (apparel.def.apparel.bodyPartGroups.Any(g => g.defName == "Torso"))
+                        cubrePecho = true;
+
+                    // Verificamos si la prenda cubre las Piernas (que en RimWorld incluye el área pélvica/genitales)
+                    if (apparel.def.apparel.bodyPartGroups.Any(g => g.defName == "Legs"))
+                        cubreGenitales = true;
+                }
+            }
+
+            // 3. Construcción del string de retorno
+            string inventoryBase = items.Any() ? string.Join(", ", items.Take(6)) : "None";
+            string nudityWarning = "";
+
+            if (!cubrePecho && !cubreGenitales)
+                nudityWarning = " (EXPOSED: Completely naked!)";
+            else if (!cubrePecho)
+                nudityWarning = " (EXPOSED: Bare chested)";
+            else if (!cubreGenitales)
+                nudityWarning = " (EXPOSED: No pants/lower clothing)";
+
+            return $"*Key equipment:* {inventoryBase}{nudityWarning}";
         }
 
         // ✅ OPTIMIZADO: Solo habilidades relevantes
@@ -420,7 +449,18 @@ namespace EchoColony
             var recentEvents = EventLogger.events.AsEnumerable().Reverse()
                 .Where(e => e.Contains(pawn.LabelShort))
                 .Take(7)
-                .Select(e => CleanText(e).Split('.')[0]) // Solo primera oración
+                .Select(e =>
+                {
+                    // 1. Buscamos dónde termina el encabezado de la fecha (el cierre del corchete ']')
+                    int index = e.IndexOf(']');
+                    string textWithoutDate = (index != -1 && e.Length > index + 1)
+                        ? e.Substring(index + 1).Trim()
+                        : e;
+
+                    // 2. Ahora sí, tomamos solo la primera oración del contenido real
+                    return textWithoutDate.Split('.')[0].Trim();
+                })
+                .Where(s => !string.IsNullOrWhiteSpace(s)) // Evitamos strings vacíos
                 .ToList();
 
             return recentEvents.Any() 
