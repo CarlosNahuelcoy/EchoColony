@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+	<packageId>gerik.EchoColony</packageId>
+	<name>EchoColon[local]</name>
+	<author>Gerik Uylerk</author>
+	
+	<supportedVersions>
+		<li>1.5</li>
+		<li>1.6</li>
+	</supportedVersions>
+
+	<modDependencies>
+	 <li>
+			<packageId>brrainz.harmony</packageId>
+			<displayName>Harmony</displayName>
+			<steamWorkshopUrl>steam://url/CommunityFilePage/2009463077</steamWorkshopUrl>
+			<downloadUrl>https://github.com/pardeike/HarmonyRimWorld/releases/latest</downloadUrl>
+		</li> 
+	</modDependencies>
+
+<description>
+Have you ever wondered what your colonists think about their daily lives?
+Their relationships, that scar that never healed, their last breakup… or that human leather throne in the dining room?
+
+With EchoColony, you can talk to them directly.
+💬 Their responses aren’t random — they reflect what they’ve lived, how they feel, and what they remember.
+
+Your colonists reply like real people.
+Want them to address you as a king? A god? A curious visitor? You decide.
+Configure their tone globally or individually.
+
+Give one a French accent?
+Make another obsessed with human leather armchairs?
+Yes — you can do that too.
+
+Colonists always take into account their backstory, mood, pain, relationships, and recent events when responding.
+You can choose between two styles:
+• ✨ Roleplay mode: immersive, expressive replies with gestures and emotional nuance.
+• 🗣️ Direct mode: clear and concise, focused on conversation.
+
+Because even the quietest human-leather tanner has something to say.
+
+—
+
+🔹 EchoColony works best with the free Player2 app, which powers the AI behind colonist conversations.
+Download it at: https://player2.game/
+</description>
+
+</ModMetaData>

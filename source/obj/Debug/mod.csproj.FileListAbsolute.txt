@@ -1,0 +1,8 @@
+D:\rimworld 1.6\EchoColony-main\EchoColony-main\1.6\Assemblies\EchoColony.dll
+D:\rimworld 1.6\EchoColony-main\EchoColony-main\source\obj\Debug\mod.csproj.AssemblyReference.cache
+D:\rimworld 1.6\EchoColony-main\EchoColony-main\source\obj\Debug\mod.GeneratedMSBuildEditorConfig.editorconfig
+D:\rimworld 1.6\EchoColony-main\EchoColony-main\source\obj\Debug\mod.AssemblyInfoInputs.cache
+D:\rimworld 1.6\EchoColony-main\EchoColony-main\source\obj\Debug\mod.AssemblyInfo.cs
+D:\rimworld 1.6\EchoColony-main\EchoColony-main\source\obj\Debug\mod.csproj.CoreCompileInputs.cache
+D:\rimworld 1.6\EchoColony-main\EchoColony-main\source\obj\Debug\mod.csproj.Up2Date
+D:\rimworld 1.6\EchoColony-main\EchoColony-main\source\obj\Debug\EchoColony.dll

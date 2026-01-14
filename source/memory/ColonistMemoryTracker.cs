@@ -1,10 +1,11 @@
+using RimWorld;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using RimWorld;
+using System.Text;
 using UnityEngine;
 using Verse;
-using System.Collections;
-using System;
 
 namespace EchoColony
 {
@@ -23,6 +24,15 @@ namespace EchoColony
         public ColonistMemoryTracker(Pawn pawn)
         {
             this.pawn = pawn;
+        }
+        public void UpdateMemory(int day, string newText)
+        {
+            if (memories.ContainsKey(day))
+            {
+                memories[day] = newText;
+                // Log opcional para confirmar el guardado silencioso
+                Log.Message($"[EchoColony] Memoria del día {day} actualizada localmente.");
+            }
         }
 
         // Calculate simple edit distance between two strings
@@ -52,11 +62,22 @@ namespace EchoColony
 
         private string GetCurrentDateHeader()
         {
-            string fechaCompleta = GenDate.DateFullStringWithHourAt(GenTicks.TicksGame, new Vector2(0, 0));
-            string[] partes = fechaCompleta.Split(' ');
-            return partes.Length >= 3
-                ? partes[0] + " " + partes[1] + " " + partes[2]
-                : fechaCompleta;
+            // Usamos TicksAbs para precisión total y la ubicación del colono
+            long ticks = GenTicks.TicksAbs;
+            Vector2 location = (pawn != null && pawn.Tile >= 0)
+                ? Find.WorldGrid.LongLatOf(pawn.Tile)
+                : Find.WorldGrid.LongLatOf(Find.CurrentMap?.Tile ?? 0);
+
+            // We obtain the complete string: "day 6 of Marzimayo of 5505, 12h"
+            string nativeDate = GenDate.DateFullStringWithHourAt(ticks, location);
+
+            string[] parts = nativeDate.Split(' ');
+			string yearWithoutComma = parts[5].TrimEnd(',');
+			//{parts[0]} = Day; {parts[1]} = "number day"º.; {parts[2]} = of; {parts[3]} = Quantum; {parts[4]} = of; {yearWithoutComma} = year
+            string dateOnly = parts.Length >= 6 ? $"{parts[0]} {parts[1]} {parts[2]} {parts[3]} {parts[4]} {yearWithoutComma}" : nativeDate;
+
+            // Resultado final: "Day 6 of Marzimayo of 5505"
+            return $"{dateOnly}";
         }
 
         /// <summary>
@@ -171,6 +192,58 @@ namespace EchoColony
                 Log.Error($"[EchoColony] Error generating optimized memory: {ex.Message}");
                 // Fallback: simple combination
                 memories[day] = $"[{dateHeader}]\n{existingContent} {newContent}";
+            }
+        }
+
+        ///<summary>
+        ///Generates a promt for individual memories usig AI
+        /// </summary>
+        public void OptimizeCustomMemoryWithAI(int day, string editedMem)
+        {
+            if (string.IsNullOrWhiteSpace(editedMem)) return;
+
+            // 1. Obtenemos el encabezado de fecha aquí mismo (al ser private, podemos usarlo)
+            string dateHeader = GetCurrentDateHeader();
+
+            // 2. Obtenemos el contexto completo del colono
+            string systemIdentity = ColonistPromptContextBuilder.BuildSystemPromptPublic(pawn);
+            string currentContext = ColonistPromptContextBuilder.BuildContextPublic(pawn);
+
+            // 3. Construimos el prompt
+            StringBuilder prompt = new StringBuilder();
+            prompt.AppendLine(systemIdentity);
+            prompt.AppendLine("\n### CURRENT CONTEXT ###");
+            prompt.AppendLine(currentContext);
+
+            prompt.AppendLine("\n### TASK ###");
+            prompt.AppendLine("Act like the colonist mentioned. Your user has written a draft of their memory.");
+            prompt.AppendLine("REWRITE the text in FIRST PERSON so that it looks like a real personal diary.");
+            prompt.AppendLine("- Use language that is appropriate to your features and health status.");
+            prompt.AppendLine("- Keep the facts from the draft but make it flow smoothly.");
+            prompt.AppendLine("- Do NOT include metatext or introductions.");
+            prompt.AppendLine("- Maximum 200 words.");
+
+            prompt.AppendLine("\n### DRAFT TO BE REWRITTEN ###");
+            prompt.AppendLine(editedMem);
+
+            // 4. Callback para guardar el resultado
+            System.Action<string> summaryCallback = (aiResponse) =>
+            {
+                if (!string.IsNullOrWhiteSpace(aiResponse))
+                {
+                    memories[day] = $"[{dateHeader}]\n{aiResponse.Trim()}";
+                    Log.Message($"[EchoColony] AI rewrite the memory of day {day} for {pawn?.LabelShort}");
+                }
+            };
+
+            // 5. Enviar a la IA
+            try
+            {
+                GenerateOptimizedMemory(prompt.ToString(), summaryCallback);
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"[EchoColony] Error in OptimizeCustomMemoryWithAI: {ex.Message}");
             }
         }
 
@@ -507,10 +580,14 @@ namespace EchoColony
 
         public void ExposeData()
         {
-            if (Scribe.mode == LoadSaveMode.Saving || Scribe.mode == LoadSaveMode.LoadingVars)
+            // Limpiar el diccionario individual antes de cargar datos del archivo
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
             {
-                Scribe_Collections.Look(ref memories, "memories", LookMode.Value, LookMode.Value);
+                memories = new Dictionary<int, string>();
             }
+
+            // El modo Saving/LoadingVars se puede simplificar
+            Scribe_Collections.Look(ref memories, "memories", LookMode.Value, LookMode.Value);
 
             // Safe initialization
             if (memories == null)
