@@ -19,11 +19,19 @@ namespace EchoColony
         // Constructor without parameters (required for RimWorld serialization)
         public ColonistMemoryManager()
         {
+            ClearAllData();
         }
 
         // Constructor with Game (maintain for compatibility)
         public ColonistMemoryManager(Game game)
         {
+            ClearAllData();
+        }
+
+        private void ClearAllData()
+        {
+            memoryPerPawn = new Dictionary<string, ColonistMemoryTracker>();
+            groupMemoryTracker = new DailyGroupMemoryTracker();
         }
 
         public ColonistMemoryTracker GetTrackerFor(Pawn pawn)
@@ -63,6 +71,12 @@ namespace EchoColony
         // Simplified ExposeData - let RimWorld handle the lifecycle automatically
         public override void ExposeData()
         {
+			//Clean previous data.
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+            {
+                memoryPerPawn = new Dictionary<string, ColonistMemoryTracker>();
+                groupMemoryTracker = new DailyGroupMemoryTracker();
+            }
             // Save/Load independently of configuration
             // This allows loading existing memories even if system is disabled
             Scribe_Collections.Look(ref memoryPerPawn, "memoryPerPawn", LookMode.Value, LookMode.Deep);
@@ -93,6 +107,12 @@ namespace EchoColony
                         groupMemoryTracker = new DailyGroupMemoryTracker();
                     }
                 }
+                // UPDATE THE GLOBAL REFERENCE IF ONE EXISTS
+                if (MyStoryModComponent.Instance != null)
+                {
+                    MyStoryModComponent.Instance.ColonistMemoryManager = this;
+                    Log.Message("[EchoColony] Global Manager reference updated after loading.");
+                }
             }
         }
 
@@ -102,7 +122,7 @@ namespace EchoColony
             if (memoryPerPawn == null || memoryPerPawn.Count == 0)
                 return;
 
-            var allColonists = Find.CurrentMap?.mapPawns?.FreeColonists;
+            var allColonists = PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive; //Take every pawn alive, colonist or slave
             if (allColonists == null)
                 return;
 

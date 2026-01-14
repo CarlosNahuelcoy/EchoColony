@@ -54,7 +54,9 @@ public class ColonistMemoryViewer : Window
 
     private void LoadMemories()
     {
-        var tracker = MyStoryModComponent.Instance?.ColonistMemoryManager?.GetTrackerFor(pawn);
+		//The memory continuity problem was solved by modifying this structure; however, modifications to other parts of the code cannot be ruled out. 
+        var manager = Current.Game.GetComponent<ColonistMemoryManager>();
+        var tracker = manager?.GetTrackerFor(pawn);
         allMemories = tracker?.GetAllMemories() ?? new Dictionary<int, string>();
 
         foreach (var day in allMemories.Keys)
@@ -107,7 +109,7 @@ public class ColonistMemoryViewer : Window
     public override void DoWindowContents(Rect inRect)
     {
         // Process any pending edits first
-        ProcessPendingEdits();
+        //ProcessPendingEdits();
 
         // Header
         Text.Font = GameFont.Medium;
@@ -247,7 +249,7 @@ public class ColonistMemoryViewer : Window
             Widgets.DrawBoxSolid(borderRect, borderColor);
 
             // Clickable header for expand/collapse
-            var headerRect = new Rect(15f, y + 8f, viewRect.width - 30f, 25f);
+            var headerRect = new Rect(15f, y + 8f, viewRect.width - 200f, 25f); //Reduced area to make space for buttons
             
             if (Widgets.ButtonInvisible(headerRect))
             {
@@ -316,7 +318,7 @@ public class ColonistMemoryViewer : Window
         Widgets.DrawBoxSolid(contentRect, new Color(0.05f, 0.08f, 0.12f, 0.9f));
         
         var scrollArea = new Rect(contentRect.x + 5f, contentRect.y + 5f, 
-                                 contentRect.width - 10f, contentRect.height - 10f);
+                                 contentRect.width - 15f, contentRect.height - 10f);
         
         Text.Font = GameFont.Tiny;
         Text.WordWrap = true;
@@ -347,15 +349,20 @@ public class ColonistMemoryViewer : Window
                 
                 // Add to pending edits with debouncing
                 pendingEdits[day] = newMemory;
-                lastEditTimes[day] = Time.unscaledTime;
-                
+                //lastEditTimes[day] = Time.unscaledTime;
+
+                //var tracker = MyStoryModComponent.Instance?.ColonistMemoryManager?.GetTrackerFor(pawn);
+                //tracker?.UpdateMemory(day, newMemory);
+
+                //pendingEdits[day] = newMemory;
+
                 // Show visual indicator that edit is pending
-                if (pendingEdits.ContainsKey(day))
-                {
-                    GUI.color = new Color(1f, 1f, 0f, 0.3f);
-                    Widgets.DrawBoxSolid(new Rect(textRect.x - 2f, textRect.y - 2f, textRect.width + 4f, 20f), GUI.color);
-                    GUI.color = Color.white;
-                }
+                //if (pendingEdits.ContainsKey(day))
+                //{
+                //    GUI.color = new Color(1f, 1f, 0f, 0.3f);
+                //    Widgets.DrawBoxSolid(new Rect(textRect.x - 2f, textRect.y - 2f, textRect.width + 4f, 20f), GUI.color);
+                //    GUI.color = Color.white;
+                //}
             }
         }
         catch (System.Exception ex)
@@ -370,9 +377,11 @@ public class ColonistMemoryViewer : Window
         Widgets.EndScrollView();
         
         entryScrollPositions[day] = currentScrollPos;
-        
+
         // Individual delete button
-        var deleteRect = new Rect(contentRect.xMax - 25f, contentRect.y + 5f, 20f, 20f);
+
+        //float buttonStartX = contentRect.xMax - 30f;
+        var deleteRect = new Rect(contentRect.xMax - 23f, contentRect.y - 25f, 20f, 20f);
         GUI.color = new Color(1f, 0.4f, 0.4f);
         TooltipHandler.TipRegion(deleteRect, "EchoColony.DeleteMemoryTooltip".Translate());
         
@@ -399,7 +408,55 @@ public class ColonistMemoryViewer : Window
         }
         GUI.color = Color.white;
         
+
         Text.WordWrap = false;
         Text.Font = GameFont.Small;
+
+        // BOTÓN PROCESAR IA (✨)
+        // Se coloca a la izquierda del botón eliminar
+        var aiBtnRect = new Rect(deleteRect.x - 105f, contentRect.y - 25f, 100f, 20f);
+
+        bool hasChanges = pendingEdits.ContainsKey(day);
+        if (hasChanges) GUI.color = new Color(0.6f, 0.8f, 1f); // Azul claro si hay algo que procesar
+
+        if (Widgets.ButtonText(aiBtnRect, "✨ Process whit IA "))
+        {
+            if (pendingEdits.ContainsKey(day))
+            {
+                var tracker = MyStoryModComponent.Instance?.ColonistMemoryManager?.GetTrackerFor(pawn);
+
+                // Llamada limpia: solo el día y el texto editado
+                tracker?.OptimizeCustomMemoryWithAI(day, pendingEdits[day]);
+
+                pendingEdits.Remove(day);
+                Messages.Message("La IA está personificando tu nota...", MessageTypeDefOf.TaskCompletion);
+            }
+        }
+        GUI.color = Color.white;
+    }
+
+    public override void PostClose()
+    {
+        base.PostClose();
+
+        // 1. Obtenemos el tracker del colono
+        var tracker = MyStoryModComponent.Instance?.ColonistMemoryManager?.GetTrackerFor(pawn);
+
+        if (tracker != null && pendingEdits.Count > 0)
+        {
+            int count = 0;
+            // 2. Recorremos todos los cambios que se quedaron en "pendientes"
+            foreach (var edit in pendingEdits)
+            {
+                tracker.UpdateMemory(edit.Key, edit.Value);
+                count++;
+            }
+
+            // 3. Opcional: Log para confirmar que se guardó al salir
+            Log.Message($"[EchoColony] Guardado finalizado: {count} memorias actualizadas localmente al cerrar ventana.");
+
+            // Limpiamos los pendientes ya procesados
+            pendingEdits.Clear();
+        }
     }
 }
