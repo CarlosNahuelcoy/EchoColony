@@ -8,6 +8,7 @@ using System.IO;
 using Verse.AI.Group;
 using RimWorld.Planet;
 using System;
+using EchoColony.Actions;
 
 namespace EchoColony
 {
@@ -17,6 +18,9 @@ namespace EchoColony
         private Vector2 scrollPos = Vector2.zero;
         private string input = "";
         private List<string> chatLog => ChatGameComponent.Instance.GetChat(pawn);
+        
+        // ✅ FIX: Cache for safe access during UI updates
+        private List<string> cachedChatLog = null;
 
         private bool sendRequestedViaEnter = false;
         private bool waitingForResponse = false;
@@ -62,7 +66,6 @@ namespace EchoColony
                 }
             }
 
-            // Calculate existing turn count from message history
             CalculateTurnCountFromHistory();
 
             if (MyMod.Settings.modelSource == ModelSource.Player2 && MyMod.Settings.enableTTS)
@@ -77,7 +80,6 @@ namespace EchoColony
 
         private void CalculateTurnCountFromHistory()
         {
-            // Count complete user-model pairs as turns
             int userMessages = messageHistory.Count(m => m.role == "user");
             int modelMessages = messageHistory.Count(m => m.role == "model");
             conversationTurnCount = Math.Min(userMessages, modelMessages);
@@ -106,7 +108,7 @@ namespace EchoColony
             {
                 contextPrompt = ColonistPromptContextBuilder.Build(pawn, "");
             }
-            else // Gemini
+            else
             {
                 contextPrompt = ColonistPromptContextBuilder.Build(pawn, "");
             }
@@ -177,7 +179,12 @@ namespace EchoColony
 
         public override void DoWindowContents(Rect inRect)
         {
-            // Portrait + Title
+            // ✅ FIX: Update cache at start of frame to prevent IndexOutOfRangeException
+            if (cachedChatLog == null || cachedChatLog.Count != chatLog.Count)
+            {
+                cachedChatLog = new List<string>(chatLog);
+            }
+            
             Rect portraitRect = new Rect(0f, 0f, 60f, 60f);
             GUI.DrawTexture(portraitRect, PortraitsCache.Get(pawn, new Vector2(60f, 60f), Rot4.South, default, 1.25f));
 
@@ -185,7 +192,6 @@ namespace EchoColony
             Widgets.Label(new Rect(45f, 10f, inRect.width - 50f, 30f), "EchoColony.TalkingWithLabel".Translate(pawn.LabelCap));
             Text.Font = GameFont.Small;
 
-            // Chat log scrollable
             float chatHeight = inRect.height - 110f;
             Rect scrollRect = new Rect(0, 45f, inRect.width - 20f, chatHeight);
 
@@ -194,9 +200,10 @@ namespace EchoColony
             Text.Anchor = TextAnchor.UpperLeft;
             Text.WordWrap = true;
 
-            // Calculate heights with consistent spacing
-            foreach (string msg in chatLog)
+            // Use cached list for height calculations
+            for (int i = 0; i < cachedChatLog.Count; i++)
             {
+                string msg = cachedChatLog[i];
                 float width = msg.StartsWith("[DATE_SEPARATOR]") ? scrollRect.width - 16f : scrollRect.width - 200f;
                 
                 string actualDisplayText = GetDisplayMessage(msg);
@@ -216,9 +223,11 @@ namespace EchoColony
             }
 
             float y = 0;
-            for (int i = 0; i < chatLog.Count; i++)
+            // ✅ FIX: Double-check bounds to prevent crash
+            int messagesToDraw = Math.Min(cachedChatLog.Count, heights.Count);
+            for (int i = 0; i < messagesToDraw; i++)
             {
-                string msg = chatLog[i];
+                string msg = cachedChatLog[i];
 
                 if (msg.StartsWith("[DATE_SEPARATOR]"))
                 {
@@ -226,7 +235,7 @@ namespace EchoColony
                 }
                 else
                 {
-                    DrawRegularMessage(new Rect(0, y, viewRect.width, heights[i]), msg, i, viewRect.width);
+                    DrawRegularMessage(new Rect(0, y, viewRect.width, heights[i]), msg, i, viewRect.width, cachedChatLog);
                 }
 
                 y += heights[i] + 10f;
@@ -235,7 +244,6 @@ namespace EchoColony
             Widgets.EndScrollView();
             Text.WordWrap = false;
 
-            // Detect Enter without Shift before everything
             if (Event.current.type == EventType.KeyDown &&
                 (Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.KeypadEnter) &&
                 GUI.GetNameOfFocusedControl() == "ChatInputField" &&
@@ -245,7 +253,6 @@ namespace EchoColony
                 Event.current.Use();
             }
 
-            // Large input field
             Rect inputRect = new Rect(0, inRect.height - 60f, inRect.width - 110f, 50f);
             GUI.SetNextControlName("ChatInputField");
             
@@ -263,7 +270,6 @@ namespace EchoColony
             };
             input = GUI.TextArea(inputRect, input, 500, textStyle);
 
-            // Send button
             Rect sendRect = new Rect(inRect.width - 100f, inRect.height - 60f, 100f, 30f);
             bool sendClicked = Widgets.ButtonText(sendRect, "EchoColony.SendButton".Translate());
 
@@ -289,7 +295,6 @@ namespace EchoColony
                     }));
             }
 
-            // Export button in top right
             Rect exportRect = new Rect(inRect.width - 110f, 10f, 100f, 30f);
             if (Widgets.ButtonText(exportRect, "EchoColony.ExportButton".Translate()))
             {
@@ -333,7 +338,6 @@ namespace EchoColony
                 }
             }
 
-            // Customize button
             Rect personalizeRect = new Rect(inRect.width - 220f, 10f, 100f, 30f);
             if (Widgets.ButtonText(personalizeRect, "EchoColony.PersonalizeButton".Translate()))
             {
@@ -495,6 +499,10 @@ namespace EchoColony
 
             ChatGameComponent.Instance.AddLine(pawn, "[USER] " + "EchoColony.UserPrefix".Translate() + userMsg);
             ChatGameComponent.Instance.AddLine(pawn, pawn.LabelShort + ": ...");
+            
+            // ✅ FIX: Invalidate cache to show "..." immediately
+            cachedChatLog = null;
+            
             UpdateContextPrompt();
             waitingForResponse = true;
             forceScrollToBottom = true;
@@ -557,12 +565,115 @@ namespace EchoColony
             var chat = ChatGameComponent.Instance.GetChat(pawn);
             string thinkingMsg = pawn.LabelShort + ": ...";
 
+            // Remove the "..." placeholder
             if (chat.LastOrDefault() == thinkingMsg)
             {
                 chat.RemoveAt(chat.Count - 1);
             }
 
-            ChatGameComponent.Instance.AddLine(pawn, pawn.LabelShort + ": " + response);
+            // ✅ CHECK FOR ERROR RESPONSES - SHOW THEM IN CHAT!
+            if (string.IsNullOrWhiteSpace(response))
+            {
+                Log.Error("[EchoColony] Received empty response from API");
+                string errorMsg = "<color=#FF6B6B>⚠ ERROR: No response received from AI</color>\n<color=#FFAA00>Check your settings:</color>\n";
+                
+                if (MyMod.Settings.modelSource == ModelSource.Gemini)
+                {
+                    errorMsg += "• Verify your Gemini API key is correct\n";
+                    errorMsg += "• Check your internet connection\n";
+                    errorMsg += $"• Current model: {MyMod.Settings.modelPreferences?.preferredFastModel ?? "auto"}";
+                }
+                else if (MyMod.Settings.modelSource == ModelSource.Player2)
+                {
+                    errorMsg += "• Make sure Player2 is running\n";
+                    errorMsg += "• Check http://127.0.0.1:4315/v1/health";
+                }
+                else if (MyMod.Settings.modelSource == ModelSource.OpenRouter)
+                {
+                    errorMsg += "• Verify your OpenRouter API key\n";
+                    errorMsg += $"• Check endpoint: {MyMod.Settings.openRouterEndpoint}";
+                }
+                else if (MyMod.Settings.modelSource == ModelSource.Local)
+                {
+                    errorMsg += $"• Check if local model is running at: {MyMod.Settings.localModelEndpoint}\n";
+                    errorMsg += $"• Model: {MyMod.Settings.localModelName}";
+                }
+                
+                ChatGameComponent.Instance.AddLine(pawn, errorMsg);
+                cachedChatLog = null; // ✅ FIX: Force UI update
+                waitingForResponse = false;
+                forceScrollToBottom = true;
+                return;
+            }
+
+            if (response.StartsWith("ERROR:") || response.StartsWith("⚠"))
+            {
+                Log.Error($"[EchoColony] API returned error: {response}");
+                ChatGameComponent.Instance.AddLine(pawn, $"<color=#FF6B6B>{response}</color>");
+                cachedChatLog = null; // ✅ FIX: Force UI update
+                waitingForResponse = false;
+                forceScrollToBottom = true;
+                return;
+            }
+
+            // Process actions with robust error handling
+            string cleanResponse = response;
+            List<string> actionResults = new List<string>();
+
+            if (MyMod.Settings.enableDivineActions)
+            {
+                try
+                {
+                    var actionExecutorType = typeof(ActionExecutor);
+                    if (actionExecutorType != null)
+                    {
+                        var processed = ActionExecutor.ProcessResponse(pawn, response);
+                        if (processed != null)
+                        {
+                            cleanResponse = processed.CleanResponse ?? response;
+                            actionResults = processed.ExecutionResults ?? new List<string>();
+                            
+                            Log.Message($"[EchoColony] Processed response for {pawn.LabelShort}: {actionResults.Count} action(s) executed");
+                        }
+                        else
+                        {
+                            Log.Warning("[EchoColony] ActionExecutor.ProcessResponse returned null, using raw response");
+                            cleanResponse = response;
+                        }
+                    }
+                    else
+                    {
+                        Log.Warning("[EchoColony] ActionExecutor class not found, using raw response");
+                        cleanResponse = response;
+                    }
+                }
+                catch (TypeLoadException)
+                {
+                    Log.Warning("[EchoColony] ActionExecutor class not available (this is OK if Actions system isn't compiled), using raw response");
+                    cleanResponse = response;
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[EchoColony] Error processing actions: {ex.Message}\nStack: {ex.StackTrace}");
+                    cleanResponse = response;
+                }
+            }
+
+            // Add clean response to chat
+            ChatGameComponent.Instance.AddLine(pawn, pawn.LabelShort + ": " + cleanResponse);
+            
+            // Add action results as separate lines
+            if (actionResults != null && actionResults.Any())
+            {
+                foreach (var result in actionResults)
+                {
+                    ChatGameComponent.Instance.AddLine(pawn, $"<color=#FFD700>{result}</color>");
+                }
+            }
+
+            // ✅ CRITICAL FIX: Invalidate cache to force UI refresh
+            // Without this, the response doesn't show until next message is sent
+            cachedChatLog = null;
 
             waitingForResponse = false;
             input = "";
@@ -575,7 +686,6 @@ namespace EchoColony
             
             if (conversationTurnCount >= 4 && conversationTurnCount % 4 == 0)
             {
-                // Auto-save memory every 4 turns
                 SaveMemoryAutomatically();
             }
 
@@ -635,7 +745,7 @@ namespace EchoColony
 
             var recentMessages = messageHistory
                 .Where(m => m.role == "user" || m.role == "model")
-                .TakeLast(8) // Last 8 messages (4 complete turns)
+                .TakeLast(8)
                 .Select(m => (m.role == "user" ? "Jugador: " : pawn.LabelShort + ": ") + m.content);
 
             string combined = string.Join("\n", recentMessages);
@@ -785,13 +895,12 @@ namespace EchoColony
             base.PostClose();
             Log.Message($"[EchoColony] Closing chat with {pawn.LabelShort} (total turns: {conversationTurnCount})");
 
-            // Save final memory if there's unsaved content
             var remainingTurns = conversationTurnCount % 4;
             int remainingMessages = remainingTurns * 2;
             
             Log.Message($"[EchoColony] Remaining unsaved turns: {remainingTurns} ({remainingMessages} messages)");
             
-            if (remainingTurns >= 1) // At least 1 complete turn unsaved
+            if (remainingTurns >= 1)
             {
                 Log.Message("[EchoColony] Saving final memory...");
                 
@@ -918,7 +1027,7 @@ namespace EchoColony
             Text.Anchor = TextAnchor.UpperLeft;
         }
 
-        private void DrawRegularMessage(Rect rect, string msg, int index, float viewWidth)
+        private void DrawRegularMessage(Rect rect, string msg, int index, float viewWidth, List<string> currentChatLog)
         {
             string displayMsg = GetDisplayMessage(msg);
             
@@ -939,6 +1048,7 @@ namespace EchoColony
                                     pawn.LabelShort + ": " + editedMessage.Replace(pawn.LabelShort + ": ", "").TrimStart();
                     editingIndex = -1;
                     editedMessage = "";
+                    cachedChatLog = null; // ✅ FIX: Invalidate cache after modification
                 }
 
                 if (Widgets.ButtonText(new Rect(viewWidth - 90f, rect.y + 5f, 80f, 25f), "EchoColony.CancelButton".Translate()))
@@ -962,8 +1072,8 @@ namespace EchoColony
                 GUI.color = Color.white;
 
                 bool isUserMsg = msg.StartsWith("[USER]");
-                bool hasNext = index + 1 < chatLog.Count;
-                bool nextIsColonist = hasNext && chatLog[index + 1].StartsWith(pawn.LabelShort + ":");
+                bool hasNext = index + 1 < currentChatLog.Count;
+                bool nextIsColonist = hasNext && currentChatLog[index + 1].StartsWith(pawn.LabelShort + ":");
                 bool isLastExchange = isUserMsg && nextIsColonist;
 
                 if (isLastExchange)
@@ -989,6 +1099,7 @@ namespace EchoColony
                             GeminiAPI.RebuildMemoryFromChat(pawn);
                         }
 
+                        cachedChatLog = null; // ✅ FIX: Invalidate cache after deletion
                         Messages.Message("EchoColony.LastExchangeDeleted".Translate(), MessageTypeDefOf.RejectInput, false);
                         return;
                     }
@@ -1023,18 +1134,18 @@ namespace EchoColony
                     }
 
                     bool isRegenerable = false;
-                    if (index >= 1 && chatLog[index - 1].StartsWith("[USER]"))
+                    if (index >= 1 && currentChatLog[index - 1].StartsWith("[USER]"))
                     {
-                        string userMsg = chatLog[index - 1];
-                        string colonistReply = chatLog[index];
-                        isRegenerable = (index == chatLog.Count - 1) ||
-                            (index + 1 == chatLog.Count - 1 && chatLog[index + 1].StartsWith("[USER]") == false);
+                        string userMsg = currentChatLog[index - 1];
+                        string colonistReply = currentChatLog[index];
+                        isRegenerable = (index == currentChatLog.Count - 1) ||
+                            (index + 1 == currentChatLog.Count - 1 && currentChatLog[index + 1].StartsWith("[USER]") == false);
                     }
                     bool showRegen = msg.StartsWith(pawn.LabelShort + ":") && !msg.EndsWith("...") && isRegenerable;
 
                     if (showRegen && Widgets.ButtonText(new Rect(viewWidth - 90f, rect.y, 80f, 25f), "EchoColony.RegenerateButton".Translate()))
                     {
-                        string userMsg = chatLog[index - 1].Substring(6);
+                        string userMsg = currentChatLog[index - 1].Substring(6);
                         if (!string.IsNullOrWhiteSpace(userMsg))
                         {
                             chatLog.RemoveAt(index);
@@ -1056,6 +1167,7 @@ namespace EchoColony
                             }
 
                             ChatGameComponent.Instance.AddLine(pawn, pawn.LabelShort + ": ...");
+                            cachedChatLog = null; // ✅ FIX: Force UI update
                             waitingForResponse = true;
                             forceScrollToBottom = true;
 
@@ -1084,6 +1196,7 @@ namespace EchoColony
                             }
 
                             MyStoryModComponent.Instance.StartCoroutine(coroutine);
+                            cachedChatLog = null; // ✅ FIX: Invalidate cache after regeneration
                             return;
                         }
                     }

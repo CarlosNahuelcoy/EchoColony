@@ -12,7 +12,6 @@ using System.Collections.Generic;
 
 namespace EchoColony
 {
-    // ✅ Estructura simple para los modelos hardcodeados
     public class GeminiModelInfo
     {
         public string Name { get; set; }
@@ -27,22 +26,14 @@ namespace EchoColony
 
     public static class GeminiAPI
     {
-        // ✅ SIMPLIFICADO: Solo los 8 modelos hardcodeados (no más API calls)
         private static readonly List<GeminiModelInfo> availableModels = new List<GeminiModelInfo>
         {
-            // Gemini 2.5 (Fast)
             new GeminiModelInfo("gemini-2.5-flash", false),
             new GeminiModelInfo("gemini-2.5-flash-lite", false),
             new GeminiModelInfo("gemini-2.5-flash-preview-09-2025", false),
-            
-            // Gemini 2.0 (Fast)
-            new GeminiModelInfo("gemini-2.0-flash-001", false),  // ✅ El que sabemos que funciona
+            new GeminiModelInfo("gemini-2.0-flash-001", false),
             new GeminiModelInfo("gemini-2.0-flash-lite-001", false),
-            
-            // Gemini 2.5 (Advanced)
             new GeminiModelInfo("gemini-2.5-pro", true),
-            
-            // Gemini 2.0 (Advanced)
             new GeminiModelInfo("gemini-2.0-flash-thinking-exp", true),
             new GeminiModelInfo("gemini-2.0-pro-exp", true)
         };
@@ -51,7 +42,7 @@ namespace EchoColony
         {
             if (MyMod.Settings == null)
             {
-                onResponse?.Invoke("⚠️ Settings not loaded.");
+                onResponse?.Invoke("⚠ ERROR: Settings not loaded");
                 yield break;
             }
 
@@ -71,15 +62,13 @@ namespace EchoColony
                     yield return SendRequestToGemini(geminiJson, onResponse);
                     yield break;
                 default:
-                    onResponse?.Invoke("❌ Error: Unknown model source. Please check mod settings.");
+                    onResponse?.Invoke("⚠ ERROR: Unknown model source - Check mod settings");
                     yield break;
             }
         }
 
-        // ✅ SIMPLIFICADO: Obtener el mejor modelo de la lista hardcodeada
         public static string GetBestAvailableModel(bool useAdvanced)
         {
-            // Si el usuario tiene preferencia específica, usarla
             if (MyMod.Settings?.modelPreferences != null && !MyMod.Settings.modelPreferences.useAutoSelection)
             {
                 string preferredModel = useAdvanced ? 
@@ -101,34 +90,28 @@ namespace EchoColony
                 }
             }
 
-            // Selección automática con prioridades
             var candidateModels = availableModels.Where(m => m.IsAdvanced == useAdvanced).ToList();
             
             if (candidateModels.Count == 0)
             {
-                // Si no hay modelos de la categoría, usar cualquiera
                 candidateModels = availableModels.ToList();
             }
 
             return SelectBestModel(candidateModels, useAdvanced);
         }
 
-        // ✅ Prioridades para selección automática
         private static string SelectBestModel(List<GeminiModelInfo> candidates, bool preferAdvanced)
         {
             var modelPriorities = new Dictionary<string, int>
             {
-                // Fast models
-                ["gemini-2.0-flash-001"] = 105,                    // ✅ PRIORIDAD MÁXIMA - El que funciona
-                ["gemini-2.5-flash"] = 100,                        // Latest stable
-                ["gemini-2.5-flash-lite"] = 95,                    // Latest budget
-                ["gemini-2.5-flash-preview-09-2025"] = 90,         // Latest experimental
-                ["gemini-2.0-flash-lite-001"] = 80,                // Proven budget
-
-                // Advanced models
-                ["gemini-2.5-pro"] = 100,                          // Latest advanced
-                ["gemini-2.0-flash-thinking-exp"] = 95,            // Advanced reasoning
-                ["gemini-2.0-pro-exp"] = 90,                       // High performance
+                ["gemini-2.0-flash-001"] = 105,
+                ["gemini-2.5-flash"] = 100,
+                ["gemini-2.5-flash-lite"] = 95,
+                ["gemini-2.5-flash-preview-09-2025"] = 90,
+                ["gemini-2.0-flash-lite-001"] = 80,
+                ["gemini-2.5-pro"] = 100,
+                ["gemini-2.0-flash-thinking-exp"] = 95,
+                ["gemini-2.0-pro-exp"] = 90,
             };
 
             var sortedCandidates = candidates
@@ -146,7 +129,6 @@ namespace EchoColony
             return selectedModel;
         }
 
-        // ✅ SIMPLIFICADO: Obtener lista de modelos (ya no necesita refresh)
         public static List<GeminiModelInfo> GetAvailableModels()
         {
             return new List<GeminiModelInfo>(availableModels);
@@ -154,7 +136,6 @@ namespace EchoColony
 
         public static IEnumerator SendRequestToPlayer2(Pawn pawn, string userInput, Action<string> onResponse)
         {
-            // Health check primero
             string healthCheckUrl = "http://127.0.0.1:4315/v1/health";
             UnityWebRequest healthRequest = UnityWebRequest.Get(healthCheckUrl);
             healthRequest.timeout = 2;
@@ -167,14 +148,14 @@ namespace EchoColony
             if (healthRequest.isNetworkError || healthRequest.isHttpError)
 #endif
             {
-                onResponse?.Invoke("⚠️ Player2 is not running.\nDownload the Player2 app to power the AIs for free from https://player2.game/");
+                onResponse?.Invoke("⚠ ERROR: Player2 is not running\n\nDownload Player2 for free from: https://player2.game/");
                 yield break;
             }
 
             string healthResponse = healthRequest.downloadHandler.text;
             if (!healthResponse.Contains("client_version"))
             {
-                onResponse?.Invoke("⚠️ Player2 is installed but not responding correctly.\nMake sure the app is running, or reinstall it from https://player2.game/");
+                onResponse?.Invoke("⚠ ERROR: Player2 not responding correctly\n\nMake sure the app is running, or reinstall from: https://player2.game/");
                 yield break;
             }
 
@@ -285,7 +266,7 @@ namespace EchoColony
                 if (MyMod.Settings?.debugMode == true)
                     LogPlayer2Debug("ERROR_RESPONSE", $"Status: {request.responseCode}\n{responseText}");
 
-                onResponse?.Invoke($"❌ Error contacting Player2 after {maxRetries} attempts: {request.error}");
+                onResponse?.Invoke($"⚠ ERROR: Player2 connection failed after {maxRetries} attempts\n\nError: {request.error}");
                 yield break;
             }
         }
@@ -328,11 +309,18 @@ namespace EchoColony
 #endif
             {
                 LogDebugResponse("LocalModel_ERROR", $"Status: {request.responseCode}\n{responseText}");
-                onResponse?.Invoke($"❌ Error contacting local model: {request.error}");
+                onResponse?.Invoke($"⚠ ERROR: Local model connection failed\n\nEndpoint: {endpoint}\nModel: {modelName}\nError: {request.error}");
                 yield break;
             }
 
             string text = ParseStandardLLMResponse(responseText);
+            
+            if (text.StartsWith("⚠ ERROR:") || text.StartsWith("ERROR:"))
+            {
+                onResponse?.Invoke(text);
+                yield break;
+            }
+            
             text = TrimTextAfterHashtags(text);
             text = CleanResponse(text);
 
@@ -344,11 +332,10 @@ namespace EchoColony
         {
             if (string.IsNullOrEmpty(MyMod.Settings.apiKey))
             {
-                onResponse?.Invoke("⚠️ Missing Gemini API Key. Set it in mod settings.");
+                onResponse?.Invoke("⚠ ERROR: Missing Gemini API Key\n\nSet your API key in mod settings\nGet one free at: https://ai.google.dev/");
                 yield break;
             }
 
-            // ✅ SIMPLIFICADO: Usar modelo de la lista hardcodeada
             string model = GetBestAvailableModel(MyMod.Settings.ShouldUseAdvancedModel());
             string apiKey = MyMod.Settings.apiKey;
             string endpoint = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
@@ -380,6 +367,13 @@ namespace EchoColony
                 if (!hasError)
                 {
                     string reply = ParseGeminiReply(responseText);
+                    
+                    if (reply.StartsWith("⚠ ERROR:") || reply.StartsWith("ERROR:"))
+                    {
+                        onResponse?.Invoke(reply);
+                        yield break;
+                    }
+                    
                     reply = TrimTextAfterHashtags(reply);
                     reply = CleanResponse(reply);
 
@@ -388,7 +382,6 @@ namespace EchoColony
                     yield break;
                 }
 
-                // ✅ SIMPLIFICADO: Sin manejo especial de 404, ya que los modelos están hardcodeados
                 if (request.responseCode == 429 || request.responseCode == 500 || request.responseCode == 503)
                 {
                     if (attempt < maxRetries - 1)
@@ -405,7 +398,7 @@ namespace EchoColony
                 }
 
                 LogDebugResponse("GeminiAPI_ERROR", $"Status: {request.responseCode}\nModel: {model}\nResponse: {responseText}");
-                onResponse?.Invoke($"❌ Failed to contact Gemini after {maxRetries} attempts using model {model}: {request.error}");
+                onResponse?.Invoke($"⚠ ERROR: Gemini API connection failed\n\nModel: {model}\nAttempts: {maxRetries}\nError: {request.error}");
                 yield break;
             }
         }
@@ -454,16 +447,116 @@ namespace EchoColony
 #endif
             {
                 LogDebugResponse("OpenRouter_ERROR", $"Status: {request.responseCode}\n{responseText}");
-                onResponse?.Invoke($"❌ Error contacting OpenRouter: {request.error}");
+                onResponse?.Invoke($"⚠ ERROR: OpenRouter connection failed\n\nEndpoint: {endpoint}\nError: {request.error}");
                 yield break;
             }
 
             string text = ParseStandardLLMResponse(responseText);
+            
+            if (text.StartsWith("⚠ ERROR:") || text.StartsWith("ERROR:"))
+            {
+                onResponse?.Invoke(text);
+                yield break;
+            }
+            
             text = TrimTextAfterHashtags(text);
             text = CleanResponse(text);
 
             LogDebugResponse("OpenRouter", text);
             onResponse?.Invoke(text);
+        }
+
+        public static IEnumerator SendRequestToPlayer2Storyteller(string jsonPrompt, Action<string> onResponse)
+        {
+            string healthCheckUrl = "http://127.0.0.1:4315/v1/health";
+            UnityWebRequest healthRequest = UnityWebRequest.Get(healthCheckUrl);
+            healthRequest.timeout = 2;
+
+            yield return healthRequest.SendWebRequest();
+
+#if UNITY_2020_2_OR_NEWER
+            if (healthRequest.result != UnityWebRequest.Result.Success)
+#else
+            if (healthRequest.isNetworkError || healthRequest.isHttpError)
+#endif
+            {
+                onResponse?.Invoke("⚠ ERROR: Player2 is not running\n\nDownload Player2 for free from: https://player2.game/");
+                yield break;
+            }
+
+            string healthResponse = healthRequest.downloadHandler.text;
+            if (!healthResponse.Contains("client_version"))
+            {
+                onResponse?.Invoke("⚠ ERROR: Player2 not responding correctly\n\nMake sure the app is running, or reinstall from: https://player2.game/");
+                yield break;
+            }
+
+            string endpoint = "http://127.0.0.1:4315/v1/chat/completions";
+
+            if (MyMod.Settings?.debugMode == true)
+                LogPlayer2Debug("STORYTELLER_REQUEST", jsonPrompt);
+
+            int maxRetries = 3;
+            float retryDelay = 1f;
+
+            for (int attempt = 0; attempt < maxRetries; attempt++)
+            {
+                var request = new UnityWebRequest(endpoint, "POST")
+                {
+                    uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(jsonPrompt)),
+                    downloadHandler = new DownloadHandlerBuffer()
+                };
+
+                request.SetRequestHeader("Content-Type", "application/json");
+                request.SetRequestHeader("player2-game-key", "Rimworld-EchoColony");
+
+                yield return request.SendWebRequest();
+
+                string responseText = request.downloadHandler.text;
+
+#if UNITY_2020_2_OR_NEWER
+                bool hasError = request.result != UnityWebRequest.Result.Success;
+#else
+                bool hasError = request.isNetworkError || request.isHttpError;
+#endif
+
+                if (!hasError)
+                {
+                    if (MyMod.Settings?.debugMode == true)
+                        LogPlayer2Debug("STORYTELLER_RESPONSE", responseText);
+
+                    string reply = ParseStandardLLMResponse(responseText);
+                    reply = TrimTextAfterHashtags(reply);
+                    reply = CleanResponse(reply);
+
+                    if (MyMod.Settings?.debugMode == true)
+                        LogPlayer2Debug("STORYTELLER_FINAL", reply);
+
+                    onResponse?.Invoke(reply);
+                    yield break;
+                }
+
+                if (request.responseCode == 429 || request.responseCode == 500 || request.responseCode == 503)
+                {
+                    if (attempt < maxRetries - 1)
+                    {
+                        if (MyMod.Settings?.debugMode == true)
+                        {
+                            LogPlayer2Debug("STORYTELLER_RETRY", $"Attempt {attempt + 1}/{maxRetries} failed with code {request.responseCode}. Retrying in {retryDelay}s...\n{responseText}");
+                        }
+
+                        yield return new WaitForSeconds(retryDelay);
+                        retryDelay *= 2f;
+                        continue;
+                    }
+                }
+
+                if (MyMod.Settings?.debugMode == true)
+                    LogPlayer2Debug("STORYTELLER_ERROR", $"Status: {request.responseCode}\n{responseText}");
+
+                onResponse?.Invoke($"⚠ ERROR: Player2 storyteller connection failed\n\nAttempts: {maxRetries}\nError: {request.error}");
+                yield break;
+            }
         }
 
         private static string ParseGeminiReply(string json)
@@ -472,7 +565,6 @@ namespace EchoColony
             {
                 var parsed = JSON.Parse(json);
                 
-                // ✅ CORREGIDO: Manejo más robusto del parsing
                 if (parsed["candidates"] != null && parsed["candidates"].AsArray.Count > 0)
                 {
                     var candidate = parsed["candidates"][0];
@@ -486,25 +578,22 @@ namespace EchoColony
                     }
                 }
                 
-                // ✅ FALLBACK: Si no encuentra la estructura esperada, buscar texto en cualquier parte
                 if (parsed["text"] != null)
                     return parsed["text"].Value;
                     
-                // ✅ ÚLTIMO RECURSO: Si hay algún "text" en cualquier lugar del JSON
                 var textNodes = FindTextInJSON(parsed);
                 if (textNodes.Count > 0)
                     return textNodes[0];
                 
-                return "❌ No text found in Gemini response.";
+                return "⚠ ERROR: No text found in Gemini response\n\nThe API returned an unexpected format";
             }
             catch (Exception ex)
             {
                 LogDebugResponse("ParseGemini_ERROR", $"JSON: {json}\nError: {ex.Message}");
-                return "❌ Error parsing Gemini response.";
+                return "⚠ ERROR: Failed to parse Gemini response\n\nTry again or check debug logs";
             }
         }
         
-        // ✅ NUEVO: Método auxiliar para buscar texto en cualquier parte del JSON
         private static List<string> FindTextInJSON(JSONNode node)
         {
             var results = new List<string>();
@@ -598,11 +687,11 @@ namespace EchoColony
                 if (quoted.Success)
                     return quoted.Groups[1].Value;
                     
-                return "❌ Unrecognized response format.";
+                return "⚠ ERROR: Unrecognized response format\n\nThe API returned an unexpected structure";
             }
             catch
             {
-                return "❌ Error parsing model response.";
+                return "⚠ ERROR: Failed to parse API response\n\nCheck debug logs for details";
             }
         }
 
@@ -613,9 +702,7 @@ namespace EchoColony
 
             text = text.Trim();
 
-            // ✅ NUEVO: Remover nombres de colonistas duplicados al inicio
-            // Buscar patrones como "Nombre: Nombre: texto" o "Nombre: texto"
-            var colonistNamePattern = @"^([A-Za-z]+):\s*\1:\s*(.*)$"; // "Nombre: Nombre: texto"
+            var colonistNamePattern = @"^([A-Za-z]+):\s*\1:\s*(.*)$";
             var match = System.Text.RegularExpressions.Regex.Match(text, colonistNamePattern);
             if (match.Success)
             {
@@ -623,7 +710,6 @@ namespace EchoColony
             }
             else
             {
-                // Buscar patrón simple "Nombre: texto"
                 var simpleNamePattern = @"^([A-Za-z]+):\s*(.*)$";
                 var simpleMatch = System.Text.RegularExpressions.Regex.Match(text, simpleNamePattern);
                 if (simpleMatch.Success)
@@ -632,13 +718,10 @@ namespace EchoColony
                 }
             }
 
-            // Solo remover comillas si la ENTERA respuesta está envuelta en comillas
-            // Y parece ser un wrapper artificial (muy corto o contiene caracteres extraños)
             if (text.StartsWith("\"") && text.EndsWith("\""))
             {
                 string unwrapped = text.Substring(1, text.Length - 2);
                 
-                // Solo desenvolver si parece un wrapper artificial
                 if (text.Length < 30 || 
                     !unwrapped.Contains(" ") || 
                     unwrapped.Split(' ').Length < 3)
@@ -647,7 +730,6 @@ namespace EchoColony
                 }
             }
 
-            // Remover prefijos comunes de IA que pueden aparecer
             string[] prefixesToRemove = {
                 "As a colonist, ",
                 "As someone who ",
@@ -667,7 +749,6 @@ namespace EchoColony
                 }
             }
 
-            // Limpiar sufijos problemáticos
             string[] suffixesToRemove = {
                 " #",
                 " [END]",
@@ -721,11 +802,21 @@ namespace EchoColony
             try
             {
                 string safeSource = sourceName.Replace(" ", "_");
-                string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-                string filename = $"{safeSource}_Response_{timestamp}.txt";
+                string filename = $"{safeSource}_Response_LATEST.txt";
                 string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-                string fullPath = Path.Combine(desktopPath, filename);
-                File.WriteAllText(fullPath, responseText);
+                string folderPath = Path.Combine(desktopPath, "EchoColony_Debug");
+                
+                if (!Directory.Exists(folderPath))
+                    Directory.CreateDirectory(folderPath);
+                
+                string fullPath = Path.Combine(folderPath, filename);
+                
+                string debugContent = $"=== {sourceName} RESPONSE DEBUG LOG ===\n";
+                debugContent += $"Last Updated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n";
+                debugContent += "".PadRight(50, '=') + "\n\n";
+                debugContent += responseText;
+                
+                File.WriteAllText(fullPath, debugContent);
             }
             catch (Exception ex)
             {
@@ -739,13 +830,17 @@ namespace EchoColony
                 return;
             try
             {
-                string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss-fff");
-                string filename = $"Player2_{type}_{timestamp}.txt";
+                string filename = $"Player2_{type}_LATEST.txt";
                 string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-                string fullPath = Path.Combine(desktopPath, filename);
+                string folderPath = Path.Combine(desktopPath, "EchoColony_Debug");
+                
+                if (!Directory.Exists(folderPath))
+                    Directory.CreateDirectory(folderPath);
+                
+                string fullPath = Path.Combine(folderPath, filename);
 
                 string debugContent = $"=== PLAYER2 {type} DEBUG LOG ===\n";
-                debugContent += $"Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}\n";
+                debugContent += $"Last Updated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n";
                 debugContent += $"Type: {type}\n";
                 debugContent += "".PadRight(50, '=') + "\n\n";
                 debugContent += content;

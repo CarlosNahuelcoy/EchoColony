@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<LanguageData>
+  <EchoColony.EnableSocialAffectsPersonality>💬 La habilidad social afecta la personalidad</EchoColony.EnableSocialAffectsPersonality>
+  <EchoColony.EnableRoleplayResponses>🎭 Activar respuestas estilo rol</EchoColony.EnableRoleplayResponses>
+  <EchoColony.ModelSource>🌐 Fuente del modelo:</EchoColony.ModelSource>
+  <EchoColony.UseGemini>Usar Gemini (en la nube)</EchoColony.UseGemini>
+  <EchoColony.UseLocal>Usar modelo local (Ollama, KoboldAI, LM Studio)</EchoColony.UseLocal>
+  <EchoColony.UseOpenRouter>Usar OpenRouter (hospedaje externo)</EchoColony.UseOpenRouter>
+  <EchoColony.LocalModelProvider>Proveedor de modelo local:</EchoColony.LocalModelProvider>
+  <EchoColony.LocalModelEndpoint>Dirección del modelo local:</EchoColony.LocalModelEndpoint>
+  <EchoColony.LocalModelName>Nombre del modelo:</EchoColony.LocalModelName>
+  <EchoColony.OpenRouterEndpoint>Dirección de OpenRouter:</EchoColony.OpenRouterEndpoint>
+  <EchoColony.OpenRouterAPIKey>Clave API de OpenRouter:</EchoColony.OpenRouterAPIKey>
+  <EchoColony.GeminiAPIKey>Clave API de Gemini:</EchoColony.GeminiAPIKey>
+  <EchoColony.Model>Modelo:</EchoColony.Model>
+  <EchoColony.GlobalPrompt>Prompt global (aplica a todos los colonos):</EchoColony.GlobalPrompt>
+  <EchoColony.MaxResponseLength>Límite de caracteres por respuesta: {0}</EchoColony.MaxResponseLength>
+    <EchoColony.CustomPromptTitle>✍️ Prompt personalizado para {0}</EchoColony.CustomPromptTitle>
+  <EchoColony.SaveButton>Guardar</EchoColony.SaveButton>
+  <EchoColony.ChatGizmoLabel>Hablar</EchoColony.ChatGizmoLabel>
+  <EchoColony.ChatGizmoDesc>Iniciar una conversación con este colono.</EchoColony.ChatGizmoDesc>
+  <EchoColony.SendButton>Enviar</EchoColony.SendButton>
+  <EchoColony.GeminiTooltip>
+    gemini-2.0-flash: Rápido y liviano.
+    gemini-1.5-pro: Más inmersivo, pero más lento y exigente.
+  </EchoColony.GeminiTooltip>
+    <EchoColony.ExportButton>Exportar</EchoColony.ExportButton>
+  <EchoColony.PersonalizeButton>Personalizar...</EchoColony.PersonalizeButton>
+    <EchoColony.TalkingWithLabel>💬 Hablando con {0}</EchoColony.TalkingWithLabel>
+      <EchoColony.UserPrefix>Tú: </EchoColony.UserPrefix>
+  <EchoColony.ColonistThinking>{0}: Pensando...</EchoColony.ColonistThinking>
+  <EchoColony.UndoTooltip>Eliminar este mensaje y respuesta</EchoColony.UndoTooltip>
+<EchoColony.DebugModeLabel>Activar Modo Depuración (Guardar respuestas de IA en el Escritorio)</EchoColony.DebugModeLabel>
+<EchoColony.DebugModeTooltip>Crea un archivo de texto con cada respuesta de la IA para ayudar a diagnosticar problemas. Actívalo solo si es necesario.</EchoColony.DebugModeTooltip>
+  <EchoColony.ClearAllButton>Borrar todo</EchoColony.ClearAllButton>
+  <EchoColony.ClearAllConfirm>¿Estás seguro de que deseas borrar toda la conversación?</EchoColony.ClearAllConfirm>
+  <EchoColony.LastExchangeDeleted>🗑 Último intercambio eliminado.</EchoColony.LastExchangeDeleted>
+  <EchoColony.EditButton>Editar</EchoColony.EditButton>
+  <EchoColony.RegenerateButton>Regenerar</EchoColony.RegenerateButton>
+    <EchoColony.SaveButton>Guardar</EchoColony.SaveButton>
+  <EchoColony.CancelButton>Cancelar</EchoColony.CancelButton>
+</LanguageData>
