@@ -15,8 +15,7 @@ namespace EchoColony
                     GameObject obj = new GameObject("MyStoryModComponent");
                     Object.DontDestroyOnLoad(obj);
                     MyStoryModComponent.Instance = obj.AddComponent<MyStoryModComponent>();
-                    Log.Message("[EchoColony] 🟢 MyStoryModComponent añadido al mundo tras carga.");
-                    // Ya NO se llama Init() aquí
+                    Log.Message("[EchoColony] MyStoryModComponent added to world after load");
                 }
             });
         }
@@ -29,9 +28,13 @@ namespace EchoColony
         public ColonistMemoryManager ColonistMemoryManager;
         public DailyGroupMemoryTracker GroupMemoryTracker;
         
-        // ✅ NUEVO: Referencias a componentes dinámicos
         private Player2Heartbeat player2HeartbeatComponent;
         private bool ttsInitialized = false;
+        private bool actionsInitialized = false;
+        
+        // Cleanup tracking
+        private int lastCleanupTick = 0;
+        private const int CLEANUP_INTERVAL = 60000; // Every in-game day
 
         void Awake()
         {
@@ -40,13 +43,13 @@ namespace EchoColony
 
         void Start()
         {
-            Log.Message($"[EchoColony] MyStoryModComponent.Start() ejecutado. enableTTS = {MyMod.Settings?.enableTTS}");
+            Log.Message($"[EchoColony] MyStoryModComponent.Start() executed. enableTTS = {MyMod.Settings?.enableTTS}");
             Init();
         }
 
         public void Init()
         {
-            Log.Message("[EchoColony] ✅ Start() ejecutado en MyStoryModComponent");
+            Log.Message("[EchoColony] Start() executed in MyStoryModComponent");
 
             ColonistMemoryManager = Current.Game.GetComponent<ColonistMemoryManager>();
             if (ColonistMemoryManager == null)
@@ -57,19 +60,23 @@ namespace EchoColony
 
             GroupMemoryTracker = ColonistMemoryManager.GetGroupMemoryTracker();
 
-            // ✅ CAMBIO CLAVE: Siempre añadir Player2Heartbeat, él se encarga de decidir cuándo funcionar
             EnsurePlayer2HeartbeatExists();
 
-            // ✅ MEJORADO: TTS initialization
             if (MyMod.Settings != null && MyMod.Settings.enableTTS && !ttsInitialized)
             {
                 Log.Message("[EchoColony] TTS enabled. Loading voices...");
                 StartCoroutine(TTSVoiceCache.LoadVoices());
                 ttsInitialized = true;
             }
+            
+            if (MyMod.Settings != null && MyMod.Settings.enableDivineActions && !actionsInitialized)
+            {
+                Log.Message("[EchoColony] Divine Actions enabled. Initializing action system...");
+                Actions.ActionRegistry.Initialize();
+                actionsInitialized = true;
+            }
         }
 
-        // ✅ NUEVO: Método para asegurar que Player2Heartbeat existe
         private void EnsurePlayer2HeartbeatExists()
         {
             if (player2HeartbeatComponent == null)
@@ -83,24 +90,19 @@ namespace EchoColony
             }
         }
 
-        // ✅ NUEVO: Método público para forzar check de Player2 (útil para UI)
         public void ForcePlayer2Check()
         {
             EnsurePlayer2HeartbeatExists();
             player2HeartbeatComponent?.ForceCheckPlayer2();
         }
 
-        // ✅ NUEVO: Método para verificar si Player2 está disponible
         public bool IsPlayer2Available()
         {
-            // Simplificado: solo verificar si está configurado como modelo activo
             return MyMod.Settings?.modelSource == ModelSource.Player2;
         }
 
-        // ✅ NUEVO: Update para manejar cambios dinámicos en configuración
         void Update()
         {
-            // Verificar cambios en configuración TTS
             if (MyMod.Settings != null && MyMod.Settings.enableTTS && !ttsInitialized)
             {
                 Log.Message("[EchoColony] TTS enabled during runtime. Loading voices...");
@@ -109,12 +111,34 @@ namespace EchoColony
             }
             else if (MyMod.Settings != null && !MyMod.Settings.enableTTS && ttsInitialized)
             {
-                // TTS deshabilitado durante runtime
                 ttsInitialized = false;
             }
+            
+            if (MyMod.Settings != null && MyMod.Settings.enableDivineActions && !actionsInitialized)
+            {
+                Log.Message("[EchoColony] Divine Actions enabled during runtime. Initializing...");
+                Actions.ActionRegistry.Initialize();
+                actionsInitialized = true;
+            }
+            else if (MyMod.Settings != null && !MyMod.Settings.enableDivineActions && actionsInitialized)
+            {
+                actionsInitialized = false;
+            }
 
-            // ✅ Asegurar que Player2Heartbeat siempre esté disponible
             EnsurePlayer2HeartbeatExists();
+            
+            // Periodic cleanup of action cooldowns
+            if (Find.TickManager != null && MyMod.Settings != null && MyMod.Settings.enableDivineActions)
+            {
+                int currentTick = Find.TickManager.TicksGame;
+                
+                if (currentTick - lastCleanupTick > CLEANUP_INTERVAL)
+                {
+                    Actions.Mood.AddPlayerThoughtAction.CleanupOldCooldowns();
+                    lastCleanupTick = currentTick;
+                    Log.Message("[EchoColony] Cleaned up old action cooldowns");
+                }
+            }
         }
     }
 }

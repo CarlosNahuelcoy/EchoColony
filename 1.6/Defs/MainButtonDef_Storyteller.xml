@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <MainButtonDef>
+    <defName>EchoColony_StorytellerChat</defName>
+    <label>Storyteller</label>
+    <description>Talk directly with your storyteller and request events</description>
+    <buttonVisible>true</buttonVisible>
+    <order>101</order>
+    <workerClass>EchoColony.MainButtonWorker_StorytellerChat</workerClass>
+  </MainButtonDef>
+</Defs>
