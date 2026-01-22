@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<LanguageData>
+  <EchoColony.EnableSocialAffectsPersonality>💬 Social skill affects personality</EchoColony.EnableSocialAffectsPersonality>
+  <EchoColony.EnableRoleplayResponses>🎭 Enable roleplay-style responses</EchoColony.EnableRoleplayResponses>
+  <EchoColony.ModelSource>🌐 Model source:</EchoColony.ModelSource>
+  <EchoColony.UseGemini>Use Gemini (cloud-based)</EchoColony.UseGemini>
+  <EchoColony.UseLocal>Use local model (e.g., Ollama, KoboldAI, LM Studio)</EchoColony.UseLocal>
+  <EchoColony.UseOpenRouter>Use OpenRouter (external hosted)</EchoColony.UseOpenRouter>
+  <EchoColony.LocalModelProvider>Local Model Provider:</EchoColony.LocalModelProvider>
+  <EchoColony.LocalModelEndpoint>Local model endpoint:</EchoColony.LocalModelEndpoint>
+  <EchoColony.LocalModelName>Name model:</EchoColony.LocalModelName>
+  <EchoColony.OpenRouterEndpoint>OpenRouter endpoint:</EchoColony.OpenRouterEndpoint>
+  <EchoColony.OpenRouterAPIKey>OpenRouter API Key:</EchoColony.OpenRouterAPIKey>
+  <EchoColony.GeminiAPIKey>Gemini API Key:</EchoColony.GeminiAPIKey>
+  <EchoColony.Model>Model:</EchoColony.Model>
+  <EchoColony.GlobalPrompt>Global prompt (applies to all colonists):</EchoColony.GlobalPrompt>
+  <EchoColony.MaxResponseLength>Character limit per response: {0}</EchoColony.MaxResponseLength>
+  <EchoColony.SaveButton>Save</EchoColony.SaveButton>
+    <EchoColony.ChatGizmoLabel>Talk</EchoColony.ChatGizmoLabel>
+  <EchoColony.ChatGizmoDesc>Start a conversation with this colonist.</EchoColony.ChatGizmoDesc>
+    <EchoColony.SendButton>Send</EchoColony.SendButton>
+  <EchoColony.GeminiTooltip>
+    gemini flash: Fast and light.
+    gemini pro: More immersive, but slower and more demanding.
+  </EchoColony.GeminiTooltip>
+    <EchoColony.ExportButton>Export</EchoColony.ExportButton>
+  <EchoColony.PersonalizeButton>Personalize...</EchoColony.PersonalizeButton>
+    <EchoColony.TalkingWithLabel>💬 Talking with {0}</EchoColony.TalkingWithLabel>
+  <EchoColony.UserPrefix>You: </EchoColony.UserPrefix>
+  <EchoColony.ColonistThinking>{0}: Thinking...</EchoColony.ColonistThinking>
+  <EchoColony.UndoTooltip>Undo this message and response</EchoColony.UndoTooltip>
+    <EchoColony.DebugModeLabel>Enable Debug Mode (Save AI responses to Desktop)</EchoColony.DebugModeLabel>
+  <EchoColony.DebugModeTooltip>Creates a text file with each AI response to help diagnose issues. Only activate if necessary.</EchoColony.DebugModeTooltip>
+  <EchoColony.ClearAllButton>Clear all</EchoColony.ClearAllButton>
+  <EchoColony.ClearAllConfirm>Are you sure you want to delete the entire conversation?</EchoColony.ClearAllConfirm>
+  <EchoColony.LastExchangeDeleted>🗑 Last exchange deleted.</EchoColony.LastExchangeDeleted>
+  <EchoColony.EditButton>Edit</EchoColony.EditButton>
+  <EchoColony.RegenerateButton>Regenerate</EchoColony.RegenerateButton>
+    <EchoColony.SaveButton>Save</EchoColony.SaveButton>
+  <EchoColony.CancelButton>Cancel</EchoColony.CancelButton>
+  <EchoColony.OpenRouterModel>OpenRouter Model</EchoColony.OpenRouterModel>
+  <EchoColony.ChooseVoiceTitle>Choose voice for {0}:</EchoColony.ChooseVoiceTitle>
+  <EchoColony.PlayAudio>Play Audio</EchoColony.PlayAudio>
+    <EchoColony.VoiceLabel>Voice:</EchoColony.VoiceLabel>
+  <EchoColony.ImportPlayer2Button>Import Player2</EchoColony.ImportPlayer2Button>
+  <EchoColony.PlayTestAudioTooltip>Play test audio</EchoColony.PlayTestAudioTooltip>
+  <EchoColony.TestTextLabel>Test text:</EchoColony.TestTextLabel>
+  <EchoColony.SelectVoicePlaceholder>Select voice</EchoColony.SelectVoicePlaceholder>
+    <EchoColony.UsePlayer2Label>Use Player2</EchoColony.UsePlayer2Label>
+  <EchoColony.UsePlayer2Tooltip>You just need Player2 running and logged in. No API key or extra setup required.</EchoColony.UsePlayer2Tooltip>
+  <EchoColony.Player2Warning>⚠️ Player2 is active. Other model settings are ignored.</EchoColony.Player2Warning>
+  <EchoColony.EnableTTS>Enable TTS (text to speech)</EchoColony.EnableTTS>
+  <EchoColony.AutoPlayVoice>Auto-play voice on each reply</EchoColony.AutoPlayVoice>
+  <EchoColony.GroupChatLabel>Group conversation with</EchoColony.GroupChatLabel>
+  <EchoColony.GroupChat>Group conversation</EchoColony.GroupChat>
+<EchoColony.GroupChatDesc>Start a group chat with nearby colonists.</EchoColony.GroupChatDesc>
+
+<EchoColony.MemoriesOf>Memories of</EchoColony.MemoriesOf>
+<EchoColony.MemoriesEntries>entries</EchoColony.MemoriesEntries>
+<EchoColony.NoMemoriesSaved>No memories saved</EchoColony.NoMemoriesSaved>
+<EchoColony.MemoriesAutoCreated>Memories will be created automatically\nwhen closing conversations</EchoColony.MemoriesAutoCreated>
+<EchoColony.CollapseAll>Collapse All</EchoColony.CollapseAll>
+<EchoColony.ExpandAll>Expand All</EchoColony.ExpandAll>
+<EchoColony.RefreshButton>Refresh</EchoColony.RefreshButton>
+<EchoColony.ClearAllMemories>Clear All</EchoColony.ClearAllMemories>
+<EchoColony.ClearAllMemoriesConfirm>Are you sure you want to delete all memories of {0}?\n\nThis action cannot be undone.</EchoColony.ClearAllMemoriesConfirm>
+<EchoColony.MemoriesDeleted>Memories of {0} deleted</EchoColony.MemoriesDeleted>
+<EchoColony.CurrentDay>Current day:</EchoColony.CurrentDay>
+<EchoColony.Today>TODAY</EchoColony.Today>
+<EchoColony.Day>Day</EchoColony.Day>
+<EchoColony.Yesterday>(yesterday)</EchoColony.Yesterday>
+<EchoColony.DaysAgo>(days ago)</EchoColony.DaysAgo>
+<EchoColony.DeleteMemoryConfirm>Delete this memory from day {0}?</EchoColony.DeleteMemoryConfirm>
+<EchoColony.MemoryDeleted>Memory deleted</EchoColony.MemoryDeleted>
+<EchoColony.MemoryEdited>Memory edited for {0} day {1}</EchoColony.MemoryEdited>
+<EchoColony.MemoriesLoaded>Loaded {0} memories for {1}</EchoColony.MemoriesLoaded>
+
+<EchoColony.ColonistJoins>{0} joins the conversation.</EchoColony.ColonistJoins>
+<EchoColony.ColonistNoLongerPresent>{0} is no longer part of this conversation.</EchoColony.ColonistNoLongerPresent>
+<EchoColony.AllColonistsGone>The conversation comes to an end.</EchoColony.AllColonistsGone>
+<EchoColony.SavingMemories>Recording memories of the conversation...</EchoColony.SavingMemories>
+<EchoColony.MemoriesSaved>Conversation memories recorded</EchoColony.MemoriesSaved>
+
+<!-- ===== PROMPT EDITOR ===== -->
+<EchoColony.PersonalizingTitle>Customizing: {0}</EchoColony.PersonalizingTitle>
+<EchoColony.MemoriesButton>🧠 Memories</EchoColony.MemoriesButton>
+<EchoColony.MemoriesTooltip>View and edit {0}'s memories
+
+Memories are automatically generated during conversations and help the colonist remember past interactions.</EchoColony.MemoriesTooltip>
+
+<!-- Voice Configuration -->
+<EchoColony.VoiceConfigurationTitle>🎵 Voice Configuration</EchoColony.VoiceConfigurationTitle>
+<EchoColony.ImportButton>📥 Import</EchoColony.ImportButton>
+<EchoColony.TestButton>▶ Test</EchoColony.TestButton>
+<EchoColony.TestVoiceTooltip>Play test text with the selected voice</EchoColony.TestVoiceTooltip>
+
+<!-- Custom Prompt -->
+<EchoColony.CustomPromptTitle>📝 Custom Prompt</EchoColony.CustomPromptTitle>
+
+<!-- Messages -->
+<EchoColony.ConfigurationSaved>Configuration saved for {0}</EchoColony.ConfigurationSaved>
+<EchoColony.NoCharactersFound>⚠️ No characters found in Player2. Make sure Player2 is running and has characters loaded.</EchoColony.NoCharactersFound>
+<EchoColony.CharacterImportedAuto>✅ Automatically imported {0}'s description and voice.</EchoColony.CharacterImportedAuto>
+<EchoColony.CharacterImported>✅ Imported {0}'s description and voice.</EchoColony.CharacterImported>
+    <EchoColony.IgnoreAgeLabel>Ignore biological age for behavior</EchoColony.IgnoreAgeLabel>
+<EchoColony.IgnoreAgeTooltip>Use for synthetic or alien colonists to ignore age-based behavior.</EchoColony.IgnoreAgeTooltip>
+
+<EchoColony.IgnoreDangers>Colonists ignore dangers in conversations</EchoColony.IgnoreDangers>
+  <EchoColony.IgnoreDangersTooltip>When enabled, colonists will not mention enemies, threats, or combat situations in their conversations. They will focus on daily life, relationships, work, and peaceful topics instead.</EchoColony.IgnoreDangersTooltip>
+  
+  
+ <!-- Memorias Sistema -->
+  <EchoColony.EnableMemorySystem>Enable Memory System</EchoColony.EnableMemorySystem>
+  <EchoColony.EnableMemorySystemTooltip>When enabled, colonists will remember past conversations. This uses more AI tokens but creates more immersive roleplay. Disable to reduce API costs.</EchoColony.EnableMemorySystemTooltip>
+  
+  <EchoColony.MemorySystemEnabled>Memory system is active - colonists will remember conversations</EchoColony.MemorySystemEnabled>
+  <EchoColony.MemorySystemDisabled>Memory system is disabled - conversations won't be saved to memory</EchoColony.MemorySystemDisabled>
+  
+  <EchoColony.DisableMemorySystemConfirm>You are about to disable the memory system. Do you want to delete all existing memories to free up save file space?\n\nNote: This action cannot be undone.</EchoColony.DisableMemorySystemConfirm>
+  
+  <!-- Herramientas de Debug de Memorias -->
+  <EchoColony.MemoryDebugTools>Memory Debug Tools</EchoColony.MemoryDebugTools>
+  <EchoColony.CheckMemoryState>Check Memory System State</EchoColony.CheckMemoryState>
+  <EchoColony.ForceCleanMemories>Force Clean All Memories</EchoColony.ForceCleanMemories>
+  <EchoColony.ForceCleanMemoriesConfirm>This will permanently delete ALL memories for ALL colonists. This action cannot be undone.\n\nAre you sure you want to continue?</EchoColony.ForceCleanMemoriesConfirm>
+  
+  <!-- Visor de Memorias -->
+  <EchoColony.MemoriesLoaded>Loaded {0} memories for {1}</EchoColony.MemoriesLoaded>
+  <EchoColony.MemoriesOf>Memories of</EchoColony.MemoriesOf>
+  <EchoColony.MemoriesEntries>entries</EchoColony.MemoriesEntries>
+  <EchoColony.NoMemoriesSaved>No memories saved yet</EchoColony.NoMemoriesSaved>
+  <EchoColony.MemoriesAutoCreated>Memories will be automatically created from conversations</EchoColony.MemoriesAutoCreated>
+  
+  <EchoColony.CollapseAll>Collapse All</EchoColony.CollapseAll>
+  <EchoColony.ExpandAll>Expand All</EchoColony.ExpandAll>
+  <EchoColony.RefreshButton>Refresh</EchoColony.RefreshButton>
+  <EchoColony.ClearAllMemories>Clear All</EchoColony.ClearAllMemories>
+  <EchoColony.ClearAllMemoriesConfirm>Are you sure you want to delete all memories for {0}? This action cannot be undone.</EchoColony.ClearAllMemoriesConfirm>
+  <EchoColony.CurrentDay>Current day</EchoColony.CurrentDay>
+  
+  <EchoColony.Today>Today</EchoColony.Today>
+  <EchoColony.Day>Day</EchoColony.Day>
+  <EchoColony.Yesterday>yesterday</EchoColony.Yesterday>
+  <EchoColony.DaysAgo>days ago</EchoColony.DaysAgo>
+  
+  <EchoColony.DeleteMemoryTooltip>Delete this memory</EchoColony.DeleteMemoryTooltip>
+  <EchoColony.DeleteMemoryConfirm>Are you sure you want to delete the memory from day {0}?</EchoColony.DeleteMemoryConfirm>
+  
+  <EchoColony.MemoryEdited>Memory for {0} (day {1}) has been edited</EchoColony.MemoryEdited>
+  <EchoColony.MemoriesDeleted>Memories deleted for {0}</EchoColony.MemoriesDeleted>
+  <EchoColony.MemoryDeleted>Memory deleted</EchoColony.MemoryDeleted>  
+</LanguageData>

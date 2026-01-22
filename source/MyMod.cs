@@ -12,8 +12,8 @@ namespace EchoColony
     {
         public static GeminiSettings Settings;
         private Vector2 scrollPos = Vector2.zero;
+        private Vector2 settingsScrollPosition = Vector2.zero;
 
-        // Guardar el modelo anterior para restaurarlo al desmarcar Player2
         private ModelSource previousModelSource = ModelSource.Gemini;
 
         private static bool pingInProgress = false;
@@ -22,7 +22,6 @@ namespace EchoColony
         {
             Settings = GetSettings<GeminiSettings>();
             
-            // Asegurar que modelPreferences existe
             if (Settings.modelPreferences == null)
                 Settings.modelPreferences = new GeminiModelPreferences();
         }
@@ -31,10 +30,21 @@ namespace EchoColony
 
         public override void DoSettingsWindowContents(Rect inRect)
         {
+            // Calculate total height needed for all settings
+            float totalHeight = 2000f; // Adjust this if you add more settings
+            
+            // Create scroll view
+            Rect viewRect = new Rect(0f, 0f, inRect.width - 20f, totalHeight);
+            Widgets.BeginScrollView(inRect, ref settingsScrollPosition, viewRect);
+            
             Listing_Standard list = new Listing_Standard();
-            list.Begin(inRect);
+            list.Begin(viewRect);
 
-            // Configuración básica (siempre visible)
+            // ===== BASIC CONFIGURATION =====
+            GUI.color = new Color(0.7f, 0.9f, 1f);
+            list.Label("═══ Basic Settings ═══");
+            GUI.color = Color.white;
+            
             list.CheckboxLabeled("EchoColony.EnableSocialAffectsPersonality".Translate(), ref Settings.enableSocialAffectsPersonality);
             list.CheckboxLabeled("EchoColony.EnableRoleplayResponses".Translate(), ref Settings.enableRoleplayResponses);
             
@@ -44,7 +54,13 @@ namespace EchoColony
                 "EchoColony.IgnoreDangersTooltip".Translate()
             );
             
-            // ✅ NUEVO: Toggle para sistema de memorias
+            list.GapLine();
+
+            // ===== MEMORY SYSTEM =====
+            GUI.color = new Color(0.7f, 0.9f, 1f);
+            list.Label("═══ Memory System ═══");
+            GUI.color = Color.white;
+            
             bool oldMemorySystemState = Settings.enableMemorySystem;
             list.CheckboxLabeled(
                 "EchoColony.EnableMemorySystem".Translate(), 
@@ -52,29 +68,72 @@ namespace EchoColony
                 "EchoColony.EnableMemorySystemTooltip".Translate()
             );
 
-            // ✅ NUEVO: Verificar si cambió el estado y aplicar cambios
             if (oldMemorySystemState != Settings.enableMemorySystem)
             {
                 OnMemorySystemToggled(Settings.enableMemorySystem);
             }
 
-            // ✅ NUEVO: Información sobre el estado del sistema de memorias
             if (Settings.enableMemorySystem)
             {
                 GUI.color = Color.green;
-                list.Label("💾 " + "EchoColony.MemorySystemEnabled".Translate());
+                list.Label("  ✓ Memory system: Enabled");
                 GUI.color = Color.white;
             }
             else
             {
                 GUI.color = Color.yellow;
-                list.Label("🚫 " + "EchoColony.MemorySystemDisabled".Translate());
+                list.Label("  ✗ Memory system: Disabled");
                 GUI.color = Color.white;
             }
 
             list.GapLine();
 
-            // Global Prompt - siempre visible en la parte superior
+            // ===== UI SETTINGS =====
+            GUI.color = new Color(0.7f, 0.9f, 1f);
+            list.Label("═══ UI Settings ═══");
+            GUI.color = Color.white;
+            
+            list.CheckboxLabeled(
+                "Show Storyteller Chat Button", 
+                ref Settings.enableStorytellerButton,
+                "Shows or hides the Storyteller chat button in the main menu bar"
+            );
+
+            list.GapLine();
+
+            // ===== DIVINE ACTIONS SYSTEM =====
+            GUI.color = new Color(1f, 0.8f, 0.4f);
+            list.Label("═══ Divine Actions System ═══");
+            GUI.color = Color.white;
+            
+            list.CheckboxLabeled(
+                "Enable Divine Actions (AI can affect colonists)", 
+                ref Settings.enableDivineActions,
+                "Allows the AI to use actions like healing, mood changes, etc. during conversations"
+            );
+
+            if (Settings.enableDivineActions)
+            {
+                list.CheckboxLabeled(
+                    "  → Allow Negative Actions", 
+                    ref Settings.allowNegativeActions,
+                    "Allows AI to use negative actions (mental breaks, injuries, etc.)"
+                );
+                
+                list.CheckboxLabeled(
+                    "  → Allow Extreme Actions", 
+                    ref Settings.allowExtremeActions,
+                    "Allows AI to use extreme actions (amputations, resurrections, etc.)"
+                );
+            }
+
+            list.GapLine();
+
+            // ===== GLOBAL PROMPT =====
+            GUI.color = new Color(0.7f, 0.9f, 1f);
+            list.Label("═══ Global Prompt ═══");
+            GUI.color = Color.white;
+            
             list.Label("EchoColony.GlobalPrompt".Translate());
             float areaHeight = 80f;
             Rect scrollOut = list.GetRect(areaHeight);
@@ -84,6 +143,11 @@ namespace EchoColony
             Widgets.EndScrollView();
             
             list.GapLine();
+
+            // ===== MODEL SOURCE SELECTION =====
+            GUI.color = new Color(0.6f, 1f, 0.6f);
+            list.Label("═══ AI Model Configuration ═══");
+            GUI.color = Color.white;
 
             // Player2 Toggle
             bool isPlayer2 = Settings.modelSource == ModelSource.Player2;
@@ -104,10 +168,10 @@ namespace EchoColony
                     Settings.modelSource = previousModelSource;
                 }
             }
-            list.GapLine();
 
             if (Settings.modelSource == ModelSource.Player2)
             {
+                list.Gap();
                 list.Label("EchoColony.Player2Warning".Translate());
                 list.CheckboxLabeled("EchoColony.EnableTTS".Translate(), ref Settings.enableTTS);
                 if (Settings.enableTTS)
@@ -117,7 +181,7 @@ namespace EchoColony
             }
             else
             {
-                // Selección de fuente del modelo
+                list.Gap();
                 list.Label("EchoColony.ModelSource".Translate());
 
                 if (Widgets.RadioButtonLabeled(list.GetRect(25f), "EchoColony.UseGemini".Translate(), Settings.modelSource == ModelSource.Gemini))
@@ -133,9 +197,15 @@ namespace EchoColony
                     Settings.modelSource = ModelSource.OpenRouter;
                 }
 
-                // Configuración específica según modelo
+                list.Gap();
+
+                // Model-specific configuration
                 if (Settings.modelSource == ModelSource.Local)
                 {
+                    GUI.color = new Color(1f, 1f, 0.7f);
+                    list.Label("Local Model Settings:");
+                    GUI.color = Color.white;
+                    
                     list.Label("EchoColony.LocalModelProvider".Translate());
                     if (list.ButtonText(Settings.localModelProvider.ToString()))
                     {
@@ -158,6 +228,10 @@ namespace EchoColony
                 }
                 else if (Settings.modelSource == ModelSource.OpenRouter)
                 {
+                    GUI.color = new Color(1f, 1f, 0.7f);
+                    list.Label("OpenRouter Settings:");
+                    GUI.color = Color.white;
+                    
                     list.Label("EchoColony.OpenRouterEndpoint".Translate());
                     Settings.openRouterEndpoint = list.TextEntry(Settings.openRouterEndpoint);
 
@@ -175,7 +249,11 @@ namespace EchoColony
 
             list.GapLine();
 
-            // Controles finales (compactos)
+            // ===== GENERAL SETTINGS =====
+            GUI.color = new Color(0.7f, 0.9f, 1f);
+            list.Label("═══ General Settings ═══");
+            GUI.color = Color.white;
+
             if (Settings.modelSource != ModelSource.Player2)
             {
                 list.Label("EchoColony.MaxResponseLength".Translate(Settings.maxResponseLength));
@@ -184,73 +262,88 @@ namespace EchoColony
 
             list.CheckboxLabeled("EchoColony.DebugModeLabel".Translate(), ref Settings.debugMode, "EchoColony.DebugModeTooltip".Translate());
 
-            // ✅ NUEVO: Botones de debug para memorias (solo en modo debug)
+            // ===== DEBUG TOOLS =====
             if (Settings.debugMode)
             {
                 list.GapLine();
                 GUI.color = Color.cyan;
-                list.Label("🔧 " + "EchoColony.MemoryDebugTools".Translate());
+                list.Label("═══ Debug Tools ═══");
                 GUI.color = Color.white;
 
-                if (list.ButtonText("🔍 " + "EchoColony.CheckMemoryState".Translate()))
+                // Memory debug tools
+                GUI.color = new Color(1f, 1f, 0.7f);
+                list.Label("Memory System:");
+                GUI.color = Color.white;
+                
+                if (list.ButtonText("Check Memory State"))
                 {
                     CheckMemorySystemState();
                 }
 
-                if (list.ButtonText("🗑️ " + "EchoColony.ForceCleanMemories".Translate()))
+                if (list.ButtonText("Force Clean Memories"))
                 {
                     ForceCleanAllMemories();
+                }
+                
+                // Actions debug tools
+                if (Settings.enableDivineActions)
+                {
+                    list.Gap();
+                    GUI.color = new Color(1f, 1f, 0.7f);
+                    list.Label("Actions System:");
+                    GUI.color = Color.white;
+
+                    if (list.ButtonText("List Registered Actions"))
+                    {
+                        ListRegisteredActions();
+                    }
                 }
             }
 
             list.End();
+            Widgets.EndScrollView();
         }
 
-        // ✅ NUEVO: Maneja el cambio en el toggle de memorias
         private void OnMemorySystemToggled(bool newState)
         {
             if (newState)
             {
-                Log.Message("[EchoColony] 💾 Sistema de memorias habilitado por usuario");
-                Messages.Message("EchoColony: Sistema de memorias habilitado - las conversaciones futuras se recordarán", MessageTypeDefOf.PositiveEvent);
+                Log.Message("[EchoColony] Memory system enabled by user");
+                Messages.Message("EchoColony: Memory system enabled - future conversations will be remembered", MessageTypeDefOf.PositiveEvent);
             }
             else
             {
-                Log.Message("[EchoColony] 🚫 Sistema de memorias deshabilitado por usuario");
+                Log.Message("[EchoColony] Memory system disabled by user");
                 
-                // Preguntar si quiere limpiar memorias existentes
                 Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
                     "EchoColony.DisableMemorySystemConfirm".Translate(),
                     () => {
-                        // Limpiar memorias existentes
                         var memoryManager = MyStoryModComponent.Instance?.ColonistMemoryManager;
                         if (memoryManager != null)
                         {
                             memoryManager.ForceCleanMemories();
                         }
-                        Messages.Message("EchoColony: Memorias existentes eliminadas", MessageTypeDefOf.TaskCompletion);
+                        Messages.Message("EchoColony: Existing memories deleted", MessageTypeDefOf.TaskCompletion);
                     }));
             }
         }
 
-        // ✅ NUEVO: Método de debug para verificar estado del sistema de memorias
         private void CheckMemorySystemState()
         {
             var memoryManager = MyStoryModComponent.Instance?.ColonistMemoryManager;
             if (memoryManager == null)
             {
-                Messages.Message("❌ MemoryManager no disponible", MessageTypeDefOf.RejectInput);
+                Messages.Message("MemoryManager not available", MessageTypeDefOf.RejectInput);
                 return;
             }
 
             memoryManager.DebugPrintMemoryState();
             bool integrity = memoryManager.ValidateMemoryIntegrity();
             
-            string status = integrity ? "✅ Sistema funcionando correctamente" : "⚠️ Problemas detectados";
+            string status = integrity ? "System working correctly" : "Problems detected";
             Messages.Message($"EchoColony: {status}", integrity ? MessageTypeDefOf.PositiveEvent : MessageTypeDefOf.CautionInput);
         }
 
-        // ✅ NUEVO: Método de debug para limpiar todas las memorias
         private void ForceCleanAllMemories()
         {
             Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
@@ -263,60 +356,80 @@ namespace EchoColony
                     }
                     else
                     {
-                        Messages.Message("❌ MemoryManager no disponible", MessageTypeDefOf.RejectInput);
+                        Messages.Message("MemoryManager not available", MessageTypeDefOf.RejectInput);
                     }
                 }));
         }
 
-        // ✅ SIMPLIFICADO: Configuración directa de modelos Gemini (sin refresh)
+        private void ListRegisteredActions()
+        {
+            Actions.ActionRegistry.Initialize();
+            var actions = Actions.ActionRegistry.GetAllActions();
+            
+            var categorized = actions.GroupBy(a => a.Category).OrderBy(g => g.Key);
+            
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            sb.AppendLine($"[EchoColony] Registered Actions ({actions.Count} total):");
+            
+            foreach (var group in categorized)
+            {
+                sb.AppendLine($"  {group.Key}: {group.Count()} actions");
+                foreach (var action in group)
+                {
+                    sb.AppendLine($"    - {action.ActionId}");
+                }
+            }
+            
+            Log.Message(sb.ToString());
+            Messages.Message($"Listed {actions.Count} actions in log", MessageTypeDefOf.TaskCompletion);
+        }
+
         private void DrawGeminiSettings(Listing_Standard list)
         {
-            // API Key
+            GUI.color = new Color(1f, 1f, 0.7f);
+            list.Label("Gemini Settings:");
+            GUI.color = Color.white;
+            
             list.Label("EchoColony.GeminiAPIKey".Translate());
             Settings.apiKey = list.TextEntry(Settings.apiKey);
 
             if (string.IsNullOrEmpty(Settings.apiKey))
             {
                 GUI.color = Color.yellow;
-                list.Label("⚠️ Enter your Gemini API key to configure models");
+                list.Label("⚠ Enter your Gemini API key to configure models");
                 GUI.color = Color.white;
                 return;
             }
 
             list.Gap();
 
-            // Configuración directa y simple
             GUI.color = Color.cyan;
-            list.Label("🎯 Model Configuration:");
+            list.Label("Model Configuration:");
             GUI.color = Color.white;
 
-            // Mostrar modelo actual
             string currentModel = GetCurrentModelInUse();
             list.Label($"Current model: {currentModel}");
 
             list.Gap();
 
-            // Botón principal para elegir modelo
-            if (list.ButtonText("📋 Choose Specific Model"))
+            if (list.ButtonText("Choose Specific Model"))
             {
                 ShowSimpleModelSelectionMenu();
             }
 
-            // Información útil
+            list.Gap();
             GUI.color = Color.gray;
-            list.Label("💡 Flash models: Faster, cheaper");
-            list.Label("💡 Pro models: Better quality, more expensive");
-            list.Label($"💎 Available: 5 Flash, 3 Pro models");
+            list.Label("• Flash models: Faster, cheaper");
+            list.Label("• Pro models: Better quality, more expensive");
+            list.Label($"• Available: 5 Flash, 3 Pro models");
             GUI.color = Color.white;
         }
 
-        // ✅ FINAL: Menú organizado con los 8 modelos más relevantes (hardcodeado)
         private void ShowSimpleModelSelectionMenu()
         {
             List<FloatMenuOption> options = new List<FloatMenuOption>();
 
-            // Opción automática
-            options.Add(new FloatMenuOption("🤖 Automatic (gemini-2.0-flash-001)", () =>
+            options.Add(new FloatMenuOption("Automatic (gemini-2.0-flash-001)", () =>
             {
                 Settings.modelPreferences.useAutoSelection = true;
                 Settings.modelPreferences.preferredFastModel = "";
@@ -325,7 +438,6 @@ namespace EchoColony
 
             options.Add(new FloatMenuOption("──────────────", null) { Disabled = true });
 
-            // Los 8 modelos directos
             options.Add(new FloatMenuOption("gemini-2.5-flash", () =>
             {
                 SetSpecificModel("gemini-2.5-flash", false);
@@ -341,7 +453,7 @@ namespace EchoColony
                 SetSpecificModel("gemini-2.5-flash-preview-09-2025", false);
             }));
 
-            options.Add(new FloatMenuOption("gemini-2.0-flash-001 ⭐", () =>
+            options.Add(new FloatMenuOption("gemini-2.0-flash-001 (Recommended)", () =>
             {
                 SetSpecificModel("gemini-2.0-flash-001", false);
             }));
@@ -369,7 +481,6 @@ namespace EchoColony
             Find.WindowStack.Add(new FloatMenu(options));
         }
         
-        // Método para configurar un modelo específico
         private void SetSpecificModel(string modelName, bool isAdvanced)
         {
             Settings.modelPreferences.useAutoSelection = false;
@@ -377,18 +488,17 @@ namespace EchoColony
             if (isAdvanced)
             {
                 Settings.modelPreferences.preferredAdvancedModel = modelName;
-                Settings.modelPreferences.preferredFastModel = ""; // Limpiar el otro
+                Settings.modelPreferences.preferredFastModel = "";
                 Settings.useAdvancedModel = true;
             }
             else
             {
                 Settings.modelPreferences.preferredFastModel = modelName;
-                Settings.modelPreferences.preferredAdvancedModel = ""; // Limpiar el otro
+                Settings.modelPreferences.preferredAdvancedModel = "";
                 Settings.useAdvancedModel = false;
             }
         }
 
-        // Método para mostrar el modelo actual
         private string GetCurrentModelInUse()
         {
             try
@@ -407,7 +517,6 @@ namespace EchoColony
                     
                     if (!string.IsNullOrEmpty(manualModel))
                     {
-                        // Mostrar versión acortada para que sea legible
                         string shortName = manualModel.Replace("gemini-", "").Replace("-preview-09-2025", "-preview");
                         return $"{shortName} (Manual)";
                     }
@@ -443,7 +552,7 @@ namespace EchoColony
 #endif
                 {
                     Messages.Message(
-                        "⚠️ Player2 is not running. Download it for free from https://player2.game/",
+                        "Player2 is not running. Download it for free from https://player2.game/",
                         MessageTypeDefOf.RejectInput,
                         false
                     );
@@ -454,7 +563,7 @@ namespace EchoColony
                 if (!result.Contains("client_version"))
                 {
                     Messages.Message(
-                        "⚠️ Player2 responded, but in an unexpected format. Try restarting the app or reinstalling.",
+                        "Player2 responded, but in an unexpected format. Try restarting the app or reinstalling.",
                         MessageTypeDefOf.RejectInput,
                         false
                     );

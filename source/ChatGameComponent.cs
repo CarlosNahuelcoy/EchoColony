@@ -12,7 +12,7 @@ namespace EchoColony
 
         private Dictionary<string, string> pawnVoiceMap = new Dictionary<string, string>();
         
-        // ✅ AGREGAR: Tracking de fechas por pawn
+        // Track the last day a chat occurred for each pawn to insert date separators
         private Dictionary<string, int> lastChatDay = new Dictionary<string, int>();
 
         public ChatGameComponent(Game game) { }
@@ -26,7 +26,7 @@ namespace EchoColony
             return savedChats[key];
         }
 
-        // ✅ MODIFICAR: Agregar separadores de fecha automáticamente
+        // Add a line to the chat log, automatically inserting date separators when needed
         public void AddLine(Pawn pawn, string line)
         {
             string key = pawn.ThingID;
@@ -35,10 +35,10 @@ namespace EchoColony
 
             int currentDay = GenDate.DaysPassed;
             
-            // Verificar si es un nuevo día desde la última conversación
+            // Check if this is a new day since the last conversation
             if (!lastChatDay.ContainsKey(key) || lastChatDay[key] != currentDay)
             {
-                // Agregar separador de fecha
+                // Add date separator
                 string dateHeader = GetFormattedDateHeader(currentDay);
                 savedChats[key].Add($"[DATE_SEPARATOR] {dateHeader}");
                 lastChatDay[key] = currentDay;
@@ -47,20 +47,65 @@ namespace EchoColony
             savedChats[key].Add(line);
         }
 
-        // ✅ AGREGAR: Método para formatear fecha
+        // Format a date header with robust error handling for all edge cases
         private string GetFormattedDateHeader(int day)
-{
-    // Usar el formato nativo de RimWorld (ya completamente localizado)
-    string nativeDate = GenDate.DateFullStringWithHourAt(GenTicks.TicksAbs, Find.WorldGrid.LongLatOf(Find.CurrentMap.Tile));
-    string[] parts = nativeDate.Split(' ');
-	string yearWithoutComma = parts[5].TrimEnd(',');
-	//{parts[0]} = Day; {parts[1]} = "number day"º.; {parts[2]} = of; {parts[3]} = Quantum; {parts[4]} = of; {tearWithoutComma = year}
-    string dateOnly = parts.Length >= 6 ? $"{parts[0]} {parts[1]} {parts[2]} {parts[3]} {parts[4]} {yearWithoutComma}" : nativeDate;
-    
-    return $"--- {dateOnly} ---";
-}
+        {
+            try
+            {
+                // CRITICAL FIX: Check if map exists before accessing it
+                if (Find.CurrentMap == null)
+                {
+                    // Simple fallback when no map is available
+                    int ticks = day * GenDate.TicksPerDay;
+                    int year = GenDate.Year(ticks, 0f);
+                    Quadrum quadrum = GenDate.Quadrum(ticks, 0f);
+                    int dayOfSeason = GenDate.DayOfSeason(ticks, 0f);
+                    return $"--- {quadrum.Label()} {dayOfSeason}, {year} ---";
+                }
+                
+                // Use RimWorld's native date format (already fully localized)
+                string nativeDate = GenDate.DateFullStringWithHourAt(GenTicks.TicksAbs, Find.WorldGrid.LongLatOf(Find.CurrentMap.Tile));
+                string[] parts = nativeDate.Split(' ');
+                
+                // CRITICAL FIX: Verify we have enough parts before accessing array indices
+                if (parts.Length >= 6)
+                {
+                    string yearWithoutComma = parts[5].TrimEnd(',');
+                    // Format: parts[0] = Day; parts[1] = "number day"; parts[2] = of; parts[3] = Quadrum; parts[4] = of; yearWithoutComma = year
+                    string dateOnly = $"{parts[0]} {parts[1]} {parts[2]} {parts[3]} {parts[4]} {yearWithoutComma}";
+                    return $"--- {dateOnly} ---";
+                }
+                else
+                {
+                    // If format is different, use the full string but remove the time
+                    // Typically the time is at the end after a comma
+                    int commaIndex = nativeDate.LastIndexOf(',');
+                    string dateOnly = commaIndex > 0 ? nativeDate.Substring(0, commaIndex) : nativeDate;
+                    return $"--- {dateOnly} ---";
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Log.Error($"[EchoColony] Error formatting date header for day {day}: {ex.Message}");
+                
+                // CRITICAL FIX: Safe fallback that always works
+                try
+                {
+                    int ticks = day * GenDate.TicksPerDay;
+                    int year = GenDate.Year(ticks, 0f);
+                    Quadrum quadrum = GenDate.Quadrum(ticks, 0f);
+                    int dayOfSeason = GenDate.DayOfSeason(ticks, 0f);
+                    return $"--- {quadrum.Label()} {dayOfSeason}, {year} ---";
+                }
+                catch
+                {
+                    // Last resort: just show the day number
+                    return $"--- Day {day} ---";
+                }
+            }
+        }
 
-        // ✅ MODIFICAR: Limpiar también el tracking de fechas
+        // Clear chat history and date tracking for a specific pawn
         public void ClearChat(Pawn pawn)
         {
             string key = pawn.ThingID;
@@ -69,14 +114,14 @@ namespace EchoColony
                 savedChats[key].Clear();
             }
             
-            // Limpiar también el tracking de fecha
+            // Also clear date tracking
             if (lastChatDay.ContainsKey(key))
             {
                 lastChatDay.Remove(key);
             }
         }
 
-        // ✅ MODIFICAR: Guardar también el tracking de fechas
+        // Save and load chat data, date tracking, and voice assignments
         public override void ExposeData()
         {
             Scribe_Collections.Look(ref savedChats, "savedChats", LookMode.Value, LookMode.Value);
@@ -96,22 +141,25 @@ namespace EchoColony
             }
         }
 
+        // Assign a TTS voice to a specific pawn
         public void SetVoiceForPawn(Pawn pawn, string voiceId)
         {
             pawnVoiceMap[pawn.ThingID.ToString()] = voiceId;
         }
 
+        // Retrieve the assigned TTS voice for a pawn
         public string GetVoiceForPawn(Pawn pawn)
         {
             return pawnVoiceMap.TryGetValue(pawn.ThingID.ToString(), out var voiceId) ? voiceId : null;
         }
 
-        // 🔄 Este método se ejecuta automáticamente cuando se carga la partida
+        // Automatically executed when loading a saved game
         public override void FinalizeInit()
         {
             base.FinalizeInit();
 
-            if (MyMod.Settings.enableTTS) // Asegura que TTS esté activo
+            // Restore TTS voice assignments if TTS is enabled
+            if (MyMod.Settings.enableTTS)
             {
                 foreach (Pawn pawn in PawnsFinder.AllMaps_FreeColonists)
                 {

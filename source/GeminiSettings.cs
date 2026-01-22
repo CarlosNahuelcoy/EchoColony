@@ -18,12 +18,12 @@ namespace EchoColony
         KoboldAI
     }
 
-    // ✅ NUEVO: Configuración granular de modelos
+    // Granular model configuration
     public class GeminiModelPreferences : IExposable
     {
-        public string preferredFastModel = "";      // Modelo rápido específico elegido
-        public string preferredAdvancedModel = "";  // Modelo avanzado específico elegido
-        public bool useAutoSelection = true;        // Si true, ignora las preferencias y usa auto
+        public string preferredFastModel = "";
+        public string preferredAdvancedModel = "";
+        public bool useAutoSelection = true;
         
         public void ExposeData()
         {
@@ -42,24 +42,24 @@ namespace EchoColony
         public bool enableSocialAffectsPersonality = true;
         public bool enableRoleplayResponses = true;
 
-        // ✅ NUEVO: Sistema de memorias opcional
+        // Optional memory system
         public bool enableMemorySystem = true;
 
-        // Fuente del modelo
+        // Model source
         public ModelSource modelSource = ModelSource.Player2;
 
-        // ✅ NUEVO: Preferencias de modelos Gemini
+        // Gemini model preferences
         public GeminiModelPreferences modelPreferences = new GeminiModelPreferences();
 
-        // Gemini (DEPRECATED: useAdvancedModel - mantenido para compatibilidad)
+        // DEPRECATED: useAdvancedModel - kept for backward compatibility
         public bool useAdvancedModel = false;
 
-        // Local
+        // Local model settings
         public string localModelEndpoint = "http://localhost:11434/api/generate";
         public string localModelName = "llama3.2:latest";
         public LocalModelProvider localModelProvider = LocalModelProvider.LMStudio;
 
-        // OpenRouter
+        // OpenRouter settings
         public string openRouterEndpoint = "https://openrouter.ai/api/v1/chat/completions";
         public string openRouterApiKey = "";
         public string openRouterModel = "mistral-7b";
@@ -70,27 +70,31 @@ namespace EchoColony
         public bool autoPlayVoice = true;
 
         public bool ignoreDangersInConversations = false;
-        public Dictionary<string, string> colonistVoices = new Dictionary<string, string>(); // PawnName -> VoiceId
+        public Dictionary<string, string> colonistVoices = new Dictionary<string, string>();
 
-        // ✅ CORREGIDO: Método para obtener el modelo a usar considerando preferencias
+        public bool enableDivineActions = true;
+        public bool allowNegativeActions = false;
+        public bool allowExtremeActions = false;
+
+        // NEW: Control storyteller button visibility
+        public bool enableStorytellerButton = true;
+
+        // Determine if advanced model should be used based on preferences
         public bool ShouldUseAdvancedModel()
         {
             if (modelPreferences.useAutoSelection)
             {
-                return useAdvancedModel; // Comportamiento automático - usa el toggle Fast/Advanced
+                return useAdvancedModel;
             }
             
-            // En modo manual, determinar basándose en qué modelo específico tiene configurado
             bool hasFastPreference = !string.IsNullOrEmpty(modelPreferences.preferredFastModel);
             bool hasAdvancedPreference = !string.IsNullOrEmpty(modelPreferences.preferredAdvancedModel);
             
-            // Si solo tiene configurado un tipo, usar ese
             if (hasAdvancedPreference && !hasFastPreference)
-                return true;  // Solo tiene advanced configurado
+                return true;
             if (hasFastPreference && !hasAdvancedPreference)
-                return false; // Solo tiene fast configurado
+                return false;
                 
-            // Si tiene ambos o ninguno configurado, usar el toggle como fallback
             return useAdvancedModel;
         }
 
@@ -98,7 +102,7 @@ namespace EchoColony
         {
             if (modelPreferences.useAutoSelection)
             {
-                return null; // Usar detección automática
+                return null;
             }
             
             return isAdvanced ? modelPreferences.preferredAdvancedModel : modelPreferences.preferredFastModel;
@@ -114,7 +118,6 @@ namespace EchoColony
             Scribe_Values.Look(ref enableSocialAffectsPersonality, "EnableSocialAffectsPersonality", true);
             Scribe_Values.Look(ref enableRoleplayResponses, "EnableRoleplayResponses", true);
             
-            // ✅ NUEVO: Guardar configuración de memorias
             Scribe_Values.Look(ref enableMemorySystem, "EnableMemorySystem", true);
             
             Scribe_Values.Look(ref modelSource, "ModelSource", ModelSource.Player2);
@@ -134,18 +137,21 @@ namespace EchoColony
             Scribe_Values.Look(ref debugMode, "DebugMode", false);
             Scribe_Values.Look(ref ignoreDangersInConversations, "IgnoreDangersInConversations", false);
 
-            // ✅ NUEVO: Guardar preferencias de modelos
             if (modelPreferences == null) modelPreferences = new GeminiModelPreferences();
             Scribe_Deep.Look(ref modelPreferences, "modelPreferences");
 
-            // Mantener compatibilidad con versiones anteriores
             Scribe_Values.Look(ref useAdvancedModel, "UseAdvancedModel", false);
+
+            Scribe_Values.Look(ref enableDivineActions, "enableDivineActions", true);
+            Scribe_Values.Look(ref allowNegativeActions, "allowNegativeActions", false);
+            Scribe_Values.Look(ref allowExtremeActions, "allowExtremeActions", false);
             
-            // ✅ Migración de datos legacy
+            Scribe_Values.Look(ref enableStorytellerButton, "enableStorytellerButton", true);
+            
+            // Legacy data migration
             if (Scribe.mode == LoadSaveMode.PostLoadInit && modelPreferences.useAutoSelection)
             {
-                // Si es la primera vez que carga con el nuevo sistema, mantener comportamiento anterior
-                // No hacer nada, useAutoSelection = true mantiene el comportamiento legacy
+                // First load with new system maintains legacy behavior via useAutoSelection = true
             }
         }
     }
