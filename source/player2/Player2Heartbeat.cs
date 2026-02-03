@@ -36,11 +36,7 @@ namespace EchoColony
             
             if (MyMod.Settings.debugMode && deltaTime > 0)
             {
-                // Log cada 10 segundos para debug
-                if (Mathf.FloorToInt(timer) % 10 == 0 && Mathf.FloorToInt(timer + deltaTime) % 10 != 0)
-                {
-                    Log.Message($"[EchoColony] Player2 usage timer: {timer:F1}s (next heartbeat in {Interval - timer:F1}s)");
-                }
+                
             }
 
             timer += deltaTime;

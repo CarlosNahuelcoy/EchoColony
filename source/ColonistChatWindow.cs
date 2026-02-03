@@ -35,6 +35,7 @@ namespace EchoColony
         private Vector2 voiceScroll = Vector2.zero;
 
         private int conversationTurnCount = 0;
+        private int lastSavedTurnCount = 0;
 
         public ColonistChatWindow(Pawn pawn)
         {
@@ -683,8 +684,12 @@ namespace EchoColony
             // Increment turn counter and check for auto-save
             conversationTurnCount++;
             Log.Message($"[EchoColony] Turn completed #{conversationTurnCount} for {pawn.LabelShort}");
-            
-            if (conversationTurnCount >= 4 && conversationTurnCount % 4 == 0)
+
+            //Solo guardar cada 4 turnos NUEVOS
+            int turnsSinceLastSave = conversationTurnCount - lastSavedTurnCount;
+            Log.Message($"[EchoColony] Turns since last save: {turnsSinceLastSave}");
+
+            if (turnsSinceLastSave >= 4 && turnsSinceLastSave % 4 == 0)
             {
                 SaveMemoryAutomatically();
             }
@@ -722,147 +727,148 @@ namespace EchoColony
         }
 
         private void SaveMemoryAutomatically()
+{
+    Log.Message($"[EchoColony] Attempting to save automatic memory for {pawn.LabelShort} (turn {conversationTurnCount}, last saved: {lastSavedTurnCount})");
+    
+    // ✅ NUEVO: Verificar si ya guardamos memoria recientemente
+    int turnsSinceLastSave = conversationTurnCount - lastSavedTurnCount;
+    if (turnsSinceLastSave < 4)
+    {
+        Log.Message($"[EchoColony] Only {turnsSinceLastSave} turns since last save, skipping");
+        return;
+    }
+    
+    if (messageHistory.Count < 4)
+    {
+        Log.Message($"[EchoColony] Memory not saved: Only {messageHistory.Count} messages (minimum 4)");
+        return;
+    }
+
+    var manager = ColonistMemoryManager.GetOrCreate();
+    if (manager == null)
+    {
+        Log.Warning("[EchoColony] Could not get ColonistMemoryManager for auto-save");
+        return;
+    }
+
+    Messages.Message("EchoColony.SavingMemories".Translate(), MessageTypeDefOf.SilentInput, false);
+
+    // ✅ OBTENER SOLO MENSAJES DESDE EL ÚLTIMO GUARDADO
+    int messagesToSkip = lastSavedTurnCount * 2; // user + model por turno
+    var recentMessages = messageHistory
+        .Skip(messagesToSkip)
+        .Where(m => m.role == "user" || m.role == "model")
+        .TakeLast(8)
+        .Select(m => (m.role == "user" ? "Jugador: " : pawn.LabelShort + ": ") + m.content);
+
+    if (!recentMessages.Any())
+    {
+        Log.Message("[EchoColony] No new messages to save");
+        return;
+    }
+
+    string combined = string.Join("\n", recentMessages);
+    string promptResumen = "Summarize this part of the conversation as if it were a personal memory from the colonist's perspective. Keep it brief, intimate, and natural—avoid literal quotes.";
+    string fullPrompt = promptResumen + "\n\n" + combined;
+
+    Log.Message($"[EchoColony] Generating summary for {recentMessages.Count()} new messages using {MyMod.Settings.modelSource}");
+
+    System.Action<string> memoryCallback = (summary) =>
+    {
+        Log.Message($"[EchoColony] AI response received for memory");
+        
+        if (string.IsNullOrWhiteSpace(summary))
         {
-            Log.Message($"[EchoColony] Attempting to save automatic memory for {pawn.LabelShort} (turn {conversationTurnCount})");
+            Log.Warning("[EchoColony] Empty memory summary, using fallback");
+            summary = $"Conversación con el jugador durante el turno {conversationTurnCount}. {combined.Substring(0, Math.Min(100, combined.Length))}...";
+        }
+
+        var tracker = manager.GetTrackerFor(pawn);
+        if (tracker != null)
+        {
+            int today = GenDate.DaysPassed;
+            string autoMemory = summary.Trim();
             
-            if (messageHistory.Count < 4)
-            {
-                Log.Message($"[EchoColony] Memory not saved: Only {messageHistory.Count} messages (minimum 4)");
-                return;
-            }
-
-            if (MyStoryModComponent.Instance?.ColonistMemoryManager == null)
-            {
-                InitializeMemoryManager();
-                if (MyStoryModComponent.Instance?.ColonistMemoryManager == null)
-                {
-                    Log.Warning("[EchoColony] Could not initialize ColonistMemoryManager for auto-save.");
-                    return;
-                }
-            }
-
-            Messages.Message("EchoColony.SavingMemories".Translate(), MessageTypeDefOf.SilentInput, false);
-
-            var recentMessages = messageHistory
-                .Where(m => m.role == "user" || m.role == "model")
-                .TakeLast(8)
-                .Select(m => (m.role == "user" ? "Jugador: " : pawn.LabelShort + ": ") + m.content);
-
-            string combined = string.Join("\n", recentMessages);
-            string promptResumen = "Summarize this part of the conversation as if it were a personal memory from the colonist's perspective. Keep it brief, intimate, and natural—avoid literal quotes.";
-            string fullPrompt = promptResumen + "\n\n" + combined;
-
-            Log.Message($"[EchoColony] Generating summary for memory using {MyMod.Settings.modelSource}");
-
-            System.Action<string> memoryCallback = (summary) =>
-            {
-                Log.Message($"[EchoColony] AI response received for memory");
-                
-                if (string.IsNullOrWhiteSpace(summary))
-                {
-                    Log.Warning("[EchoColony] Empty memory summary, using fallback");
-                    summary = $"Conversación con el jugador durante el turno {conversationTurnCount}. {combined.Substring(0, Math.Min(100, combined.Length))}...";
-                }
-
-                var tracker = MyStoryModComponent.Instance.ColonistMemoryManager.GetTrackerFor(pawn);
-                if (tracker != null)
-                {
-                    int today = GenDate.DaysPassed;
-                    string autoMemory = summary.Trim();
-                    
-                    try
-                    {
-                        tracker.SaveMemoryForDay(today, autoMemory);
-                        Log.Message($"[EchoColony] Automatic memory saved for {pawn.LabelShort} (turn {conversationTurnCount})");
-                        Messages.Message("EchoColony.MemoriesSaved".Translate(), MessageTypeDefOf.SilentInput, false);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error($"[EchoColony] Error saving memory: {ex.Message}");
-                    }
-                }
-                else
-                {
-                    Log.Error("[EchoColony] Tracker became NULL during callback");
-                }
-            };
-
             try
             {
-                bool isKobold = MyMod.Settings.modelSource == ModelSource.Local &&
-                                MyMod.Settings.localModelProvider == LocalModelProvider.KoboldAI;
-
-                bool isLMStudio = MyMod.Settings.modelSource == ModelSource.Local &&
-                                  MyMod.Settings.localModelProvider == LocalModelProvider.LMStudio;
-
-                IEnumerator memoryCoroutine;
-
-                if (isKobold)
-                {
-                    string koboldPrompt = KoboldPromptBuilder.Build(pawn, fullPrompt);
-                    memoryCoroutine = GeminiAPI.SendRequestToLocalModel(koboldPrompt, memoryCallback);
-                    Log.Message("[EchoColony] Starting memory with KoboldAI");
-                }
-                else if (isLMStudio)
-                {
-                    string lmPrompt = LMStudioPromptBuilder.Build(pawn, fullPrompt);
-                    memoryCoroutine = GeminiAPI.SendRequestToLocalModel(lmPrompt, memoryCallback);
-                    Log.Message("[EchoColony] Starting memory with LMStudio");
-                }
-                else if (MyMod.Settings.modelSource == ModelSource.Local)
-                {
-                    memoryCoroutine = GeminiAPI.SendRequestToLocalModel(fullPrompt, memoryCallback);
-                    Log.Message("[EchoColony] Starting memory with local model");
-                }
-                else if (MyMod.Settings.modelSource == ModelSource.Player2)
-                {
-                    memoryCoroutine = GeminiAPI.SendRequestToPlayer2(pawn, fullPrompt, memoryCallback);
-                    Log.Message("[EchoColony] Starting memory with Player2");
-                }
-                else if (MyMod.Settings.modelSource == ModelSource.OpenRouter)
-                {
-                    memoryCoroutine = GeminiAPI.SendRequestToOpenRouter(fullPrompt, memoryCallback);
-                    Log.Message("[EchoColony] Starting memory with OpenRouter");
-                }
-                else
-                {
-                    var tempHistory = new List<GeminiMessage>
-                    {
-                        new GeminiMessage("user", fullPrompt)
-                    };
-                    string jsonPrompt = BuildGeminiChatJson(tempHistory);
-                    memoryCoroutine = GeminiAPI.SendRequestToGemini(jsonPrompt, memoryCallback);
-                    Log.Message("[EchoColony] Starting memory with Gemini");
-                }
-
-                if (memoryCoroutine != null && MyStoryModComponent.Instance != null)
-                {
-                    MyStoryModComponent.Instance.StartCoroutine(memoryCoroutine);
-                }
-                else
-                {
-                    Log.Error("[EchoColony] Could not start coroutine for memory");
-                }
+                tracker.SaveMemoryForDay(today, autoMemory);
+                lastSavedTurnCount = conversationTurnCount; // ✅ ACTUALIZAR CONTADOR
+                Log.Message($"[EchoColony] Automatic memory saved for {pawn.LabelShort} (turn {conversationTurnCount}, day {today})");
+                Messages.Message("EchoColony.MemoriesSaved".Translate(), MessageTypeDefOf.SilentInput, false);
             }
             catch (Exception ex)
             {
-                Log.Error($"[EchoColony] Error starting memory generation: {ex.Message}");
+                Log.Error($"[EchoColony] Error saving memory: {ex.Message}");
             }
         }
-
-        private void InitializeMemoryManager()
+        else
         {
-            if (MyStoryModComponent.Instance != null)
+            Log.Error("[EchoColony] Tracker became NULL during callback");
+        }
+    };
+
+    try
+    {
+        bool isKobold = MyMod.Settings.modelSource == ModelSource.Local &&
+                        MyMod.Settings.localModelProvider == LocalModelProvider.KoboldAI;
+
+        bool isLMStudio = MyMod.Settings.modelSource == ModelSource.Local &&
+                          MyMod.Settings.localModelProvider == LocalModelProvider.LMStudio;
+
+        IEnumerator memoryCoroutine;
+
+        if (isKobold)
+        {
+            string koboldPrompt = KoboldPromptBuilder.Build(pawn, fullPrompt);
+            memoryCoroutine = GeminiAPI.SendRequestToLocalModel(koboldPrompt, memoryCallback);
+            Log.Message("[EchoColony] Starting memory with KoboldAI");
+        }
+        else if (isLMStudio)
+        {
+            string lmPrompt = LMStudioPromptBuilder.Build(pawn, fullPrompt);
+            memoryCoroutine = GeminiAPI.SendRequestToLocalModel(lmPrompt, memoryCallback);
+            Log.Message("[EchoColony] Starting memory with LMStudio");
+        }
+        else if (MyMod.Settings.modelSource == ModelSource.Local)
+        {
+            memoryCoroutine = GeminiAPI.SendRequestToLocalModel(fullPrompt, memoryCallback);
+            Log.Message("[EchoColony] Starting memory with local model");
+        }
+        else if (MyMod.Settings.modelSource == ModelSource.Player2)
+        {
+            memoryCoroutine = GeminiAPI.SendRequestToPlayer2(pawn, fullPrompt, memoryCallback);
+            Log.Message("[EchoColony] Starting memory with Player2");
+        }
+        else if (MyMod.Settings.modelSource == ModelSource.OpenRouter)
+        {
+            memoryCoroutine = GeminiAPI.SendRequestToOpenRouter(fullPrompt, memoryCallback);
+            Log.Message("[EchoColony] Starting memory with OpenRouter");
+        }
+        else
+        {
+            var tempHistory = new List<GeminiMessage>
             {
-                MyStoryModComponent.Instance.ColonistMemoryManager = Current.Game.GetComponent<ColonistMemoryManager>();
-                if (MyStoryModComponent.Instance.ColonistMemoryManager == null)
-                {
-                    MyStoryModComponent.Instance.ColonistMemoryManager = new ColonistMemoryManager(Current.Game);
-                    Current.Game.components.Add(MyStoryModComponent.Instance.ColonistMemoryManager);
-                }
-            }
+                new GeminiMessage("user", fullPrompt)
+            };
+            string jsonPrompt = BuildGeminiChatJson(tempHistory);
+            memoryCoroutine = GeminiAPI.SendRequestToGemini(jsonPrompt, memoryCallback);
+            Log.Message("[EchoColony] Starting memory with Gemini");
         }
 
+        if (memoryCoroutine != null && MyStoryModComponent.Instance != null)
+        {
+            MyStoryModComponent.Instance.StartCoroutine(memoryCoroutine);
+        }
+        else
+        {
+            Log.Error("[EchoColony] Could not start coroutine for memory");
+        }
+    }
+    catch (Exception ex)
+    {
+        Log.Error($"[EchoColony] Error starting memory generation: {ex.Message}");
+    }
+}
         private void TryAssignVoiceToPawn(Pawn pawn)
         {
             if (TTSVoiceCache.Voices == null || TTSVoiceCache.Voices.Count == 0) return;
@@ -891,117 +897,165 @@ namespace EchoColony
         }
 
         public override void PostClose()
+{
+    base.PostClose();
+    Log.Message($"[EchoColony] Closing chat with {pawn.LabelShort} (total turns: {conversationTurnCount}, last saved: {lastSavedTurnCount})");
+
+    int unsavedTurns = conversationTurnCount - lastSavedTurnCount;
+    int unsavedMessages = unsavedTurns * 2;
+    
+    Log.Message($"[EchoColony] Unsaved turns: {unsavedTurns} ({unsavedMessages} messages)");
+    
+    // No unsaved content
+    if (unsavedTurns < 1)
+    {
+        Log.Message("[EchoColony] No unsaved content, skipping memory save");
+        return;
+    }
+    
+    var manager = ColonistMemoryManager.GetOrCreate();
+    if (manager == null)
+    {
+        Log.Error("[EchoColony] Could not get ColonistMemoryManager for final memory save");
+        return;
+    }
+
+    var tracker = manager.GetTrackerFor(pawn);
+    if (tracker == null)
+    {
+        Log.Error("[EchoColony] Could not get tracker for pawn");
+        return;
+    }
+
+    // ✅ OBTENER SOLO MENSAJES NO GUARDADOS
+    int messagesToSkip = lastSavedTurnCount * 2;
+    var remainingMessagesList = messageHistory
+        .Skip(messagesToSkip)
+        .Where(m => m.role == "user" || m.role == "model")
+        .Select(m => (m.role == "user" ? "Jugador: " : pawn.LabelShort + ": ") + m.content);
+
+    if (!remainingMessagesList.Any())
+    {
+        Log.Message("[EchoColony] No messages to save");
+        return;
+    }
+
+    string combined = string.Join("\n", remainingMessagesList);
+    
+    // VALIDATION 1: Content too short
+    if (combined.Length < 20)
+    {
+        Log.Message($"[EchoColony] Content too short ({combined.Length} chars), skipping memory save");
+        return;
+    }
+
+    int today = GenDate.DaysPassed;
+    Log.Message($"[EchoColony] Checking existing memory for day {today}");
+    
+    var existingMemory = tracker.GetMemoryForDay(today);
+    
+    // VALIDATION 2: Check if content already exists BEFORE generating AI summary
+    if (!string.IsNullOrEmpty(existingMemory))
+    {
+        // Extract content without date
+        string existingContent = existingMemory.Contains("]\n") 
+            ? existingMemory.Substring(existingMemory.IndexOf("]\n") + 2)
+            : existingMemory;
+        
+        // Check if new content is already included
+        string newContentSample = combined.Length > 50 ? combined.Substring(0, 50) : combined;
+        if (existingContent.Contains(newContentSample, System.StringComparison.OrdinalIgnoreCase))
         {
-            base.PostClose();
-            Log.Message($"[EchoColony] Closing chat with {pawn.LabelShort} (total turns: {conversationTurnCount})");
-
-            var remainingTurns = conversationTurnCount % 4;
-            int remainingMessages = remainingTurns * 2;
-            
-            Log.Message($"[EchoColony] Remaining unsaved turns: {remainingTurns} ({remainingMessages} messages)");
-            
-            if (remainingTurns >= 1)
-            {
-                Log.Message("[EchoColony] Saving final memory...");
-                
-                if (MyStoryModComponent.Instance?.ColonistMemoryManager == null)
-                {
-                    InitializeMemoryManager();
-                    if (MyStoryModComponent.Instance?.ColonistMemoryManager == null)
-                    {
-                        Log.Error("[EchoColony] Could not initialize ColonistMemoryManager. Final memory will not be saved.");
-                        return;
-                    }
-                }
-
-                var remainingMessagesList = messageHistory
-                    .Where(m => m.role == "user" || m.role == "model")
-                    .TakeLast(remainingMessages)
-                    .Select(m => (m.role == "user" ? "Jugador: " : pawn.LabelShort + ": ") + m.content);
-
-                if (remainingMessagesList.Any())
-                {
-                    string combined = string.Join("\n", remainingMessagesList);
-                    string promptResumen = "Summarize this final part of the conversation as if it were a personal memory from the colonist's perspective. Keep it brief, intimate, and natural—avoid literal quotes.";
-                    string fullPrompt = promptResumen + "\n\n" + combined;
-                    
-                    Log.Message($"[EchoColony] Generating final memory using {MyMod.Settings.modelSource} (length: {combined.Length})");
-                    
-                    System.Action<string> finalMemoryCallback = (summary) =>
-                    {
-                        if (string.IsNullOrWhiteSpace(summary))
-                        {
-                            summary = $"Conversación final con el jugador. {combined.Substring(0, Math.Min(100, combined.Length))}...";
-                        }
-                        
-                        var tracker = MyStoryModComponent.Instance.ColonistMemoryManager.GetTrackerFor(pawn);
-                        if (tracker != null)
-                        {
-                            int today = GenDate.DaysPassed;
-                            string finalMemory = summary.Trim();
-                            tracker.SaveMemoryForDay(today, finalMemory);
-                            Log.Message($"[EchoColony] Final memory saved for {pawn.LabelShort}");
-                        }
-                    };
-
-                    try
-                    {
-                        bool isKobold = MyMod.Settings.modelSource == ModelSource.Local &&
-                                        MyMod.Settings.localModelProvider == LocalModelProvider.KoboldAI;
-
-                        bool isLMStudio = MyMod.Settings.modelSource == ModelSource.Local &&
-                                          MyMod.Settings.localModelProvider == LocalModelProvider.LMStudio;
-
-                        IEnumerator finalCoroutine;
-
-                        if (isKobold)
-                        {
-                            string koboldPrompt = KoboldPromptBuilder.Build(pawn, fullPrompt);
-                            finalCoroutine = GeminiAPI.SendRequestToLocalModel(koboldPrompt, finalMemoryCallback);
-                        }
-                        else if (isLMStudio)
-                        {
-                            string lmPrompt = LMStudioPromptBuilder.Build(pawn, fullPrompt);
-                            finalCoroutine = GeminiAPI.SendRequestToLocalModel(lmPrompt, finalMemoryCallback);
-                        }
-                        else if (MyMod.Settings.modelSource == ModelSource.Local)
-                        {
-                            finalCoroutine = GeminiAPI.SendRequestToLocalModel(fullPrompt, finalMemoryCallback);
-                        }
-                        else if (MyMod.Settings.modelSource == ModelSource.Player2)
-                        {
-                            finalCoroutine = GeminiAPI.SendRequestToPlayer2(pawn, fullPrompt, finalMemoryCallback);
-                        }
-                        else if (MyMod.Settings.modelSource == ModelSource.OpenRouter)
-                        {
-                            finalCoroutine = GeminiAPI.SendRequestToOpenRouter(fullPrompt, finalMemoryCallback);
-                        }
-                        else
-                        {
-                            var tempHistory = new List<GeminiMessage>
-                            {
-                                new GeminiMessage("user", fullPrompt)
-                            };
-                            string jsonPrompt = BuildGeminiChatJson(tempHistory);
-                            finalCoroutine = GeminiAPI.SendRequestToGemini(jsonPrompt, finalMemoryCallback);
-                        }
-
-                        if (finalCoroutine != null && MyStoryModComponent.Instance != null)
-                        {
-                            MyStoryModComponent.Instance.StartCoroutine(finalCoroutine);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error($"[EchoColony] Error generating final memory: {ex.Message}");
-                    }
-                }
-            }
-            else
-            {
-                Log.Message("[EchoColony] No remaining turns to save as final memory");
-            }
+            Log.Message("[EchoColony] Content already in today's memory, skipping AI generation to save tokens");
+            return;
         }
+        
+        // Check if existing is much longer (user probably just viewing/reopening)
+        if (existingContent.Length > combined.Length * 2)
+        {
+            Log.Message($"[EchoColony] Existing memory ({existingContent.Length} chars) much longer than new ({combined.Length} chars), likely duplicate - skipping AI generation");
+            return;
+        }
+        
+        // VALIDATION 3: Check if new content length is negligible compared to existing
+        if (combined.Length < 30 && existingContent.Length > 100)
+        {
+            Log.Message($"[EchoColony] New content too short ({combined.Length} chars) compared to existing ({existingContent.Length} chars), skipping");
+            return;
+        }
+    }
+
+    // If we got here, it's genuinely new content - proceed with AI generation
+    Log.Message($"[EchoColony] Generating final memory using {MyMod.Settings.modelSource} ({combined.Length} chars of new content)");
+    Messages.Message("EchoColony.SavingMemories".Translate(), MessageTypeDefOf.SilentInput, false);
+
+    string promptResumen = "Summarize this final part of the conversation as if it were a personal memory from the colonist's perspective. Keep it brief, intimate, and natural—avoid literal quotes.";
+    string fullPrompt = promptResumen + "\n\n" + combined;
+    
+    System.Action<string> finalMemoryCallback = (summary) =>
+    {
+        if (string.IsNullOrWhiteSpace(summary))
+        {
+            summary = $"Conversación final con el jugador. {combined.Substring(0, Math.Min(100, combined.Length))}...";
+        }
+        
+        tracker.SaveMemoryForDay(today, summary.Trim());
+        lastSavedTurnCount = conversationTurnCount; // ✅ ACTUALIZAR CONTADOR
+        Log.Message($"[EchoColony] Final memory saved for {pawn.LabelShort} (day {today})");
+    };
+
+    try
+    {
+        bool isKobold = MyMod.Settings.modelSource == ModelSource.Local &&
+                        MyMod.Settings.localModelProvider == LocalModelProvider.KoboldAI;
+
+        bool isLMStudio = MyMod.Settings.modelSource == ModelSource.Local &&
+                          MyMod.Settings.localModelProvider == LocalModelProvider.LMStudio;
+
+        IEnumerator finalCoroutine;
+
+        if (isKobold)
+        {
+            string koboldPrompt = KoboldPromptBuilder.Build(pawn, fullPrompt);
+            finalCoroutine = GeminiAPI.SendRequestToLocalModel(koboldPrompt, finalMemoryCallback);
+        }
+        else if (isLMStudio)
+        {
+            string lmPrompt = LMStudioPromptBuilder.Build(pawn, fullPrompt);
+            finalCoroutine = GeminiAPI.SendRequestToLocalModel(lmPrompt, finalMemoryCallback);
+        }
+        else if (MyMod.Settings.modelSource == ModelSource.Local)
+        {
+            finalCoroutine = GeminiAPI.SendRequestToLocalModel(fullPrompt, finalMemoryCallback);
+        }
+        else if (MyMod.Settings.modelSource == ModelSource.Player2)
+        {
+            finalCoroutine = GeminiAPI.SendRequestToPlayer2(pawn, fullPrompt, finalMemoryCallback);
+        }
+        else if (MyMod.Settings.modelSource == ModelSource.OpenRouter)
+        {
+            finalCoroutine = GeminiAPI.SendRequestToOpenRouter(fullPrompt, finalMemoryCallback);
+        }
+        else
+        {
+            var tempHistory = new List<GeminiMessage>
+            {
+                new GeminiMessage("user", fullPrompt)
+            };
+            string jsonPrompt = BuildGeminiChatJson(tempHistory);
+            finalCoroutine = GeminiAPI.SendRequestToGemini(jsonPrompt, finalMemoryCallback);
+        }
+
+        if (finalCoroutine != null && MyStoryModComponent.Instance != null)
+        {
+            MyStoryModComponent.Instance.StartCoroutine(finalCoroutine);
+        }
+    }
+    catch (Exception ex)
+    {
+        Log.Error($"[EchoColony] Error generating final memory: {ex.Message}");
+    }
+}
 
         private string GetDisplayMessage(string msg)
         {
