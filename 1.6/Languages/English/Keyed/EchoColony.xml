@@ -16,100 +16,100 @@
   <EchoColony.GlobalPrompt>Global prompt (applies to all colonists):</EchoColony.GlobalPrompt>
   <EchoColony.MaxResponseLength>Character limit per response: {0}</EchoColony.MaxResponseLength>
   <EchoColony.SaveButton>Save</EchoColony.SaveButton>
-    <EchoColony.ChatGizmoLabel>Talk</EchoColony.ChatGizmoLabel>
+  <EchoColony.ChatGizmoLabel>Talk</EchoColony.ChatGizmoLabel>
   <EchoColony.ChatGizmoDesc>Start a conversation with this colonist.</EchoColony.ChatGizmoDesc>
-    <EchoColony.SendButton>Send</EchoColony.SendButton>
+  <EchoColony.SendButton>Send</EchoColony.SendButton>
   <EchoColony.GeminiTooltip>
     gemini flash: Fast and light.
     gemini pro: More immersive, but slower and more demanding.
   </EchoColony.GeminiTooltip>
-    <EchoColony.ExportButton>Export</EchoColony.ExportButton>
+  <EchoColony.ExportButton>Export</EchoColony.ExportButton>
   <EchoColony.PersonalizeButton>Personalize...</EchoColony.PersonalizeButton>
-    <EchoColony.TalkingWithLabel>💬 Talking with {0}</EchoColony.TalkingWithLabel>
+  <EchoColony.TalkingWithLabel>💬 Talking with {0}</EchoColony.TalkingWithLabel>
   <EchoColony.UserPrefix>You: </EchoColony.UserPrefix>
   <EchoColony.ColonistThinking>{0}: Thinking...</EchoColony.ColonistThinking>
   <EchoColony.UndoTooltip>Undo this message and response</EchoColony.UndoTooltip>
-    <EchoColony.DebugModeLabel>Enable Debug Mode (Save AI responses to Desktop)</EchoColony.DebugModeLabel>
+  <EchoColony.DebugModeLabel>Enable Debug Mode (Save AI responses to Desktop)</EchoColony.DebugModeLabel>
   <EchoColony.DebugModeTooltip>Creates a text file with each AI response to help diagnose issues. Only activate if necessary.</EchoColony.DebugModeTooltip>
   <EchoColony.ClearAllButton>Clear all</EchoColony.ClearAllButton>
   <EchoColony.ClearAllConfirm>Are you sure you want to delete the entire conversation?</EchoColony.ClearAllConfirm>
   <EchoColony.LastExchangeDeleted>🗑 Last exchange deleted.</EchoColony.LastExchangeDeleted>
   <EchoColony.EditButton>Edit</EchoColony.EditButton>
   <EchoColony.RegenerateButton>Regenerate</EchoColony.RegenerateButton>
-    <EchoColony.SaveButton>Save</EchoColony.SaveButton>
+  <EchoColony.SaveButton>Save</EchoColony.SaveButton>
   <EchoColony.CancelButton>Cancel</EchoColony.CancelButton>
   <EchoColony.OpenRouterModel>OpenRouter Model</EchoColony.OpenRouterModel>
   <EchoColony.ChooseVoiceTitle>Choose voice for {0}:</EchoColony.ChooseVoiceTitle>
   <EchoColony.PlayAudio>Play Audio</EchoColony.PlayAudio>
-    <EchoColony.VoiceLabel>Voice:</EchoColony.VoiceLabel>
+  <EchoColony.VoiceLabel>Voice:</EchoColony.VoiceLabel>
   <EchoColony.ImportPlayer2Button>Import Player2</EchoColony.ImportPlayer2Button>
   <EchoColony.PlayTestAudioTooltip>Play test audio</EchoColony.PlayTestAudioTooltip>
   <EchoColony.TestTextLabel>Test text:</EchoColony.TestTextLabel>
   <EchoColony.SelectVoicePlaceholder>Select voice</EchoColony.SelectVoicePlaceholder>
-    <EchoColony.UsePlayer2Label>Use Player2</EchoColony.UsePlayer2Label>
+  <EchoColony.UsePlayer2Label>Use Player2</EchoColony.UsePlayer2Label>
   <EchoColony.UsePlayer2Tooltip>You just need Player2 running and logged in. No API key or extra setup required.</EchoColony.UsePlayer2Tooltip>
   <EchoColony.Player2Warning>⚠️ Player2 is active. Other model settings are ignored.</EchoColony.Player2Warning>
   <EchoColony.EnableTTS>Enable TTS (text to speech)</EchoColony.EnableTTS>
   <EchoColony.AutoPlayVoice>Auto-play voice on each reply</EchoColony.AutoPlayVoice>
   <EchoColony.GroupChatLabel>Group conversation with</EchoColony.GroupChatLabel>
   <EchoColony.GroupChat>Group conversation</EchoColony.GroupChat>
-<EchoColony.GroupChatDesc>Start a group chat with nearby colonists.</EchoColony.GroupChatDesc>
+  <EchoColony.GroupChatDesc>Start a group chat with nearby colonists.</EchoColony.GroupChatDesc>
 
-<EchoColony.MemoriesOf>Memories of</EchoColony.MemoriesOf>
-<EchoColony.MemoriesEntries>entries</EchoColony.MemoriesEntries>
-<EchoColony.NoMemoriesSaved>No memories saved</EchoColony.NoMemoriesSaved>
-<EchoColony.MemoriesAutoCreated>Memories will be created automatically\nwhen closing conversations</EchoColony.MemoriesAutoCreated>
-<EchoColony.CollapseAll>Collapse All</EchoColony.CollapseAll>
-<EchoColony.ExpandAll>Expand All</EchoColony.ExpandAll>
-<EchoColony.RefreshButton>Refresh</EchoColony.RefreshButton>
-<EchoColony.ClearAllMemories>Clear All</EchoColony.ClearAllMemories>
-<EchoColony.ClearAllMemoriesConfirm>Are you sure you want to delete all memories of {0}?\n\nThis action cannot be undone.</EchoColony.ClearAllMemoriesConfirm>
-<EchoColony.MemoriesDeleted>Memories of {0} deleted</EchoColony.MemoriesDeleted>
-<EchoColony.CurrentDay>Current day:</EchoColony.CurrentDay>
-<EchoColony.Today>TODAY</EchoColony.Today>
-<EchoColony.Day>Day</EchoColony.Day>
-<EchoColony.Yesterday>(yesterday)</EchoColony.Yesterday>
-<EchoColony.DaysAgo>(days ago)</EchoColony.DaysAgo>
-<EchoColony.DeleteMemoryConfirm>Delete this memory from day {0}?</EchoColony.DeleteMemoryConfirm>
-<EchoColony.MemoryDeleted>Memory deleted</EchoColony.MemoryDeleted>
-<EchoColony.MemoryEdited>Memory edited for {0} day {1}</EchoColony.MemoryEdited>
-<EchoColony.MemoriesLoaded>Loaded {0} memories for {1}</EchoColony.MemoriesLoaded>
+  <EchoColony.MemoriesOf>Memories of</EchoColony.MemoriesOf>
+  <EchoColony.MemoriesEntries>entries</EchoColony.MemoriesEntries>
+  <EchoColony.NoMemoriesSaved>No memories saved</EchoColony.NoMemoriesSaved>
+  <EchoColony.MemoriesAutoCreated>Memories will be created automatically\nwhen closing conversations</EchoColony.MemoriesAutoCreated>
+  <EchoColony.CollapseAll>Collapse All</EchoColony.CollapseAll>
+  <EchoColony.ExpandAll>Expand All</EchoColony.ExpandAll>
+  <EchoColony.RefreshButton>Refresh</EchoColony.RefreshButton>
+  <EchoColony.ClearAllMemories>Clear All</EchoColony.ClearAllMemories>
+  <EchoColony.ClearAllMemoriesConfirm>Are you sure you want to delete all memories of {0}?\n\nThis action cannot be undone.</EchoColony.ClearAllMemoriesConfirm>
+  <EchoColony.MemoriesDeleted>Memories of {0} deleted</EchoColony.MemoriesDeleted>
+  <EchoColony.CurrentDay>Current day:</EchoColony.CurrentDay>
+  <EchoColony.Today>TODAY</EchoColony.Today>
+  <EchoColony.Day>Day</EchoColony.Day>
+  <EchoColony.Yesterday>(yesterday)</EchoColony.Yesterday>
+  <EchoColony.DaysAgo>(days ago)</EchoColony.DaysAgo>
+  <EchoColony.DeleteMemoryConfirm>Delete this memory from day {0}?</EchoColony.DeleteMemoryConfirm>
+  <EchoColony.MemoryDeleted>Memory deleted</EchoColony.MemoryDeleted>
+  <EchoColony.MemoryEdited>Memory edited for {0} day {1}</EchoColony.MemoryEdited>
+  <EchoColony.MemoriesLoaded>Loaded {0} memories for {1}</EchoColony.MemoriesLoaded>
 
-<EchoColony.ColonistJoins>{0} joins the conversation.</EchoColony.ColonistJoins>
-<EchoColony.ColonistNoLongerPresent>{0} is no longer part of this conversation.</EchoColony.ColonistNoLongerPresent>
-<EchoColony.AllColonistsGone>The conversation comes to an end.</EchoColony.AllColonistsGone>
-<EchoColony.SavingMemories>Recording memories of the conversation...</EchoColony.SavingMemories>
-<EchoColony.MemoriesSaved>Conversation memories recorded</EchoColony.MemoriesSaved>
+  <EchoColony.ColonistJoins>{0} joins the conversation.</EchoColony.ColonistJoins>
+  <EchoColony.ColonistNoLongerPresent>{0} is no longer part of this conversation.</EchoColony.ColonistNoLongerPresent>
+  <EchoColony.AllColonistsGone>The conversation comes to an end.</EchoColony.AllColonistsGone>
+  <EchoColony.SavingMemories>Recording memories of the conversation...</EchoColony.SavingMemories>
+  <EchoColony.MemoriesSaved>Conversation memories recorded</EchoColony.MemoriesSaved>
 
-<!-- ===== PROMPT EDITOR ===== -->
-<EchoColony.PersonalizingTitle>Customizing: {0}</EchoColony.PersonalizingTitle>
-<EchoColony.MemoriesButton>🧠 Memories</EchoColony.MemoriesButton>
-<EchoColony.MemoriesTooltip>View and edit {0}'s memories
+  <!-- ===== PROMPT EDITOR ===== -->
+  <EchoColony.PersonalizingTitle>Customizing: {0}</EchoColony.PersonalizingTitle>
+  <EchoColony.MemoriesButton>🧠 Memories</EchoColony.MemoriesButton>
+  <EchoColony.MemoriesTooltip>View and edit {0}'s memories
 
 Memories are automatically generated during conversations and help the colonist remember past interactions.</EchoColony.MemoriesTooltip>
 
-<!-- Voice Configuration -->
-<EchoColony.VoiceConfigurationTitle>🎵 Voice Configuration</EchoColony.VoiceConfigurationTitle>
-<EchoColony.ImportButton>📥 Import</EchoColony.ImportButton>
-<EchoColony.TestButton>▶ Test</EchoColony.TestButton>
-<EchoColony.TestVoiceTooltip>Play test text with the selected voice</EchoColony.TestVoiceTooltip>
+  <!-- Voice Configuration -->
+  <EchoColony.VoiceConfigurationTitle>🎵 Voice Configuration</EchoColony.VoiceConfigurationTitle>
+  <EchoColony.ImportButton>📥 Import</EchoColony.ImportButton>
+  <EchoColony.TestButton>▶ Test</EchoColony.TestButton>
+  <EchoColony.TestVoiceTooltip>Play test text with the selected voice</EchoColony.TestVoiceTooltip>
 
-<!-- Custom Prompt -->
-<EchoColony.CustomPromptTitle>📝 Custom Prompt</EchoColony.CustomPromptTitle>
+  <!-- Custom Prompt -->
+  <EchoColony.CustomPromptTitle>📝 Custom Prompt</EchoColony.CustomPromptTitle>
 
-<!-- Messages -->
-<EchoColony.ConfigurationSaved>Configuration saved for {0}</EchoColony.ConfigurationSaved>
-<EchoColony.NoCharactersFound>⚠️ No characters found in Player2. Make sure Player2 is running and has characters loaded.</EchoColony.NoCharactersFound>
-<EchoColony.CharacterImportedAuto>✅ Automatically imported {0}'s description and voice.</EchoColony.CharacterImportedAuto>
-<EchoColony.CharacterImported>✅ Imported {0}'s description and voice.</EchoColony.CharacterImported>
-    <EchoColony.IgnoreAgeLabel>Ignore biological age for behavior</EchoColony.IgnoreAgeLabel>
-<EchoColony.IgnoreAgeTooltip>Use for synthetic or alien colonists to ignore age-based behavior.</EchoColony.IgnoreAgeTooltip>
+  <!-- Messages -->
+  <EchoColony.ConfigurationSaved>Configuration saved for {0}</EchoColony.ConfigurationSaved>
+  <EchoColony.NoCharactersFound>⚠️ No characters found in Player2. Make sure Player2 is running and has characters loaded.</EchoColony.NoCharactersFound>
+  <EchoColony.CharacterImportedAuto>✅ Automatically imported {0}'s description and voice.</EchoColony.CharacterImportedAuto>
+  <EchoColony.CharacterImported>✅ Imported {0}'s description and voice.</EchoColony.CharacterImported>
+  <EchoColony.IgnoreAgeLabel>Ignore biological age for behavior</EchoColony.IgnoreAgeLabel>
+  <EchoColony.IgnoreAgeTooltip>Use for synthetic or alien colonists to ignore age-based behavior.</EchoColony.IgnoreAgeTooltip>
 
-<EchoColony.IgnoreDangers>Colonists ignore dangers in conversations</EchoColony.IgnoreDangers>
+  <EchoColony.IgnoreDangers>Colonists ignore dangers in conversations</EchoColony.IgnoreDangers>
   <EchoColony.IgnoreDangersTooltip>When enabled, colonists will not mention enemies, threats, or combat situations in their conversations. They will focus on daily life, relationships, work, and peaceful topics instead.</EchoColony.IgnoreDangersTooltip>
   
   
- <!-- Memorias Sistema -->
+  <!-- Memorias Sistema -->
   <EchoColony.EnableMemorySystem>Enable Memory System</EchoColony.EnableMemorySystem>
   <EchoColony.EnableMemorySystemTooltip>When enabled, colonists will remember past conversations. This uses more AI tokens but creates more immersive roleplay. Disable to reduce API costs.</EchoColony.EnableMemorySystemTooltip>
   
@@ -148,5 +148,86 @@ Memories are automatically generated during conversations and help the colonist 
   
   <EchoColony.MemoryEdited>Memory for {0} (day {1}) has been edited</EchoColony.MemoryEdited>
   <EchoColony.MemoriesDeleted>Memories deleted for {0}</EchoColony.MemoriesDeleted>
-  <EchoColony.MemoryDeleted>Memory deleted</EchoColony.MemoryDeleted>  
+  <EchoColony.MemoryDeleted>Memory deleted</EchoColony.MemoryDeleted>
+  
+  <!-- ===== SPONTANEOUS MESSAGES SYSTEM ===== -->
+  
+  <!-- Settings Section -->
+  <EchoColony.SpontaneousMessagesTitle>Spontaneous Messages System</EchoColony.SpontaneousMessagesTitle>
+  <EchoColony.SpontaneousMessageMode>Message Mode:</EchoColony.SpontaneousMessageMode>
+  <EchoColony.SpontaneousMode.Disabled>Disabled</EchoColony.SpontaneousMode.Disabled>
+  <EchoColony.SpontaneousMode.RandomOnly>Random Only</EchoColony.SpontaneousMode.RandomOnly>
+  <EchoColony.SpontaneousMode.IncidentsOnly>Incidents Only</EchoColony.SpontaneousMode.IncidentsOnly>
+  <EchoColony.SpontaneousMode.Full>Full (Random + Incidents)</EchoColony.SpontaneousMode.Full>
+  
+  <EchoColony.MaxMessagesPerDay>Max messages per colonist per day:</EchoColony.MaxMessagesPerDay>
+  <EchoColony.CooldownHours>Cooldown between messages (hours):</EchoColony.CooldownHours>
+  <EchoColony.RandomMessageInterval>Random message interval (hours):</EchoColony.RandomMessageInterval>
+  <EchoColony.PrioritizeSocialTraits>Prioritize colonists with social traits</EchoColony.PrioritizeSocialTraits>
+  <EchoColony.MinConsciousness>Minimum consciousness to speak (%):</EchoColony.MinConsciousness>
+  <EchoColony.ConfigureIndividualColonists>Configure Individual Colonists</EchoColony.ConfigureIndividualColonists>
+  <EchoColony.NeedActiveGame>Need an active game to configure colonists</EchoColony.NeedActiveGame>
+  
+  <!-- Colonist Message Letter -->
+  <EchoColony.ColonistWantsToTalk>{0} wants to talk</EchoColony.ColonistWantsToTalk>
+  
+  <!-- Colonist Message Dialog -->
+  <EchoColony.OpenChat>Open Chat</EchoColony.OpenChat>
+  <EchoColony.Dismiss>Dismiss</EchoColony.Dismiss>
+  
+  <!-- Context strings for message types -->
+  <EchoColony.MessageType.Incident>Wants to talk about an incident</EchoColony.MessageType.Incident>
+  <EchoColony.MessageType.Random>Wants to have a casual chat</EchoColony.MessageType.Random>
+  <EchoColony.MessageType.CriticalNeed>Urgent message</EchoColony.MessageType.CriticalNeed>
+  <EchoColony.MessageType.ColonySituation>About the colony situation</EchoColony.MessageType.ColonySituation>
+  
+  <!-- Mood descriptions -->
+  <EchoColony.Mood.Happy>Happy</EchoColony.Mood.Happy>
+  <EchoColony.Mood.OK>OK</EchoColony.Mood.OK>
+  <EchoColony.Mood.Sad>Sad</EchoColony.Mood.Sad>
+  
+  <!-- Individual Colonist Config Window -->
+  <EchoColony.ColonistMessageConfig>Colonist Message Configuration</EchoColony.ColonistMessageConfig>
+  <EchoColony.EnabledColumn>Enabled</EchoColony.EnabledColumn>
+  <EchoColony.ColonistColumn>Colonist</EchoColony.ColonistColumn>
+  <EchoColony.MaxPerDayColumn>Max/Day</EchoColony.MaxPerDayColumn>
+  <EchoColony.CooldownColumn>Cooldown (h)</EchoColony.CooldownColumn>
+  <EchoColony.TriggersColumn>Triggers</EchoColony.TriggersColumn>
+  <EchoColony.ApplyToAll>Apply to All</EchoColony.ApplyToAll>
+  <EchoColony.ResetDefaults>Reset Defaults</EchoColony.ResetDefaults>
+  <EchoColony.ConfigureTriggers>Configure Triggers</EchoColony.ConfigureTriggers>
+  
+  <!-- Trigger Configuration -->
+  <EchoColony.TriggerConfig>Configure Triggers for {0}</EchoColony.TriggerConfig>
+  <EchoColony.AllowedTriggers>Allowed Triggers:</EchoColony.AllowedTriggers>
+  <EchoColony.Trigger.Random>Random messages</EchoColony.Trigger.Random>
+  <EchoColony.Trigger.Incident>Incident reactions</EchoColony.Trigger.Incident>
+  <EchoColony.Trigger.CriticalNeed>Critical needs (hunger, exhaustion, etc.)</EchoColony.Trigger.CriticalNeed>
+  <EchoColony.Trigger.ColonySituation>Colony situation updates</EchoColony.Trigger.ColonySituation>
+  
+  <!-- Debug Tools -->
+  <EchoColony.SpontaneousMessagesDebug>Spontaneous Messages Testing</EchoColony.SpontaneousMessagesDebug>
+  <EchoColony.CheckSystemStatus>🔍 Check System Status</EchoColony.CheckSystemStatus>
+  <EchoColony.ForceTestMessage>✉️ Force Test Message</EchoColony.ForceTestMessage>
+  <EchoColony.SimulateTestRaid>⚔️ Simulate Test Raid</EchoColony.SimulateTestRaid>
+  <EchoColony.ResetAllCooldowns>🔄 Reset All Cooldowns</EchoColony.ResetAllCooldowns>
+  <EchoColony.ListColonistsStatus>📋 List Colonists Status</EchoColony.ListColonistsStatus>
+  
+  <!-- Spontaneous Messages Mode Labels -->
+  <EchoColony.SpontaneousMessagesMode>Message Mode:</EchoColony.SpontaneousMessagesMode>
+  <EchoColony.ModeDisabled>Disabled</EchoColony.ModeDisabled>
+  <EchoColony.ModeRandomOnly>Random Only</EchoColony.ModeRandomOnly>
+  <EchoColony.ModeIncidentsOnly>Incidents Only</EchoColony.ModeIncidentsOnly>
+  <EchoColony.ModeFull>Full</EchoColony.ModeFull>
+  
+  <!-- Spontaneous Messages Mode Descriptions -->
+  <EchoColony.ModeDisabledDesc>No spontaneous messages</EchoColony.ModeDisabledDesc>
+  <EchoColony.ModeRandomOnlyDesc>Colonists message randomly</EchoColony.ModeRandomOnlyDesc>
+  <EchoColony.ModeIncidentsOnlyDesc>Colonists react to incidents</EchoColony.ModeIncidentsOnlyDesc>
+  <EchoColony.ModeFullDesc>Both random and incident messages</EchoColony.ModeFullDesc>
+  
+  <!-- Additional Settings Labels -->
+  <EchoColony.DefaultMaxMessagesPerDay>Default max messages per day</EchoColony.DefaultMaxMessagesPerDay>
+  <EchoColony.DefaultCooldownHours>Default cooldown hours</EchoColony.DefaultCooldownHours>
+  <EchoColony.PrioritizeSocialTraitsTooltip>Colonists with social traits (Kind, Chatty, etc.) are more likely to initiate conversations</EchoColony.PrioritizeSocialTraitsTooltip>
 </LanguageData>

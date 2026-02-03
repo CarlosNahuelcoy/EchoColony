@@ -134,6 +134,7 @@ namespace EchoColony
             sb.AppendLine(BuildOptimizedInventory(pawn));
             sb.AppendLine(BuildOptimizedSkills(pawn));
             sb.AppendLine(BuildOptimizedRelationships(pawn));
+            sb.AppendLine(BuildColonyPopulation(pawn)); // NUEVO: Info de esclavos y prisioneros
             sb.AppendLine(BuildLocationInfo(pawn));
             sb.AppendLine(BuildOptimizedEventSummary(pawn));
             sb.AppendLine(BuildOptimizedEnvironmentInfo(pawn));
@@ -442,19 +443,32 @@ namespace EchoColony
             else return "";
         }
 
+        // NUEVA FUNCIÓN: Relaciones mejoradas con prioridad familiar
         private static string BuildOptimizedRelationships(Pawn pawn)
         {
             var colonists = Find.CurrentMap?.mapPawns?.FreeColonistsSpawned;
             if (colonists == null) return "*Relationships:* None";
 
+            var family = new List<string>();
             var significant = new List<string>();
 
-            foreach (var other in colonists.Where(p => p != pawn).Take(4))
+            // Definir relaciones familiares directas
+            var familyRelations = new HashSet<string> { 
+                "wife", "husband", "spouse", 
+                "son", "daughter", "child",
+                "father", "mother", "parent",
+                "brother", "sister", "sibling"
+            };
+
+            foreach (var other in colonists.Where(p => p != pawn))
             {
                 var relationLabel = pawn.GetRelations(other).FirstOrDefault()?.label;
                 int opinion = pawn.relations.OpinionOf(other);
+                
+                bool isFamily = relationLabel != null && familyRelations.Contains(relationLabel.ToLower());
+                bool isSignificant = Math.Abs(opinion) >= 25;
 
-                if (relationLabel != null || Math.Abs(opinion) >= 25)
+                if (isFamily || isSignificant)
                 {
                     string genderStr = other.gender == Gender.Male ? "M" : "F";
                     int age = other.ageTracker.AgeBiologicalYears;
@@ -463,13 +477,66 @@ namespace EchoColony
                                        opinion <= -60 ? "hates" : opinion <= -20 ? "dislikes" : "neutral";
 
                     string rel = relationLabel != null ? $"{relationLabel}, " : "";
-                    significant.Add($"{other.LabelShort} ({rel}{genderStr}{age}) - {opinionDesc}");
+                    string entry = $"{other.LabelShort} ({rel}{genderStr}{age}) - {opinionDesc}";
+                    
+                    if (isFamily)
+                        family.Add(entry);
+                    else
+                        significant.Add(entry);
                 }
             }
 
-            return significant.Any()
-                ? "*Key relationships:* " + string.Join("; ", significant)
+            var result = new List<string>();
+            
+            // Mostrar familia primero (sin límite)
+            if (family.Any())
+                result.Add("*Family:* " + string.Join("; ", family));
+            
+            // Luego otras relaciones significativas (máximo 4)
+            if (significant.Any())
+                result.Add("*Others:* " + string.Join("; ", significant.Take(4)));
+            
+            return result.Any() 
+                ? string.Join("\n", result)
                 : "*Relationships:* None significant";
+        }
+
+        // NUEVA FUNCIÓN: Información de esclavos y prisioneros
+        private static string BuildColonyPopulation(Pawn pawn)
+        {
+            var map = Find.CurrentMap;
+            if (map?.mapPawns == null) return "";
+
+            var slaves = map.mapPawns.SlavesOfColonySpawned?.ToList() ?? new List<Pawn>();
+            var prisoners = map.mapPawns.PrisonersOfColonySpawned?.ToList() ?? new List<Pawn>();
+
+            var info = new List<string>();
+
+            if (slaves.Any())
+            {
+                var slaveInfo = slaves.Take(8).Select(s => 
+                    $"{s.LabelShort} ({(s.gender == Gender.Male ? "M" : "F")}{s.ageTracker.AgeBiologicalYears})"
+                );
+                int remaining = slaves.Count - 8;
+                string slaveList = string.Join(", ", slaveInfo);
+                if (remaining > 0) slaveList += $", +{remaining} more";
+                info.Add($"*Slaves:* {slaveList}");
+            }
+
+            if (prisoners.Any())
+            {
+                var prisonerInfo = prisoners.Take(8).Select(p => 
+                {
+                    string recruitStatus = p.guest?.Recruitable == true ? "recruitable" : "hostile";
+                    return $"{p.LabelShort} ({(p.gender == Gender.Male ? "M" : "F")}{p.ageTracker.AgeBiologicalYears}, {recruitStatus})";
+                });
+                int remaining = prisoners.Count - 8;
+                string prisonerList = string.Join(", ", prisonerInfo);
+                if (remaining > 0) prisonerList += $", +{remaining} more";
+                info.Add($"*Prisoners:* {prisonerList}");
+            }
+
+            return info.Any() ? string.Join("\n", info) : "";
         }
 
         private static string BuildOptimizedEventSummary(Pawn pawn)
@@ -494,6 +561,7 @@ namespace EchoColony
                 : "";
         }
 
+        // MODIFICADA: Información de ambiente con hambre y descanso mejorados
         private static string BuildOptimizedEnvironmentInfo(Pawn pawn)
         {
             var info = new List<string>();
@@ -509,18 +577,36 @@ namespace EchoColony
                 info.Add("activity: idle or resting");
             }
             
+            // Hambre
+            var foodNeed = pawn.needs?.food;
+            if (foodNeed != null)
+            {
+                float foodLevel = foodNeed.CurLevel;
+                if (foodLevel < 0.15f) info.Add("starving");
+                else if (foodLevel < 0.3f) info.Add("very hungry");
+                else if (foodLevel < 0.5f) info.Add("hungry");
+                else if (foodLevel > 0.95f) info.Add("well fed");
+            }
+            
+            // Descanso
+            var restNeed = pawn.needs?.rest;
+            if (restNeed != null)
+            {
+                float restLevel = restNeed.CurLevel;
+                if (restLevel < 0.15f) info.Add("exhausted");
+                else if (restLevel < 0.3f) info.Add("very tired");
+                else if (restLevel < 0.5f) info.Add("tired");
+            }
+            
             float pain = pawn.health?.hediffSet?.PainTotal ?? 0f;
             if (pain > 0.2f) info.Add($"pain {pain:P0}");
-            
-            var restNeed = pawn.needs?.rest;
-            if (restNeed != null && restNeed.CurLevel < 0.3f) info.Add("very tired");
             
             var room = pawn.GetRoom();
             if (room?.Role != null && room.Role.defName != "None") 
                 info.Add($"in {room.Role.label}");
             
             var map = Find.CurrentMap;
-            if (map?.resourceCounter?.TotalHumanEdibleNutrition < 10f) info.Add("low food");
+            if (map?.resourceCounter?.TotalHumanEdibleNutrition < 10f) info.Add("colony low food");
             
             return info.Any() 
                 ? "*Current state:* " + string.Join(", ", info)
@@ -636,60 +722,47 @@ private static string GetSimplifiedContextualHints(Pawn pawn)
         }
 
         private static string BuildMemoryRecap(Pawn pawn)
+{
+    var sb = new StringBuilder();
+    sb.AppendLine("# Recent Memories");
+
+    // ✅ NUEVO: Usar GetOrCreate()
+    var memoryManager = ColonistMemoryManager.GetOrCreate();
+    if (memoryManager == null)
+    {
+        sb.AppendLine("*No memory system available.*");
+        return sb.ToString();
+    }
+
+    var tracker = memoryManager.GetTrackerFor(pawn);
+    var recentMemories = tracker?.GetLastMemories(6);
+    int today = GenDate.DaysPassed;
+
+    if (recentMemories != null && recentMemories.Any())
+    {
+        sb.AppendLine("*Recent conversation memories (private chat with player):*");
+
+        int lastDay = tracker.GetLastMemoryDay();
+        if (lastDay != today && lastDay > 0)
         {
-            var sb = new StringBuilder();
-            sb.AppendLine("# Recent Memories");
-
-            if (MyStoryModComponent.Instance?.ColonistMemoryManager == null)
-            {
-                if (MyStoryModComponent.Instance != null)
-                {
-                    MyStoryModComponent.Instance.ColonistMemoryManager = Current.Game.GetComponent<ColonistMemoryManager>();
-                    if (MyStoryModComponent.Instance.ColonistMemoryManager == null)
-                    {
-                        MyStoryModComponent.Instance.ColonistMemoryManager = new ColonistMemoryManager(Current.Game);
-                        Current.Game.components.Add(MyStoryModComponent.Instance.ColonistMemoryManager);
-                    }
-                }
-            }
-
-            var memoryManager = MyStoryModComponent.Instance?.ColonistMemoryManager;
-            if (memoryManager == null)
-            {
-                sb.AppendLine("*No memory system available.*");
-                return sb.ToString();
-            }
-
-            var tracker = memoryManager.GetTrackerFor(pawn);
-            var recentMemories = tracker?.GetLastMemories(6);
-            int today = GenDate.DaysPassed;
-
-            if (recentMemories != null && recentMemories.Any())
-            {
-                sb.AppendLine("*Recent conversation memories (private chat with player):*");
-
-                int lastDay = tracker.GetLastMemoryDay();
-                if (lastDay != today && lastDay > 0)
-                {
-                    sb.AppendLine($"*Today is a new day since last saved memory.*");
-                }
-
-                foreach (var mem in recentMemories.Take(4))
-                {
-                    string prefix = mem.StartsWith("[Conversación grupal") ? "👥" : "💬";
-                    sb.AppendLine($"{prefix} {mem}");
-                }
-
-                sb.AppendLine("*Note: Focus on YOUR perspective in this private conversation.*");
-            }
-            else
-            {
-                sb.AppendLine("*No recent conversation memories. This is a private chat.*");
-            }
-
-            return sb.ToString();
+            sb.AppendLine($"*Today is a new day since last saved memory.*");
         }
 
+        foreach (var mem in recentMemories.Take(4))
+        {
+            string prefix = mem.StartsWith("[Conversación grupal") ? "👥" : "💬";
+            sb.AppendLine($"{prefix} {mem}");
+        }
+
+        sb.AppendLine("*Note: Focus on YOUR perspective in this private conversation.*");
+    }
+    else
+    {
+        sb.AppendLine("*No recent conversation memories. This is a private chat.*");
+    }
+
+    return sb.ToString();
+}
         public static (string systemPrompt, string userMessage) BuildForPlayer2(Pawn pawn, string userMessage)
 {
     if (pawn == null) return ("", "");

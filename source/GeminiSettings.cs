@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Verse;
+using EchoColony.SpontaneousMessages;
 
 namespace EchoColony
 {
@@ -108,6 +109,17 @@ namespace EchoColony
             return isAdvanced ? modelPreferences.preferredAdvancedModel : modelPreferences.preferredFastModel;
         }
 
+        // ===== SPONTANEOUS MESSAGES SYSTEM =====
+        public SpontaneousMessageMode spontaneousMessageMode = SpontaneousMessageMode.Disabled;
+        public int defaultMaxMessagesPerColonistPerDay = 1; // 1-3
+        public float defaultColonistCooldownHours = 12f; // 1-48
+        public float randomMessageIntervalHours = 4f; // Para modo Random/Full
+        public bool prioritizeSocialTraits = true;
+        public float minConsciousnessPercent = 50f;
+
+        // Configuraciones individuales por colono (usa ThingID como key)
+        public Dictionary<string, ColonistMessageSettings> colonistMessageSettings = new Dictionary<string, ColonistMessageSettings>();
+
         public override void ExposeData()
         {
             base.ExposeData();
@@ -153,6 +165,98 @@ namespace EchoColony
             {
                 // First load with new system maintains legacy behavior via useAutoSelection = true
             }
+
+            Scribe_Values.Look(ref spontaneousMessageMode, "spontaneousMessageMode", SpontaneousMessageMode.Disabled);
+            Scribe_Values.Look(ref defaultMaxMessagesPerColonistPerDay, "defaultMaxMessagesPerColonistPerDay", 1);
+            Scribe_Values.Look(ref defaultColonistCooldownHours, "defaultColonistCooldownHours", 12f);
+            Scribe_Values.Look(ref randomMessageIntervalHours, "randomMessageIntervalHours", 36f);
+            Scribe_Values.Look(ref prioritizeSocialTraits, "prioritizeSocialTraits", true);
+            Scribe_Values.Look(ref minConsciousnessPercent, "minConsciousnessPercent", 50f);
+
+            if (Scribe.mode == LoadSaveMode.Saving)
+            {
+                // Limpiar entradas de colonos que ya no existen
+                CleanupColonistSettings();
+            }
+            Scribe_Collections.Look(ref colonistMessageSettings, "colonistMessageSettings", LookMode.Value, LookMode.Deep);
+            if (Scribe.mode == LoadSaveMode.LoadingVars && colonistMessageSettings == null)
+            {
+                colonistMessageSettings = new Dictionary<string, ColonistMessageSettings>();
+            }
+        }
+
+        /// <summary>
+/// Limpia configuraciones de colonos que ya no existen en el juego
+/// </summary>
+private void CleanupColonistSettings()
+{
+    if (Current.Game == null || colonistMessageSettings == null) return;
+    
+    var validThingIDs = new HashSet<string>();
+    foreach (var map in Find.Maps)
+    {
+        foreach (var pawn in map.mapPawns.FreeColonistsSpawned)
+        {
+            validThingIDs.Add(pawn.ThingID);
         }
     }
+    
+    var toRemove = new List<string>();
+    foreach (var key in colonistMessageSettings.Keys)
+    {
+        if (!validThingIDs.Contains(key))
+        {
+            toRemove.Add(key);
+        }
+    }
+    
+    foreach (var key in toRemove)
+    {
+        colonistMessageSettings.Remove(key);
+    }
+}
+
+/// <summary>
+/// Obtiene o crea configuración para un colono específico
+/// </summary>
+public ColonistMessageSettings GetOrCreateColonistSettings(Pawn pawn)
+{
+    if (pawn == null) return null;
+    
+    string key = pawn.ThingID;
+    if (!colonistMessageSettings.ContainsKey(key))
+    {
+        colonistMessageSettings[key] = ColonistMessageSettings.CreateDefault();
+    }
+    
+    return colonistMessageSettings[key];
+}
+
+/// <summary>
+/// Verifica si el sistema de mensajes espontáneos está activo
+/// </summary>
+public bool IsSpontaneousMessagesActive()
+{
+    return spontaneousMessageMode != SpontaneousMessageMode.Disabled;
+}
+
+/// <summary>
+/// Verifica si los mensajes por incidentes están habilitados
+/// </summary>
+public bool AreIncidentMessagesEnabled()
+{
+    return spontaneousMessageMode == SpontaneousMessageMode.IncidentsOnly ||
+           spontaneousMessageMode == SpontaneousMessageMode.Full;
+}
+
+/// <summary>
+/// Verifica si los mensajes aleatorios están habilitados
+/// </summary>
+public bool AreRandomMessagesEnabled()
+{
+    return spontaneousMessageMode == SpontaneousMessageMode.RandomOnly ||
+           spontaneousMessageMode == SpontaneousMessageMode.Full;
+}
+    }
+    
 }

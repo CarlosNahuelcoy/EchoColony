@@ -358,30 +358,32 @@ private static Dictionary<string, List<string>> CategorizeAllPrecepts(List<Prece
             return "";
         }
 
-        // ✅ MEMORIAS UNIFICADAS (el puente entre chat individual y grupal)
+        // MEMORIAS UNIFICADAS (el puente entre chat individual y grupal)
         private static void AppendUnifiedMemories(StringBuilder sb, Pawn speaker)
-        {
-            if (MyStoryModComponent.Instance?.ColonistMemoryManager == null)
-                return;
+{
+    // NUEVO: Usar GetOrCreate()
+    var memoryManager = ColonistMemoryManager.GetOrCreate();
+    if (memoryManager == null)
+        return;
 
-            var memoryTracker = MyStoryModComponent.Instance.ColonistMemoryManager.GetTrackerFor(speaker);
-            var recentMemories = memoryTracker?.GetLastMemories(4); // Reducido para grupos
+    var memoryTracker = memoryManager.GetTrackerFor(speaker);
+    var recentMemories = memoryTracker?.GetLastMemories(4); // Reducido para grupos
+    
+    if (recentMemories?.Any() == true)
+    {
+        sb.AppendLine("# Your Recent Memories (from both individual and group conversations):");
+        foreach (var memory in recentMemories)
+        {
+            // Identificar tipo de conversación
+            string prefix = memory.StartsWith("[Conversación grupal") ? "👥 Group:" : "💬 Private:";
             
-            if (recentMemories?.Any() == true)
-            {
-                sb.AppendLine("# Your Recent Memories (from both individual and group conversations):");
-                foreach (var memory in recentMemories)
-                {
-                    // Identificar tipo de conversación
-                    string prefix = memory.StartsWith("[Conversación grupal") ? "👥 Group:" : "💬 Private:";
-                    
-                    // Acortar memoria si es muy larga para grupos
-                    string shortMem = memory.Length > 120 ? memory.Substring(0, 120) + "..." : memory;
-                    sb.AppendLine($"{prefix} {shortMem}");
-                }
-                sb.AppendLine("*Note: These memories help you maintain consistency across all conversations.*");
-            }
+            // Acortar memoria si es muy larga para grupos
+            string shortMem = memory.Length > 120 ? memory.Substring(0, 120) + "..." : memory;
+            sb.AppendLine($"{prefix} {shortMem}");
         }
+        sb.AppendLine("*Note: These memories help you maintain consistency across all conversations.*");
+    }
+}
 
         // ✅ MÉTODOS DE SOPORTE COMPACTOS
         private static string GetCompactAgeGuidance(int age)

@@ -5,6 +5,7 @@ using System;
 using UnityEngine.Networking;
 using RimWorld;
 using System.Linq;
+using EchoColony.SpontaneousMessages;
 
 namespace EchoColony
 {
@@ -31,7 +32,7 @@ namespace EchoColony
         public override void DoSettingsWindowContents(Rect inRect)
         {
             // Calculate total height needed for all settings
-            float totalHeight = 2000f; // Adjust this if you add more settings
+            float totalHeight = 2400f;
             
             // Create scroll view
             Rect viewRect = new Rect(0f, 0f, inRect.width - 20f, totalHeight);
@@ -40,13 +41,20 @@ namespace EchoColony
             Listing_Standard list = new Listing_Standard();
             list.Begin(viewRect);
 
-            // ===== BASIC CONFIGURATION =====
-            GUI.color = new Color(0.7f, 0.9f, 1f);
-            list.Label("═══ Basic Settings ═══");
-            GUI.color = Color.white;
+            // ═══════════════════════════════════════════════════════════════
+            // BASIC SETTINGS
+            // ═══════════════════════════════════════════════════════════════
+            DrawSectionHeader(list, "Basic Settings", new Color(0.7f, 0.9f, 1f));
             
-            list.CheckboxLabeled("EchoColony.EnableSocialAffectsPersonality".Translate(), ref Settings.enableSocialAffectsPersonality);
-            list.CheckboxLabeled("EchoColony.EnableRoleplayResponses".Translate(), ref Settings.enableRoleplayResponses);
+            list.CheckboxLabeled(
+                "EchoColony.EnableSocialAffectsPersonality".Translate(), 
+                ref Settings.enableSocialAffectsPersonality
+            );
+            
+            list.CheckboxLabeled(
+                "EchoColony.EnableRoleplayResponses".Translate(), 
+                ref Settings.enableRoleplayResponses
+            );
             
             list.CheckboxLabeled(
                 "EchoColony.IgnoreDangers".Translate(), 
@@ -56,10 +64,10 @@ namespace EchoColony
             
             list.GapLine();
 
-            // ===== MEMORY SYSTEM =====
-            GUI.color = new Color(0.7f, 0.9f, 1f);
-            list.Label("═══ Memory System ═══");
-            GUI.color = Color.white;
+            // ═══════════════════════════════════════════════════════════════
+            // MEMORY SYSTEM
+            // ═══════════════════════════════════════════════════════════════
+            DrawSectionHeader(list, "Memory System", new Color(0.7f, 0.9f, 1f));
             
             bool oldMemorySystemState = Settings.enableMemorySystem;
             list.CheckboxLabeled(
@@ -73,25 +81,14 @@ namespace EchoColony
                 OnMemorySystemToggled(Settings.enableMemorySystem);
             }
 
-            if (Settings.enableMemorySystem)
-            {
-                GUI.color = Color.green;
-                list.Label("  ✓ Memory system: Enabled");
-                GUI.color = Color.white;
-            }
-            else
-            {
-                GUI.color = Color.yellow;
-                list.Label("  ✗ Memory system: Disabled");
-                GUI.color = Color.white;
-            }
+            DrawStatusIndicator(list, Settings.enableMemorySystem, "Memory system");
 
             list.GapLine();
 
-            // ===== UI SETTINGS =====
-            GUI.color = new Color(0.7f, 0.9f, 1f);
-            list.Label("═══ UI Settings ═══");
-            GUI.color = Color.white;
+            // ═══════════════════════════════════════════════════════════════
+            // UI SETTINGS
+            // ═══════════════════════════════════════════════════════════════
+            DrawSectionHeader(list, "UI Settings", new Color(0.7f, 0.9f, 1f));
             
             list.CheckboxLabeled(
                 "Show Storyteller Chat Button", 
@@ -101,10 +98,73 @@ namespace EchoColony
 
             list.GapLine();
 
-            // ===== DIVINE ACTIONS SYSTEM =====
-            GUI.color = new Color(1f, 0.8f, 0.4f);
-            list.Label("═══ Divine Actions System ═══");
-            GUI.color = Color.white;
+            // ═══════════════════════════════════════════════════════════════
+            // SPONTANEOUS MESSAGES SYSTEM
+            // ═══════════════════════════════════════════════════════════════
+            DrawSectionHeader(list, "Spontaneous Messages System", new Color(0.8f, 1f, 0.8f));
+
+            list.Label("EchoColony.SpontaneousMessagesMode".Translate());
+            string currentModeLabel = GetSpontaneousModeLabelTranslated(Settings.spontaneousMessageMode);
+            if (list.ButtonText(currentModeLabel))
+            {
+                ShowSpontaneousMessageModeMenu();
+            }
+
+            if (Settings.IsSpontaneousMessagesActive())
+            {
+                list.Gap();
+                DrawStatusIndicator(list, true, "System");
+                
+                // Global settings
+                list.Gap();
+                list.Label("EchoColony.DefaultMaxMessagesPerDay".Translate() + ": " + Settings.defaultMaxMessagesPerColonistPerDay);
+                Settings.defaultMaxMessagesPerColonistPerDay = (int)list.Slider(Settings.defaultMaxMessagesPerColonistPerDay, 1, 3);
+                
+                list.Label("EchoColony.DefaultCooldownHours".Translate() + ": " + Settings.defaultColonistCooldownHours.ToString("F1") + "h");
+                Settings.defaultColonistCooldownHours = list.Slider(Settings.defaultColonistCooldownHours, 1f, 48f);
+                
+                if (Settings.AreRandomMessagesEnabled())
+                {
+                    list.Label("EchoColony.RandomMessageInterval".Translate() + ": " + Settings.randomMessageIntervalHours.ToString("F1") + "h");
+                    Settings.randomMessageIntervalHours = list.Slider(Settings.randomMessageIntervalHours, 2f, 72f);
+                }
+                
+                list.Gap();
+                list.CheckboxLabeled(
+                    "EchoColony.PrioritizeSocialTraits".Translate(),
+                    ref Settings.prioritizeSocialTraits,
+                    "EchoColony.PrioritizeSocialTraitsTooltip".Translate()
+                );
+                
+                list.Label("EchoColony.MinConsciousness".Translate() + ": " + Settings.minConsciousnessPercent.ToString("F0") + "%");
+                Settings.minConsciousnessPercent = list.Slider(Settings.minConsciousnessPercent, 0f, 100f);
+                
+                list.Gap();
+                
+                // Button for individual colonist configuration
+                if (list.ButtonText("EchoColony.ConfigureIndividualColonists".Translate()))
+                {
+                    if (Current.Game == null)
+                    {
+                        Messages.Message("EchoColony.NeedActiveGame".Translate(), MessageTypeDefOf.RejectInput);
+                    }
+                    else
+                    {
+                        Find.WindowStack.Add(new ColonistMessageConfigWindow());
+                    }
+                }
+            }
+            else
+            {
+                DrawStatusIndicator(list, false, "System");
+            }
+
+            list.GapLine();
+
+            // ═══════════════════════════════════════════════════════════════
+            // DIVINE ACTIONS SYSTEM
+            // ═══════════════════════════════════════════════════════════════
+            DrawSectionHeader(list, "Divine Actions System", new Color(1f, 0.8f, 0.4f));
             
             list.CheckboxLabeled(
                 "Enable Divine Actions (AI can affect colonists)", 
@@ -114,6 +174,7 @@ namespace EchoColony
 
             if (Settings.enableDivineActions)
             {
+                list.Gap();
                 list.CheckboxLabeled(
                     "  → Allow Negative Actions", 
                     ref Settings.allowNegativeActions,
@@ -129,10 +190,10 @@ namespace EchoColony
 
             list.GapLine();
 
-            // ===== GLOBAL PROMPT =====
-            GUI.color = new Color(0.7f, 0.9f, 1f);
-            list.Label("═══ Global Prompt ═══");
-            GUI.color = Color.white;
+            // ═══════════════════════════════════════════════════════════════
+            // GLOBAL PROMPT
+            // ═══════════════════════════════════════════════════════════════
+            DrawSectionHeader(list, "Global Prompt", new Color(0.7f, 0.9f, 1f));
             
             list.Label("EchoColony.GlobalPrompt".Translate());
             float areaHeight = 80f;
@@ -144,16 +205,20 @@ namespace EchoColony
             
             list.GapLine();
 
-            // ===== MODEL SOURCE SELECTION =====
-            GUI.color = new Color(0.6f, 1f, 0.6f);
-            list.Label("═══ AI Model Configuration ═══");
-            GUI.color = Color.white;
+            // ═══════════════════════════════════════════════════════════════
+            // AI MODEL CONFIGURATION
+            // ═══════════════════════════════════════════════════════════════
+            DrawSectionHeader(list, "AI Model Configuration", new Color(0.6f, 1f, 0.6f));
 
             // Player2 Toggle
             bool isPlayer2 = Settings.modelSource == ModelSource.Player2;
             bool checkboxState = isPlayer2;
 
-            list.CheckboxLabeled("EchoColony.UsePlayer2Label".Translate(), ref checkboxState, "EchoColony.UsePlayer2Tooltip".Translate());
+            list.CheckboxLabeled(
+                "EchoColony.UsePlayer2Label".Translate(), 
+                ref checkboxState, 
+                "EchoColony.UsePlayer2Tooltip".Translate()
+            );
 
             if (checkboxState != isPlayer2)
             {
@@ -171,88 +236,19 @@ namespace EchoColony
 
             if (Settings.modelSource == ModelSource.Player2)
             {
-                list.Gap();
-                list.Label("EchoColony.Player2Warning".Translate());
-                list.CheckboxLabeled("EchoColony.EnableTTS".Translate(), ref Settings.enableTTS);
-                if (Settings.enableTTS)
-                {
-                    list.CheckboxLabeled("EchoColony.AutoPlayVoice".Translate(), ref Settings.autoPlayVoice);
-                }
+                DrawPlayer2Settings(list);
             }
             else
             {
-                list.Gap();
-                list.Label("EchoColony.ModelSource".Translate());
-
-                if (Widgets.RadioButtonLabeled(list.GetRect(25f), "EchoColony.UseGemini".Translate(), Settings.modelSource == ModelSource.Gemini))
-                {
-                    Settings.modelSource = ModelSource.Gemini;
-                }
-                if (Widgets.RadioButtonLabeled(list.GetRect(25f), "EchoColony.UseLocal".Translate(), Settings.modelSource == ModelSource.Local))
-                {
-                    Settings.modelSource = ModelSource.Local;
-                }
-                if (Widgets.RadioButtonLabeled(list.GetRect(25f), "EchoColony.UseOpenRouter".Translate(), Settings.modelSource == ModelSource.OpenRouter))
-                {
-                    Settings.modelSource = ModelSource.OpenRouter;
-                }
-
-                list.Gap();
-
-                // Model-specific configuration
-                if (Settings.modelSource == ModelSource.Local)
-                {
-                    GUI.color = new Color(1f, 1f, 0.7f);
-                    list.Label("Local Model Settings:");
-                    GUI.color = Color.white;
-                    
-                    list.Label("EchoColony.LocalModelProvider".Translate());
-                    if (list.ButtonText(Settings.localModelProvider.ToString()))
-                    {
-                        List<FloatMenuOption> options = new List<FloatMenuOption>();
-                        foreach (LocalModelProvider provider in Enum.GetValues(typeof(LocalModelProvider)))
-                        {
-                            options.Add(new FloatMenuOption(provider.ToString(), () =>
-                            {
-                                Settings.localModelProvider = provider;
-                            }));
-                        }
-                        Find.WindowStack.Add(new FloatMenu(options));
-                    }
-
-                    list.Label("EchoColony.LocalModelEndpoint".Translate());
-                    Settings.localModelEndpoint = list.TextEntry(Settings.localModelEndpoint);
-
-                    list.Label("EchoColony.LocalModelName".Translate());
-                    Settings.localModelName = list.TextEntry(Settings.localModelName);
-                }
-                else if (Settings.modelSource == ModelSource.OpenRouter)
-                {
-                    GUI.color = new Color(1f, 1f, 0.7f);
-                    list.Label("OpenRouter Settings:");
-                    GUI.color = Color.white;
-                    
-                    list.Label("EchoColony.OpenRouterEndpoint".Translate());
-                    Settings.openRouterEndpoint = list.TextEntry(Settings.openRouterEndpoint);
-
-                    list.Label("EchoColony.OpenRouterAPIKey".Translate());
-                    Settings.openRouterApiKey = list.TextEntry(Settings.openRouterApiKey);
-
-                    list.Label("EchoColony.OpenRouterModel".Translate());
-                    Settings.openRouterModel = list.TextEntry(Settings.openRouterModel);
-                }
-                else // Gemini
-                {
-                    DrawGeminiSettings(list);
-                }
+                DrawModelSourceSelection(list);
             }
 
             list.GapLine();
 
-            // ===== GENERAL SETTINGS =====
-            GUI.color = new Color(0.7f, 0.9f, 1f);
-            list.Label("═══ General Settings ═══");
-            GUI.color = Color.white;
+            // ═══════════════════════════════════════════════════════════════
+            // GENERAL SETTINGS
+            // ═══════════════════════════════════════════════════════════════
+            DrawSectionHeader(list, "General Settings", new Color(0.7f, 0.9f, 1f));
 
             if (Settings.modelSource != ModelSource.Player2)
             {
@@ -260,49 +256,337 @@ namespace EchoColony
                 Settings.maxResponseLength = (int)list.Slider(Settings.maxResponseLength, 50, 1000);
             }
 
-            list.CheckboxLabeled("EchoColony.DebugModeLabel".Translate(), ref Settings.debugMode, "EchoColony.DebugModeTooltip".Translate());
+            list.CheckboxLabeled(
+                "EchoColony.DebugModeLabel".Translate(), 
+                ref Settings.debugMode, 
+                "EchoColony.DebugModeTooltip".Translate()
+            );
 
-            // ===== DEBUG TOOLS =====
+            // ═══════════════════════════════════════════════════════════════
+            // DEBUG TOOLS
+            // ═══════════════════════════════════════════════════════════════
             if (Settings.debugMode)
             {
                 list.GapLine();
-                GUI.color = Color.cyan;
-                list.Label("═══ Debug Tools ═══");
-                GUI.color = Color.white;
+                DrawSectionHeader(list, "Debug Tools", Color.cyan);
 
-                // Memory debug tools
-                GUI.color = new Color(1f, 1f, 0.7f);
-                list.Label("Memory System:");
-                GUI.color = Color.white;
+                DrawMemoryDebugTools(list);
                 
-                if (list.ButtonText("Check Memory State"))
-                {
-                    CheckMemorySystemState();
-                }
-
-                if (list.ButtonText("Force Clean Memories"))
-                {
-                    ForceCleanAllMemories();
-                }
-                
-                // Actions debug tools
                 if (Settings.enableDivineActions)
                 {
-                    list.Gap();
-                    GUI.color = new Color(1f, 1f, 0.7f);
-                    list.Label("Actions System:");
-                    GUI.color = Color.white;
-
-                    if (list.ButtonText("List Registered Actions"))
-                    {
-                        ListRegisteredActions();
-                    }
+                    DrawActionsDebugTools(list);
+                }
+                
+                if (Settings.IsSpontaneousMessagesActive())
+                {
+                    DrawSpontaneousMessagesDebugTools(list);
                 }
             }
 
             list.End();
             Widgets.EndScrollView();
         }
+
+        // ═══════════════════════════════════════════════════════════════
+        // HELPER METHODS - DRAWING
+        // ═══════════════════════════════════════════════════════════════
+
+        private void DrawSectionHeader(Listing_Standard list, string title, Color color)
+        {
+            GUI.color = color;
+            list.Label($"═══ {title} ═══");
+            GUI.color = Color.white;
+        }
+
+        private void DrawStatusIndicator(Listing_Standard list, bool enabled, string systemName)
+        {
+            if (enabled)
+            {
+                GUI.color = Color.green;
+                list.Label($"  ✓ {systemName}: Enabled");
+            }
+            else
+            {
+                GUI.color = Color.gray;
+                list.Label($"  {systemName}: Disabled");
+            }
+            GUI.color = Color.white;
+        }
+
+        private void DrawPlayer2Settings(Listing_Standard list)
+        {
+            list.Gap();
+            list.Label("EchoColony.Player2Warning".Translate());
+            list.CheckboxLabeled("EchoColony.EnableTTS".Translate(), ref Settings.enableTTS);
+            if (Settings.enableTTS)
+            {
+                list.CheckboxLabeled("EchoColony.AutoPlayVoice".Translate(), ref Settings.autoPlayVoice);
+            }
+        }
+
+        private void DrawModelSourceSelection(Listing_Standard list)
+        {
+            list.Gap();
+            list.Label("EchoColony.ModelSource".Translate());
+
+            if (Widgets.RadioButtonLabeled(list.GetRect(25f), "EchoColony.UseGemini".Translate(), Settings.modelSource == ModelSource.Gemini))
+            {
+                Settings.modelSource = ModelSource.Gemini;
+            }
+            if (Widgets.RadioButtonLabeled(list.GetRect(25f), "EchoColony.UseLocal".Translate(), Settings.modelSource == ModelSource.Local))
+            {
+                Settings.modelSource = ModelSource.Local;
+            }
+            if (Widgets.RadioButtonLabeled(list.GetRect(25f), "EchoColony.UseOpenRouter".Translate(), Settings.modelSource == ModelSource.OpenRouter))
+            {
+                Settings.modelSource = ModelSource.OpenRouter;
+            }
+
+            list.Gap();
+
+            // Model-specific configuration
+            switch (Settings.modelSource)
+            {
+                case ModelSource.Local:
+                    DrawLocalModelSettings(list);
+                    break;
+                case ModelSource.OpenRouter:
+                    DrawOpenRouterSettings(list);
+                    break;
+                case ModelSource.Gemini:
+                    DrawGeminiSettings(list);
+                    break;
+            }
+        }
+
+        private void DrawLocalModelSettings(Listing_Standard list)
+        {
+            GUI.color = new Color(1f, 1f, 0.7f);
+            list.Label("Local Model Settings:");
+            GUI.color = Color.white;
+            
+            list.Label("EchoColony.LocalModelProvider".Translate());
+            if (list.ButtonText(Settings.localModelProvider.ToString()))
+            {
+                List<FloatMenuOption> options = new List<FloatMenuOption>();
+                foreach (LocalModelProvider provider in Enum.GetValues(typeof(LocalModelProvider)))
+                {
+                    options.Add(new FloatMenuOption(provider.ToString(), () =>
+                    {
+                        Settings.localModelProvider = provider;
+                    }));
+                }
+                Find.WindowStack.Add(new FloatMenu(options));
+            }
+
+            list.Label("EchoColony.LocalModelEndpoint".Translate());
+            Settings.localModelEndpoint = list.TextEntry(Settings.localModelEndpoint);
+
+            list.Label("EchoColony.LocalModelName".Translate());
+            Settings.localModelName = list.TextEntry(Settings.localModelName);
+        }
+
+        private void DrawOpenRouterSettings(Listing_Standard list)
+        {
+            GUI.color = new Color(1f, 1f, 0.7f);
+            list.Label("OpenRouter Settings:");
+            GUI.color = Color.white;
+            
+            list.Label("EchoColony.OpenRouterEndpoint".Translate());
+            Settings.openRouterEndpoint = list.TextEntry(Settings.openRouterEndpoint);
+
+            list.Label("EchoColony.OpenRouterAPIKey".Translate());
+            Settings.openRouterApiKey = list.TextEntry(Settings.openRouterApiKey);
+
+            list.Label("EchoColony.OpenRouterModel".Translate());
+            Settings.openRouterModel = list.TextEntry(Settings.openRouterModel);
+        }
+
+        private void DrawGeminiSettings(Listing_Standard list)
+        {
+            GUI.color = new Color(1f, 1f, 0.7f);
+            list.Label("Gemini Settings:");
+            GUI.color = Color.white;
+            
+            list.Label("EchoColony.GeminiAPIKey".Translate());
+            Settings.apiKey = list.TextEntry(Settings.apiKey);
+
+            if (string.IsNullOrEmpty(Settings.apiKey))
+            {
+                GUI.color = Color.yellow;
+                list.Label("⚠ Enter your Gemini API key to configure models");
+                GUI.color = Color.white;
+                return;
+            }
+
+            list.Gap();
+
+            GUI.color = Color.cyan;
+            list.Label("Model Configuration:");
+            GUI.color = Color.white;
+
+            string currentModel = GetCurrentModelInUse();
+            list.Label($"Current model: {currentModel}");
+
+            list.Gap();
+
+            if (list.ButtonText("Choose Specific Model"))
+            {
+                ShowSimpleModelSelectionMenu();
+            }
+
+            list.Gap();
+            GUI.color = Color.gray;
+            list.Label("• Flash models: Faster, cheaper");
+            list.Label("• Pro models: Better quality, more expensive");
+            list.Label($"• Available: 5 Flash, 3 Pro models");
+            GUI.color = Color.white;
+        }
+
+        private void DrawMemoryDebugTools(Listing_Standard list)
+        {
+            GUI.color = new Color(1f, 1f, 0.7f);
+            list.Label("Memory System:");
+            GUI.color = Color.white;
+            
+            if (list.ButtonText("Check Memory State"))
+            {
+                CheckMemorySystemState();
+            }
+
+            if (list.ButtonText("Force Clean Memories"))
+            {
+                ForceCleanAllMemories();
+            }
+        }
+
+        private void DrawActionsDebugTools(Listing_Standard list)
+        {
+            list.Gap();
+            GUI.color = new Color(1f, 1f, 0.7f);
+            list.Label("Actions System:");
+            GUI.color = Color.white;
+
+            if (list.ButtonText("List Registered Actions"))
+            {
+                ListRegisteredActions();
+            }
+        }
+
+        private void DrawSpontaneousMessagesDebugTools(Listing_Standard list)
+        {
+            list.Gap();
+            GUI.color = new Color(1f, 1f, 0.7f);
+            list.Label("Spontaneous Messages System:");
+            GUI.color = Color.white;
+            
+            if (!Settings.IsSpontaneousMessagesActive())
+            {
+                GUI.color = Color.yellow;
+                list.Label("⚠ System is DISABLED");
+                GUI.color = Color.white;
+            }
+            
+            // Verification button
+            if (list.ButtonText("🔍 Check System Status"))
+            {
+                SpontaneousMessages.SpontaneousMessagesDebug.CheckSystemStatus();
+            }
+            
+            // Force test message
+            if (list.ButtonText("✉️ Force Test Message"))
+            {
+                SpontaneousMessages.SpontaneousMessagesDebug.ForceTestMessage();
+            }
+            
+            // Simulate incident
+            if (list.ButtonText("⚔️ Simulate Test Raid"))
+            {
+                SpontaneousMessages.SpontaneousMessagesDebug.SimulateIncident();
+            }
+            
+            // Reset cooldowns
+            if (list.ButtonText("🔄 Reset All Cooldowns"))
+            {
+                Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+                    "Reset all colonist message cooldowns? This will allow them to send messages immediately.",
+                    () => {
+                        SpontaneousMessages.SpontaneousMessagesDebug.ResetAllCooldowns();
+                    }
+                ));
+            }
+            
+            // List colonists status
+            if (list.ButtonText("📋 List Colonists Status"))
+            {
+                SpontaneousMessages.SpontaneousMessagesDebug.ListColonistsStatus();
+            }
+            
+            list.Gap();
+            GUI.color = Color.gray;
+            list.Label("Use these tools to diagnose issues");
+            GUI.color = Color.white;
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // HELPER METHODS - SPONTANEOUS MESSAGES
+        // ═══════════════════════════════════════════════════════════════
+
+        private void ShowSpontaneousMessageModeMenu()
+        {
+            List<FloatMenuOption> options = new List<FloatMenuOption>();
+            
+            foreach (SpontaneousMessageMode mode in Enum.GetValues(typeof(SpontaneousMessageMode)))
+            {
+                string label = GetSpontaneousModeLabelTranslated(mode);
+                string desc = GetSpontaneousModeDescriptionTranslated(mode);
+                
+                options.Add(new FloatMenuOption(label + " - " + desc, () =>
+                {
+                    Settings.spontaneousMessageMode = mode;
+                }));
+            }
+            
+            Find.WindowStack.Add(new FloatMenu(options));
+        }
+
+        private string GetSpontaneousModeLabelTranslated(SpontaneousMessageMode mode)
+        {
+            switch (mode)
+            {
+                case SpontaneousMessageMode.Disabled:
+                    return "EchoColony.ModeDisabled".Translate();
+                case SpontaneousMessageMode.RandomOnly:
+                    return "EchoColony.ModeRandomOnly".Translate();
+                case SpontaneousMessageMode.IncidentsOnly:
+                    return "EchoColony.ModeIncidentsOnly".Translate();
+                case SpontaneousMessageMode.Full:
+                    return "EchoColony.ModeFull".Translate();
+                default:
+                    return mode.ToString();
+            }
+        }
+
+        private string GetSpontaneousModeDescriptionTranslated(SpontaneousMessageMode mode)
+        {
+            switch (mode)
+            {
+                case SpontaneousMessageMode.Disabled:
+                    return "EchoColony.ModeDisabledDesc".Translate();
+                case SpontaneousMessageMode.RandomOnly:
+                    return "EchoColony.ModeRandomOnlyDesc".Translate();
+                case SpontaneousMessageMode.IncidentsOnly:
+                    return "EchoColony.ModeIncidentsOnlyDesc".Translate();
+                case SpontaneousMessageMode.Full:
+                    return "EchoColony.ModeFullDesc".Translate();
+                default:
+                    return "";
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // HELPER METHODS - MEMORY SYSTEM
+        // ═══════════════════════════════════════════════════════════════
 
         private void OnMemorySystemToggled(bool newState)
         {
@@ -361,6 +645,10 @@ namespace EchoColony
                 }));
         }
 
+        // ═══════════════════════════════════════════════════════════════
+        // HELPER METHODS - DEBUG ACTIONS
+        // ═══════════════════════════════════════════════════════════════
+
         private void ListRegisteredActions()
         {
             Actions.ActionRegistry.Initialize();
@@ -384,46 +672,9 @@ namespace EchoColony
             Messages.Message($"Listed {actions.Count} actions in log", MessageTypeDefOf.TaskCompletion);
         }
 
-        private void DrawGeminiSettings(Listing_Standard list)
-        {
-            GUI.color = new Color(1f, 1f, 0.7f);
-            list.Label("Gemini Settings:");
-            GUI.color = Color.white;
-            
-            list.Label("EchoColony.GeminiAPIKey".Translate());
-            Settings.apiKey = list.TextEntry(Settings.apiKey);
-
-            if (string.IsNullOrEmpty(Settings.apiKey))
-            {
-                GUI.color = Color.yellow;
-                list.Label("⚠ Enter your Gemini API key to configure models");
-                GUI.color = Color.white;
-                return;
-            }
-
-            list.Gap();
-
-            GUI.color = Color.cyan;
-            list.Label("Model Configuration:");
-            GUI.color = Color.white;
-
-            string currentModel = GetCurrentModelInUse();
-            list.Label($"Current model: {currentModel}");
-
-            list.Gap();
-
-            if (list.ButtonText("Choose Specific Model"))
-            {
-                ShowSimpleModelSelectionMenu();
-            }
-
-            list.Gap();
-            GUI.color = Color.gray;
-            list.Label("• Flash models: Faster, cheaper");
-            list.Label("• Pro models: Better quality, more expensive");
-            list.Label($"• Available: 5 Flash, 3 Pro models");
-            GUI.color = Color.white;
-        }
+        // ═══════════════════════════════════════════════════════════════
+        // HELPER METHODS - MODEL SELECTION
+        // ═══════════════════════════════════════════════════════════════
 
         private void ShowSimpleModelSelectionMenu()
         {
@@ -529,6 +780,10 @@ namespace EchoColony
                 return "Unknown";
             }
         }
+
+        // ═══════════════════════════════════════════════════════════════
+        // HELPER METHODS - PLAYER2
+        // ═══════════════════════════════════════════════════════════════
 
         public static void CheckPlayer2AvailableAndWarn()
         {

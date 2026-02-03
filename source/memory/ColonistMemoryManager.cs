@@ -19,19 +19,38 @@ namespace EchoColony
         // Constructor without parameters (required for RimWorld serialization)
         public ColonistMemoryManager()
         {
-            ClearAllData();
         }
 
         // Constructor with Game (maintain for compatibility)
         public ColonistMemoryManager(Game game)
         {
-            ClearAllData();
+            // Registrarse en MyStoryModComponent si existe
+            if (MyStoryModComponent.Instance != null)
+            {
+                MyStoryModComponent.Instance.ColonistMemoryManager = this;
+                Log.Message("[EchoColony] ColonistMemoryManager registered with MyStoryModComponent");
+            }
         }
 
-        private void ClearAllData()
+        // ✅ NUEVO: Método estático para obtener o crear instancia
+        public static ColonistMemoryManager GetOrCreate()
         {
-            memoryPerPawn = new Dictionary<string, ColonistMemoryTracker>();
-            groupMemoryTracker = new DailyGroupMemoryTracker();
+            if (Current.Game == null)
+            {
+                Log.Error("[EchoColony] Cannot get ColonistMemoryManager - no active game");
+                return null;
+            }
+
+            var existing = Current.Game.GetComponent<ColonistMemoryManager>();
+            
+            if (existing == null)
+            {
+                Log.Message("[EchoColony] Creating ColonistMemoryManager automatically");
+                existing = new ColonistMemoryManager(Current.Game);
+                Current.Game.components.Add(existing);
+            }
+
+            return existing;
         }
 
         public ColonistMemoryTracker GetTrackerFor(Pawn pawn)
@@ -39,80 +58,99 @@ namespace EchoColony
             // If system is disabled, return empty non-persistent tracker
             if (!IsMemorySystemEnabled)
             {
-                return new ColonistMemoryTracker(pawn); // Temporary tracker that doesn't get saved
+                return new ColonistMemoryTracker(pawn);
+            }
+
+            if (pawn == null)
+            {
+                Log.Error("[EchoColony] GetTrackerFor called with null pawn");
+                return new ColonistMemoryTracker(null);
             }
 
             string id = pawn.ThingID;
+            
             if (!memoryPerPawn.ContainsKey(id))
             {
+                Log.Message($"[EchoColony] Creating new memory tracker for {pawn.LabelShort}");
                 var tracker = new ColonistMemoryTracker(pawn);
                 memoryPerPawn[id] = tracker;
+                return tracker;
             }
             else
             {
-                // Ensure pawn is assigned after loading
-                memoryPerPawn[id].SetPawn(pawn);
+                var tracker = memoryPerPawn[id];
+                tracker.SetPawn(pawn);
+                return tracker;
             }
-            return memoryPerPawn[id];
         }
 
         // Getter for group memories
         public DailyGroupMemoryTracker GetGroupMemoryTracker()
         {
-            // If system is disabled, return empty non-persistent tracker
             if (!IsMemorySystemEnabled)
             {
-                return new DailyGroupMemoryTracker(); // Temporary tracker that doesn't get saved
+                return new DailyGroupMemoryTracker();
             }
 
             return groupMemoryTracker;
         }
 
-        // Simplified ExposeData - let RimWorld handle the lifecycle automatically
+        // FIXED: Proper ExposeData implementation
         public override void ExposeData()
         {
-			//Clean previous data.
-            if (Scribe.mode == LoadSaveMode.LoadingVars)
-            {
-                memoryPerPawn = new Dictionary<string, ColonistMemoryTracker>();
-                groupMemoryTracker = new DailyGroupMemoryTracker();
-            }
-            // Save/Load independently of configuration
-            // This allows loading existing memories even if system is disabled
+            base.ExposeData();
+            
             Scribe_Collections.Look(ref memoryPerPawn, "memoryPerPawn", LookMode.Value, LookMode.Deep);
             Scribe_Deep.Look(ref groupMemoryTracker, "groupMemoryTracker");
 
-            // Post-load initialization and cleanup
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
-                // Data integrity verification
+                // Initialize if null
                 if (memoryPerPawn == null)
+                {
                     memoryPerPawn = new Dictionary<string, ColonistMemoryTracker>();
+                    Log.Warning("[EchoColony] memoryPerPawn was null after loading");
+                }
                 
                 if (groupMemoryTracker == null)
+                {
                     groupMemoryTracker = new DailyGroupMemoryTracker();
+                    Log.Warning("[EchoColony] groupMemoryTracker was null after loading");
+                }
 
-                Log.Message($"[EchoColony] Memories loaded: {memoryPerPawn.Count} colonists");
+                // Load report
+                int totalMemories = memoryPerPawn.Sum(kvp => kvp.Value?.GetAllMemories()?.Count ?? 0);
+                int groupMemCount = groupMemoryTracker?.GetAllGroupMemories()?.Count ?? 0;
+                
+                Log.Message($"[EchoColony] Loaded memories: {memoryPerPawn.Count} colonists, {totalMemories} individual memories, {groupMemCount} group memories");
 
-                // Re-assign pawn references after loading
+                // Re-assign pawn references
                 ReassignPawnReferences();
 
-                // If system is disabled, clean loaded memories
+                // Inform if system is disabled
                 if (!IsMemorySystemEnabled)
                 {
-                    if (memoryPerPawn.Count > 0)
-                    {
-                        Log.Message("[EchoColony] Memory system disabled - cleaning loaded memories");
-                        memoryPerPawn = new Dictionary<string, ColonistMemoryTracker>();
-                        groupMemoryTracker = new DailyGroupMemoryTracker();
-                    }
+                    Log.Message("[EchoColony] Memory system disabled - existing memories preserved, new memories will not be created");
                 }
-                // UPDATE THE GLOBAL REFERENCE IF ONE EXISTS
+                
+                // Update global reference
                 if (MyStoryModComponent.Instance != null)
                 {
                     MyStoryModComponent.Instance.ColonistMemoryManager = this;
-                    Log.Message("[EchoColony] Global Manager reference updated after loading.");
                 }
+                else
+                {
+                    Log.Error("[EchoColony] MyStoryModComponent.Instance is NULL during load");
+                }
+            }
+            
+            // Save report
+            if (Scribe.mode == LoadSaveMode.Saving)
+            {
+                int totalMemories = memoryPerPawn.Sum(kvp => kvp.Value?.GetAllMemories()?.Count ?? 0);
+                int groupMemCount = groupMemoryTracker?.GetAllGroupMemories()?.Count ?? 0;
+                
+                Log.Message($"[EchoColony] Saving memories: {memoryPerPawn.Count} colonists, {totalMemories} individual memories, {groupMemCount} group memories");
             }
         }
 
@@ -122,24 +160,35 @@ namespace EchoColony
             if (memoryPerPawn == null || memoryPerPawn.Count == 0)
                 return;
 
-            var allColonists = PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive; //Take every pawn alive, colonist or slave
+            var allColonists = PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive;
             if (allColonists == null)
+            {
+                Log.Warning("[EchoColony] Cannot reassign pawn references - PawnsFinder returned null");
                 return;
+            }
 
             int reassigned = 0;
-            foreach (var colonist in allColonists)
+            int notFound = 0;
+
+            foreach (var kvp in memoryPerPawn)
             {
-                string id = colonist.ThingID;
-                if (memoryPerPawn.ContainsKey(id))
+                string id = kvp.Key;
+                var colonist = allColonists.FirstOrDefault(p => p.ThingID == id);
+                
+                if (colonist != null)
                 {
-                    memoryPerPawn[id].SetPawn(colonist);
+                    kvp.Value.SetPawn(colonist);
                     reassigned++;
+                }
+                else
+                {
+                    notFound++;
                 }
             }
 
-            if (reassigned > 0)
+            if (reassigned > 0 || notFound > 0)
             {
-                Log.Message($"[EchoColony] Re-assigned {reassigned} colonists to their memory trackers");
+                Log.Message($"[EchoColony] Reassigned {reassigned} pawns, {notFound} pawns absent (dead/other maps)");
             }
         }
 
@@ -147,25 +196,32 @@ namespace EchoColony
         public void DebugPrintMemoryState()
         {
             string worldName = Current.Game?.World?.info?.name ?? "Unknown";
-            Log.Message($"[EchoColony] DEBUG Memory system state:");
-            Log.Message($"[EchoColony]   - Current world: '{worldName}'");
-            Log.Message($"[EchoColony]   - System enabled: {IsMemorySystemEnabled}");
-            Log.Message($"[EchoColony]   - Colonists with memories: {memoryPerPawn?.Count ?? 0}");
-            
+            Log.Message("[EchoColony] ========================================");
+            Log.Message("[EchoColony] MEMORY SYSTEM STATE");
+            Log.Message("[EchoColony] ========================================");
+            Log.Message($"[EchoColony] World: {worldName}");
+            Log.Message($"[EchoColony] System enabled: {IsMemorySystemEnabled}");
+            Log.Message($"[EchoColony] Colonists with memories: {memoryPerPawn?.Count ?? 0}");
+
             if (groupMemoryTracker != null)
             {
                 var groupCount = groupMemoryTracker.GetAllGroupMemories()?.Count ?? 0;
-                Log.Message($"[EchoColony]   - Groups with memories: {groupCount}");
+                Log.Message($"[EchoColony] Groups with memories: {groupCount}");
             }
 
             if (memoryPerPawn != null && memoryPerPawn.Count > 0)
             {
-                foreach (var kvp in memoryPerPawn.Take(3)) // Show only first 3
+                Log.Message("[EchoColony] Details:");
+                foreach (var kvp in memoryPerPawn)
                 {
                     var stats = kvp.Value?.GetMemoryStats();
-                    Log.Message($"[EchoColony]     - {kvp.Key}: {stats?.total ?? 0} memories");
+                    var lastDay = kvp.Value?.GetLastMemoryDay() ?? -1;
+                    Log.Message($"[EchoColony]   {kvp.Key}: {stats?.total ?? 0} memories (last: day {lastDay})");
                 }
             }
+            
+            Log.Message($"[EchoColony] Global reference: {(MyStoryModComponent.Instance?.ColonistMemoryManager != null ? "OK" : "NULL")}");
+            Log.Message("[EchoColony] ========================================");
         }
 
         // Method to force manual cleanup (useful for debugging)
@@ -177,7 +233,7 @@ namespace EchoColony
             memoryPerPawn = new Dictionary<string, ColonistMemoryTracker>();
             groupMemoryTracker = new DailyGroupMemoryTracker();
 
-            Log.Message($"[EchoColony] Forced cleanup completed: {colonistCount} colonists, {groupCount} groups");
+            Log.Message($"[EchoColony] Forced cleanup: {colonistCount} colonists, {groupCount} groups removed");
             Messages.Message($"EchoColony: Memories cleaned ({colonistCount} colonists, {groupCount} groups)", 
                            MessageTypeDefOf.TaskCompletion);
         }
@@ -189,17 +245,23 @@ namespace EchoColony
             {
                 if (memoryPerPawn == null || groupMemoryTracker == null)
                 {
-                    Log.Warning("[EchoColony] Null memory references detected");
+                    Log.Error("[EchoColony] Null memory references detected");
                     return false;
                 }
 
-                // Verify tracker references are not null
                 int invalidTrackers = 0;
-                foreach (var tracker in memoryPerPawn.Values)
+                int totalMemories = 0;
+                
+                foreach (var kvp in memoryPerPawn)
                 {
-                    if (tracker == null)
+                    if (kvp.Value == null)
                     {
                         invalidTrackers++;
+                    }
+                    else
+                    {
+                        var mems = kvp.Value.GetAllMemories();
+                        totalMemories += mems?.Count ?? 0;
                     }
                 }
 
@@ -209,12 +271,12 @@ namespace EchoColony
                     return false;
                 }
 
-                Log.Message("[EchoColony] Memory system integrity verified");
+                Log.Message($"[EchoColony] Integrity verified: {memoryPerPawn.Count} trackers, {totalMemories} total memories");
                 return true;
             }
             catch (System.Exception ex)
             {
-                Log.Error($"[EchoColony] Error verifying memory integrity: {ex.Message}");
+                Log.Error($"[EchoColony] Error verifying integrity: {ex.Message}");
                 return false;
             }
         }

@@ -1202,14 +1202,16 @@ private string BuildContextualPrompt(Pawn speaker, List<Pawn> group, List<string
 
         // ✅ NUEVO MÉTODO: Guardar memoria unificada por colono
         private void SaveUnifiedMemories(List<Pawn> group, string resumenFinal)
-        {
-            if (MyStoryModComponent.Instance?.ColonistMemoryManager == null) return;
+{
+    // CORREGIDO: Usar GetOrCreate()
+    var manager = ColonistMemoryManager.GetOrCreate();
+    if (manager == null) return;
 
-            int today = GenDate.DaysPassed;
+    int today = GenDate.DaysPassed;
 
-            // Iniciar proceso de memorias personalizadas
-            MyStoryModComponent.Instance.StartCoroutine(SavePersonalizedMemories(group, resumenFinal, today));
-        }
+    // Iniciar proceso de memorias personalizadas
+    MyStoryModComponent.Instance.StartCoroutine(SavePersonalizedMemories(group, resumenFinal, today));
+}
 
         private IEnumerator SavePersonalizedMemories(List<Pawn> group, string conversationSummary, int today)
         {

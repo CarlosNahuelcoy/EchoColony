@@ -51,6 +51,7 @@ namespace EchoColony
         {
             Log.Message("[EchoColony] Start() executed in MyStoryModComponent");
 
+            // Initialize ColonistMemoryManager
             ColonistMemoryManager = Current.Game.GetComponent<ColonistMemoryManager>();
             if (ColonistMemoryManager == null)
             {
@@ -59,6 +60,22 @@ namespace EchoColony
             }
 
             GroupMemoryTracker = ColonistMemoryManager.GetGroupMemoryTracker();
+
+            // ═══════════════════════════════════════════════════════════
+            // NUEVO: Initialize SpontaneousMessageTracker
+            // ═══════════════════════════════════════════════════════════
+            var spontaneousTracker = Current.Game.GetComponent<SpontaneousMessages.SpontaneousMessageTracker>();
+            if (spontaneousTracker == null)
+            {
+                spontaneousTracker = new SpontaneousMessages.SpontaneousMessageTracker(Current.Game);
+                Current.Game.components.Add(spontaneousTracker);
+                Log.Message("[EchoColony] SpontaneousMessageTracker added to game");
+            }
+            else
+            {
+                Log.Message("[EchoColony] SpontaneousMessageTracker already exists");
+            }
+            // ═══════════════════════════════════════════════════════════
 
             EnsurePlayer2HeartbeatExists();
 
