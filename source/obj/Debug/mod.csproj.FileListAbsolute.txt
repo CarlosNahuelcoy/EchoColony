@@ -1,0 +1,8 @@
+D:\Rimworld my mod\EchoColony My mod 2\1.6\Assemblies\EchoColony.dll
+D:\Rimworld my mod\EchoColony My mod 2\source\obj\Debug\mod.csproj.AssemblyReference.cache
+D:\Rimworld my mod\EchoColony My mod 2\source\obj\Debug\mod.GeneratedMSBuildEditorConfig.editorconfig
+D:\Rimworld my mod\EchoColony My mod 2\source\obj\Debug\mod.AssemblyInfoInputs.cache
+D:\Rimworld my mod\EchoColony My mod 2\source\obj\Debug\mod.AssemblyInfo.cs
+D:\Rimworld my mod\EchoColony My mod 2\source\obj\Debug\mod.csproj.CoreCompileInputs.cache
+D:\Rimworld my mod\EchoColony My mod 2\source\obj\Debug\mod.csproj.Up2Date
+D:\Rimworld my mod\EchoColony My mod 2\source\obj\Debug\EchoColony.dll
