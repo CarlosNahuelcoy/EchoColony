@@ -40,25 +40,28 @@ namespace EchoColony.SpontaneousMessages
         }
 
         public override void GameComponentTick()
-        {
-            base.GameComponentTick();
-            
-            // Solo evaluar cada hora de juego (2500 ticks)
-            if (Find.TickManager.TicksGame % GenDate.TicksPerHour != 0)
-                return;
+{
+    base.GameComponentTick();
+    
+    // ✅ STORYTELLER UPDATE
+    StorytellerSpontaneousMessageSystem.Update();
+    
+    // ✅ COLONIST MESSAGES 
+    if (Find.TickManager.TicksGame % GenDate.TicksPerHour != 0)
+        return;
 
-            if (!MyMod.Settings.IsSpontaneousMessagesActive())
-                return;
+    if (!MyMod.Settings.IsSpontaneousMessagesActive())
+        return;
 
-            // Limpiar trackers de colonos que ya no existen
-            CleanupOldTrackers();
+    // Limpiar trackers de colonos que ya no existen
+    CleanupOldTrackers();
 
-            // Chequear mensajes random si está habilitado
-            if (MyMod.Settings.AreRandomMessagesEnabled())
-            {
-                CheckRandomMessages();
-            }
-        }
+    // Chequear mensajes random si está habilitado
+    if (MyMod.Settings.AreRandomMessagesEnabled())
+    {
+        CheckRandomMessages();
+    }
+}
 
         /// <summary>
         /// Obtiene o crea el tracker para un colono específico
