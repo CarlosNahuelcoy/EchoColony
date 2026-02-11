@@ -230,4 +230,31 @@ Memories are automatically generated during conversations and help the colonist 
   <EchoColony.DefaultMaxMessagesPerDay>Default max messages per day</EchoColony.DefaultMaxMessagesPerDay>
   <EchoColony.DefaultCooldownHours>Default cooldown hours</EchoColony.DefaultCooldownHours>
   <EchoColony.PrioritizeSocialTraitsTooltip>Colonists with social traits (Kind, Chatty, etc.) are more likely to initiate conversations</EchoColony.PrioritizeSocialTraitsTooltip>
+
+<!-- Storyteller Spontaneous Messages -->
+<EchoColony.StorytellerMessagesMode>Storyteller Message Mode:</EchoColony.StorytellerMessagesMode>
+
+<!-- Mode Labels -->
+<EchoColony.StorytellerModeDisabled>Disabled</EchoColony.StorytellerModeDisabled>
+<EchoColony.StorytellerModeRandomOnly>Random Only</EchoColony.StorytellerModeRandomOnly>
+<EchoColony.StorytellerModeIncidentsOnly>Incidents Only</EchoColony.StorytellerModeIncidentsOnly>
+<EchoColony.StorytellerModeFull>Full (Random + Incidents)</EchoColony.StorytellerModeFull>
+
+<!-- Mode Descriptions -->
+<EchoColony.StorytellerModeDisabledDesc>No messages</EchoColony.StorytellerModeDisabledDesc>
+<EchoColony.StorytellerModeRandomOnlyDesc>Random observations</EchoColony.StorytellerModeRandomOnlyDesc>
+<EchoColony.StorytellerModeIncidentsOnlyDesc>React to events</EchoColony.StorytellerModeIncidentsOnlyDesc>
+<EchoColony.StorytellerModeFullDesc>Both random and events</EchoColony.StorytellerModeFullDesc>
+
+<!-- Settings -->
+<EchoColony.StorytellerRandomInterval>Random Message Interval (minutes)</EchoColony.StorytellerRandomInterval>
+<EchoColony.StorytellerIncidentChance>Incident Comment Chance</EchoColony.StorytellerIncidentChance>
+<EchoColony.StorytellerMessageAutoClose>Auto-close message window</EchoColony.StorytellerMessageAutoClose>
+<EchoColony.StorytellerMessageAutoCloseDelay>Auto-close delay (seconds)</EchoColony.StorytellerMessageAutoCloseDelay>
+<EchoColony.StorytellerMessagePlaySound>Play sound with messages</EchoColony.StorytellerMessagePlaySound>
+<EchoColony.StorytellerMessageTest>🧪 Test Random Message</EchoColony.StorytellerMessageTest>
+
+<!-- Tooltips -->
+<EchoColony.StorytellerMessageAutoCloseTooltip>Message window will close automatically after a few seconds</EchoColony.StorytellerMessageAutoCloseTooltip>
+<EchoColony.StorytellerMessagePlaySoundTooltip>Play a notification sound when the storyteller sends a message</EchoColony.StorytellerMessagePlaySoundTooltip>
 </LanguageData>
