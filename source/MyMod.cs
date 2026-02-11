@@ -6,6 +6,7 @@ using UnityEngine.Networking;
 using RimWorld;
 using System.Linq;
 using EchoColony.SpontaneousMessages;
+using static EchoColony.GeminiSettings;
 
 namespace EchoColony
 {
@@ -151,6 +152,83 @@ namespace EchoColony
                     else
                     {
                         Find.WindowStack.Add(new ColonistMessageConfigWindow());
+                    }
+                }
+            }
+            else
+            {
+                DrawStatusIndicator(list, false, "System");
+            }
+
+            list.GapLine();
+
+            // ═══════════════════════════════════════════════════════════════
+            // STORYTELLER SPONTANEOUS MESSAGES
+            // ═══════════════════════════════════════════════════════════════
+            DrawSectionHeader(list, "Storyteller Spontaneous Messages", new Color(1f, 0.9f, 0.6f));
+
+            list.Label("Storyteller Message Mode:");
+            string currentStorytellerModeLabel = GetStorytellerModeLabelTranslated(Settings.storytellerMessageMode);
+            if (list.ButtonText(currentStorytellerModeLabel))
+            {
+                ShowStorytellerMessageModeMenu();
+            }
+
+            if (Settings.IsStorytellerMessagesActive())
+            {
+                list.Gap();
+                DrawStatusIndicator(list, true, "System");
+
+                // Random messages settings
+                if (Settings.AreStorytellerRandomMessagesEnabled())
+                {
+                    list.Gap();
+                    list.Label("Random Message Interval (minutes): " + Settings.storytellerRandomIntervalMinutes.ToString("F0"));
+                    Settings.storytellerRandomIntervalMinutes = list.Slider(Settings.storytellerRandomIntervalMinutes, 5f, 120f);
+                }
+
+                // Incident messages settings
+                if (Settings.AreStorytellerIncidentMessagesEnabled())
+                {
+                    list.Gap();
+                    list.Label("Incident Comment Chance: " + (Settings.storytellerIncidentChance * 100f).ToString("F0") + "%");
+                    Settings.storytellerIncidentChance = list.Slider(Settings.storytellerIncidentChance, 0f, 1f);
+                }
+
+                list.Gap();
+                list.CheckboxLabeled(
+                    "Auto-close message window",
+                    ref Settings.storytellerMessageAutoClose,
+                    "Message window will close automatically after a few seconds"
+                );
+
+                if (Settings.storytellerMessageAutoClose)
+                {
+                    list.Label("Auto-close delay (seconds): " + Settings.storytellerMessageAutoCloseSeconds.ToString("F0"));
+                    Settings.storytellerMessageAutoCloseSeconds = list.Slider(Settings.storytellerMessageAutoCloseSeconds, 3f, 30f);
+                }
+
+                list.Gap();
+                list.CheckboxLabeled(
+                    "Play sound with messages",
+                    ref Settings.storytellerMessagePlaySound,
+                    "Play a notification sound when the storyteller sends a message"
+                );
+
+                // Botón de test
+                list.Gap();
+                if (list.ButtonText("🧪 Test Random Message"))
+                {
+                    if (Find.Storyteller == null)
+                    {
+                        Messages.Message("Load a game first", MessageTypeDefOf.RejectInput);
+                    }
+                    else
+                    {
+                        StorytellerSpontaneousMessageSystem.GenerateSpontaneousMessage(
+                            StorytellerSpontaneousMessageSystem.MessageTriggerType.Random, 
+                            isTest: true
+                        );
                     }
                 }
             }
@@ -825,5 +903,57 @@ namespace EchoColony
                 }
             };
         }
+
+        private void ShowStorytellerMessageModeMenu()
+{
+    List<FloatMenuOption> options = new List<FloatMenuOption>();
+    
+    foreach (StorytellerMessageMode mode in Enum.GetValues(typeof(StorytellerMessageMode)))
+    {
+        string label = GetStorytellerModeLabelTranslated(mode);
+        string desc = GetStorytellerModeDescriptionTranslated(mode);
+        
+        options.Add(new FloatMenuOption(label + " - " + desc, () =>
+        {
+            Settings.storytellerMessageMode = mode;
+        }));
+    }
+    
+    Find.WindowStack.Add(new FloatMenu(options));
+}
+
+private string GetStorytellerModeLabelTranslated(StorytellerMessageMode mode)
+{
+    switch (mode)
+    {
+        case StorytellerMessageMode.Disabled:
+            return "Disabled";
+        case StorytellerMessageMode.RandomOnly:
+            return "Random Only";
+        case StorytellerMessageMode.IncidentsOnly:
+            return "Incidents Only";
+        case StorytellerMessageMode.Full:
+            return "Full (Random + Incidents)";
+        default:
+            return mode.ToString();
+    }
+}
+
+private string GetStorytellerModeDescriptionTranslated(StorytellerMessageMode mode)
+{
+    switch (mode)
+    {
+        case StorytellerMessageMode.Disabled:
+            return "No messages";
+        case StorytellerMessageMode.RandomOnly:
+            return "Random observations";
+        case StorytellerMessageMode.IncidentsOnly:
+            return "React to events";
+        case StorytellerMessageMode.Full:
+            return "Both random and events";
+        default:
+            return "";
+    }
+}
     }
 }

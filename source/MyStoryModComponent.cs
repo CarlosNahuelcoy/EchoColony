@@ -92,6 +92,13 @@ namespace EchoColony
                 Actions.ActionRegistry.Initialize();
                 actionsInitialized = true;
             }
+
+            // Inicializar sistema de mensajes espontáneos del storyteller
+            if (MyMod.Settings.IsStorytellerMessagesActive())
+            {
+                StorytellerSpontaneousMessageSystem.StartSystem();
+                Log.Message("[EchoColony] Storyteller spontaneous message system started");
+            }
         }
 
         private void EnsurePlayer2HeartbeatExists()
