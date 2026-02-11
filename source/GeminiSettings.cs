@@ -117,6 +117,40 @@ namespace EchoColony
         public bool prioritizeSocialTraits = true;
         public float minConsciousnessPercent = 50f;
 
+        // ===== STORYTELLER SPONTANEOUS MESSAGES SYSTEM =====
+public StorytellerMessageMode storytellerMessageMode = StorytellerMessageMode.Disabled;
+public float storytellerRandomIntervalMinutes = 30f; // Para modo Random/Full
+public float storytellerIncidentChance = 0.3f; // 0-1 probabilidad de comentar en incidentes
+public bool storytellerMessageAutoClose = true;
+public float storytellerMessageAutoCloseSeconds = 8f;
+public bool storytellerMessagePlaySound = true;
+
+// Métodos helper
+public bool IsStorytellerMessagesActive()
+{
+    return storytellerMessageMode != StorytellerMessageMode.Disabled;
+}
+
+public bool AreStorytellerRandomMessagesEnabled()
+{
+    return storytellerMessageMode == StorytellerMessageMode.RandomOnly ||
+           storytellerMessageMode == StorytellerMessageMode.Full;
+}
+
+public bool AreStorytellerIncidentMessagesEnabled()
+{
+    return storytellerMessageMode == StorytellerMessageMode.IncidentsOnly ||
+           storytellerMessageMode == StorytellerMessageMode.Full;
+}
+
+        public enum StorytellerMessageMode
+        {
+            Disabled,
+            RandomOnly,
+            IncidentsOnly,
+            Full
+        }
+
         // Configuraciones individuales por colono (usa ThingID como key)
         public Dictionary<string, ColonistMessageSettings> colonistMessageSettings = new Dictionary<string, ColonistMessageSettings>();
 
@@ -183,6 +217,13 @@ namespace EchoColony
             {
                 colonistMessageSettings = new Dictionary<string, ColonistMessageSettings>();
             }
+
+            Scribe_Values.Look(ref storytellerMessageMode, "storytellerMessageMode", StorytellerMessageMode.Disabled);
+            Scribe_Values.Look(ref storytellerRandomIntervalMinutes, "storytellerRandomIntervalMinutes", 30f);
+            Scribe_Values.Look(ref storytellerIncidentChance, "storytellerIncidentChance", 0.3f);
+            Scribe_Values.Look(ref storytellerMessageAutoClose, "storytellerMessageAutoClose", true);
+            Scribe_Values.Look(ref storytellerMessageAutoCloseSeconds, "storytellerMessageAutoCloseSeconds", 8f);
+            Scribe_Values.Look(ref storytellerMessagePlaySound, "storytellerMessagePlaySound", true);
         }
 
         /// <summary>
