@@ -238,6 +238,34 @@ namespace EchoColony
                            MessageTypeDefOf.TaskCompletion);
         }
 
+        public void CleanupOrphanedMemories()
+        {
+            // Obtenemos todos los IDs de peones que el juego aún reconoce (vivos o muertos en el registro)
+            var validPawnIDs = new HashSet<string>(
+                PawnsFinder.AllMapsWorldAndTemporary_AliveOrDead
+                    .Where(p => p != null)
+                    .Select(p => p.ThingID)
+            );
+
+            List<string> keysToRemove = new List<string>();
+
+            // Identificar memorias de peones que ya no existen
+            foreach (var key in memoryPerPawn.Keys)
+            {
+                if (!validPawnIDs.Contains(key))
+                {
+                    keysToRemove.Add(key);
+                }
+            }
+
+            // Eliminar los datos huérfanos
+            foreach (var key in keysToRemove)
+            {
+                memoryPerPawn.Remove(key);
+                Log.Message($"[EchoColony] Cleaned up orphaned memory tracker for Pawn ID: {key}");
+            }
+        }
+
         // Validate system integrity
         public bool ValidateMemoryIntegrity()
         {
@@ -279,6 +307,12 @@ namespace EchoColony
                 Log.Error($"[EchoColony] Error verifying integrity: {ex.Message}");
                 return false;
             }
+        }
+
+        public override void FinalizeInit()
+        {
+            base.FinalizeInit();
+            CleanupOrphanedMemories();
         }
     }
 }
