@@ -24,8 +24,6 @@ namespace EchoColony
             string playerPrompt = BuildPlayerPrompt(userMessage);
             string globalPrompt = MyMod.Settings?.globalPrompt ?? "";
             string customPrompt = ColonistPromptManager.GetPrompt(pawn);
-            
-            // FIXED: Agregar sistema de acciones con error handling
             string actionPrompt = BuildActionSystemPrompt(pawn);
 
             sb.AppendLine(systemPrompt);
@@ -40,13 +38,10 @@ namespace EchoColony
 
             sb.AppendLine(context);
             sb.AppendLine(BuildIdeologyInfo(pawn));
-            
-            // Agregar acciones ANTES de las memorias (para que la IA las vea primero)
+
             if (!string.IsNullOrWhiteSpace(actionPrompt))
-            {
                 sb.AppendLine(actionPrompt);
-            }
-            
+
             sb.AppendLine(memoryRecap);
             sb.AppendLine(chatHistory);
             sb.AppendLine(playerPrompt);
@@ -56,13 +51,11 @@ namespace EchoColony
 
         private static string BuildActionSystemPrompt(Pawn pawn)
         {
-            // Only include if user has actions enabled
             if (!MyMod.Settings.enableDivineActions)
                 return "";
-            
+
             try
             {
-                // Check if ActionExecutor class exists
                 var actionExecutorType = typeof(Actions.ActionExecutor);
                 if (actionExecutorType != null)
                 {
@@ -91,29 +84,65 @@ namespace EchoColony
         {
             string name = pawn.LabelShort;
             string gender = pawn.gender.ToString();
-            string xenotype = pawn.genes?.Xenotype?.label ?? "baseline human";
             string faction = Faction.OfPlayer?.Name ?? "unknown faction";
             string settlement = Find.CurrentMap.info?.parent?.LabelCap ?? "unknown settlement";
 
+            // Xenotype solo si Biotech está activo
+            string xenotype = ModsConfig.BiotechActive
+                ? (pawn.genes?.Xenotype?.label ?? "baseline human")
+                : "human";
+
             string status = "colonist";
             string statusContext = "";
-            
+
             if (pawn.IsSlaveOfColony)
             {
                 status = "slave";
-                statusContext = " You are enslaved and must obey your masters. You have limited freedom and can be punished for disobedience.";
+                string slaveWill = "";
+                if (pawn.guest != null)
+                {
+                    float will = pawn.guest.will;
+                    if (will < 0.2f)
+                        slaveWill = " Your will is broken and you have little resistance left.";
+                    else if (will < 0.5f)
+                        slaveWill = " You still have some will to resist but are largely subdued.";
+                    else
+                        slaveWill = " You still have a strong will and deeply resent your situation.";
+                }
+                statusContext = $" You are enslaved and forced to obey your masters. You have no freedom and can be punished for disobedience.{slaveWill} You may feel fear, resentment, or resignation depending on your nature.";
             }
             else if (pawn.IsPrisonerOfColony)
             {
                 status = "prisoner";
-                statusContext = " You are imprisoned and confined. You may be trying to resist recruitment or escape.";
+                bool recruitable = pawn.guest?.Recruitable == true;
+
+                if (recruitable)
+                {
+                    statusContext = " You are a prisoner being held by this colony. You are considering whether to join them, but you still have doubts and reservations. You are not yet one of them.";
+                }
+                else
+                {
+                    statusContext = " You are a prisoner held against your will. You resent your captors and want to be free. You do not trust them and have no intention of cooperating unless you have a compelling reason.";
+                }
+
+                // Acceder a interactionMode via Traverse porque es campo privado
+                if (pawn.guest != null)
+                {
+                    float resistance = pawn.guest.resistance;
+                    if (resistance > 20f)
+                        statusContext += " You are very resistant to recruitment and deeply hostile.";
+                    else if (resistance > 5f)
+                        statusContext += " You are still resistant but beginning to waver slightly.";
+                    else if (resistance <= 0f && recruitable)
+                        statusContext += " Your resistance has worn down and you are genuinely considering joining.";
+                }
             }
             else if (pawn.IsColonist)
             {
                 status = "colonist";
                 statusContext = " You are a free member of this colony with full rights and responsibilities.";
             }
-            
+
             return $"You are {name}, a {status} in RimWorld. You identify as {gender} ({xenotype}). You belong to the faction '{faction}' and live in the settlement '{settlement}'.{statusContext} Speak from your perspective and stay in character.";
         }
 
@@ -124,6 +153,7 @@ namespace EchoColony
             sb.AppendLine(BuildOptimizedDemographics(pawn));
             sb.AppendLine(BuildBackstory(pawn));
             sb.AppendLine(BuildTraits(pawn));
+            sb.AppendLine(BuildGeneticsInfo(pawn)); // Solo activo si Biotech está instalado
             sb.AppendLine(BuildHealthInfo(pawn));
             sb.AppendLine(BuildOptimizedHealthDetails(pawn));
             sb.AppendLine(BuildMoodInfo(pawn));
@@ -134,25 +164,199 @@ namespace EchoColony
             sb.AppendLine(BuildOptimizedInventory(pawn));
             sb.AppendLine(BuildOptimizedSkills(pawn));
             sb.AppendLine(BuildOptimizedRelationships(pawn));
-            sb.AppendLine(BuildColonyPopulation(pawn)); // NUEVO: Info de esclavos y prisioneros
+            sb.AppendLine(BuildColonyPopulation(pawn));
             sb.AppendLine(BuildLocationInfo(pawn));
             sb.AppendLine(BuildOptimizedEventSummary(pawn));
             sb.AppendLine(BuildOptimizedEnvironmentInfo(pawn));
             sb.AppendLine(BuildOptimizedMetaInstructions(pawn));
-            
+
             string threatInfo = GetCriticalThreatInfo(pawn);
             if (!string.IsNullOrEmpty(threatInfo))
                 sb.AppendLine(threatInfo);
-            
+
             return sb.ToString();
         }
+
+        // ─────────────────────────────────────────
+        // GENETICS (requiere Biotech)
+        // ─────────────────────────────────────────
+
+        private static string BuildGeneticsInfo(Pawn pawn)
+        {
+            if (!ModsConfig.BiotechActive) return "";
+            if (pawn.genes == null) return "";
+
+            var sb = new StringBuilder();
+
+            // --- Xenotipo ---
+            string xenotypeName = pawn.genes.xenotypeName ?? pawn.genes.Xenotype?.label ?? "baseline human";
+            bool isCustom = pawn.genes.Xenotype == XenotypeDefOf.Baseliner && !string.IsNullOrEmpty(pawn.genes.xenotypeName);
+            string xenotypeLabel = isCustom ? $"{xenotypeName} (custom hybrid)" : xenotypeName;
+
+            sb.Append($"*Xenotype:* {xenotypeLabel}");
+
+            // Descripción del xenotipo si no es humano base
+            if (pawn.genes.Xenotype != null && pawn.genes.Xenotype != XenotypeDefOf.Baseliner)
+            {
+                string xenotypeDesc = pawn.genes.Xenotype.description;
+                if (!string.IsNullOrEmpty(xenotypeDesc))
+                {
+                    xenotypeDesc = System.Text.RegularExpressions.Regex.Replace(xenotypeDesc, "<.*?>", "");
+                    if (xenotypeDesc.Length > 120)
+                        xenotypeDesc = xenotypeDesc.Substring(0, 117) + "...";
+                    sb.AppendLine();
+                    sb.Append($"*What you are:* {xenotypeDesc}");
+                }
+            }
+
+            var activeGenes = pawn.genes.GenesListForReading
+                .Where(g => g.Active)
+                .ToList();
+
+            if (!activeGenes.Any())
+            {
+                sb.AppendLine();
+                return sb.ToString();
+            }
+
+            // --- Apariencia física (genes cosméticos) ---
+            var appearanceGenes = activeGenes
+                .Where(g => g.def.displayCategory != null && (
+                    g.def.displayCategory.defName == "Cosmetic" ||
+                    g.def.displayCategory.defName == "Skin" ||
+                    g.def.displayCategory.defName == "Hair" ||
+                    g.def.displayCategory.defName == "Body" ||
+                    g.def.displayCategory.defName == "Head"))
+                .Select(g => g.def.label)
+                .ToList();
+
+            // Fallback por defName para mods que no usan categorías estándar
+            var additionalAppearance = activeGenes
+                .Where(g => g.def.displayCategory == null && (
+                    g.def.defName.ToLower().Contains("skin") ||
+                    g.def.defName.ToLower().Contains("hair") ||
+                    g.def.defName.ToLower().Contains("body") ||
+                    g.def.defName.ToLower().Contains("eyes") ||
+                    g.def.defName.ToLower().Contains("fur") ||
+                    g.def.defName.ToLower().Contains("carapace") ||
+                    g.def.defName.ToLower().Contains("tail") ||
+                    g.def.defName.ToLower().Contains("horn") ||
+                    g.def.defName.ToLower().Contains("antenna")))
+                .Select(g => g.def.label)
+                .ToList();
+
+            appearanceGenes.AddRange(additionalAppearance);
+            appearanceGenes = appearanceGenes.Distinct().ToList();
+
+            if (appearanceGenes.Any())
+            {
+                sb.AppendLine();
+                sb.Append($"*Physical appearance:* {string.Join(", ", appearanceGenes)}");
+            }
+
+            // --- Habilidades y efectos genéticos ---
+            var abilityGenes = activeGenes
+                .Where(g => !appearanceGenes.Contains(g.def.label))
+                .Select(g => FormatGeneForPrompt(g))
+                .Where(s => !string.IsNullOrEmpty(s))
+                .ToList();
+
+            if (abilityGenes.Any())
+            {
+                sb.AppendLine();
+                sb.Append($"*Genetic traits & abilities:* {string.Join(", ", abilityGenes)}");
+            }
+
+            // --- Necesidades especiales ---
+            string specialNeeds = GetGeneticSpecialNeeds(pawn);
+            if (!string.IsNullOrEmpty(specialNeeds))
+            {
+                sb.AppendLine();
+                sb.Append($"*Genetic needs:* {specialNeeds}");
+            }
+
+            sb.AppendLine();
+            sb.Append("*Important:* You are fully aware of your nature and genetics. Speak about your physical traits, abilities, and needs naturally as part of who you are.");
+            sb.AppendLine();
+
+            return sb.ToString();
+        }
+
+        private static string FormatGeneForPrompt(Gene gene)
+        {
+            if (gene?.def == null) return "";
+
+            string label = gene.def.label;
+            if (string.IsNullOrEmpty(label)) return "";
+
+            string desc = gene.def.description;
+            if (!string.IsNullOrEmpty(desc))
+            {
+                desc = System.Text.RegularExpressions.Regex.Replace(desc, "<.*?>", "");
+                desc = desc.Trim().TrimEnd('.');
+                // Truncar solo si es muy largo, pero incluir siempre algo
+                if (desc.Length > 80)
+                    desc = desc.Substring(0, 77) + "...";
+                return $"{label} ({desc})";
+            }
+
+            return label;
+        }
+
+        private static string GetGeneticSpecialNeeds(Pawn pawn)
+        {
+            if (!ModsConfig.BiotechActive) return "";
+            if (pawn.genes == null) return "";
+
+            var needs = new List<string>();
+
+            // Hemogen (Sanguófago y similares) — solo si Biotech está activo
+            if (ModsConfig.BiotechActive)
+            {
+                var hemogenDef = DefDatabase<NeedDef>.GetNamedSilentFail("Hemogen");
+                if (hemogenDef != null)
+                {
+                    var hemogenNeed = pawn.needs?.TryGetNeed(hemogenDef);
+                    if (hemogenNeed != null)
+                    {
+                        float level = hemogenNeed.CurLevelPercentage;
+                        if (level < 0.2f)
+                            needs.Add("critically low on hemogen - need blood urgently");
+                        else if (level < 0.5f)
+                            needs.Add("low on hemogen - need to feed soon");
+                        else
+                            needs.Add("must consume blood (hemogen) to survive");
+                    }
+                }
+            }
+
+            // Búsqueda por defName para mods que no usan categorías estándar
+            var activeGenes = pawn.genes.GenesListForReading.Where(g => g.Active);
+            foreach (var gene in activeGenes)
+            {
+                string defName = gene.def.defName.ToLower();
+
+                if (defName.Contains("deathless") || defName.Contains("immortal"))
+                    needs.Add("immortal - does not age or die from age");
+
+                if (defName.Contains("firesupernatural"))
+                    needs.Add("supernatural fire resistance");
+
+                if (defName.Contains("psychichypersensi"))
+                    needs.Add("hypersensitive to psychic phenomena");
+            }
+
+            return needs.Any() ? string.Join("; ", needs) : "";
+        }
+
+        // ─────────────────────────────────────────
+        // RESTO DE MÉTODOS (sin cambios)
+        // ─────────────────────────────────────────
 
         private static string GetCriticalThreatInfo(Pawn pawn)
         {
             if (MyMod.Settings?.ignoreDangersInConversations == true)
-            {
                 return "";
-            }
 
             var threats = new List<string>();
 
@@ -181,176 +385,145 @@ namespace EchoColony
 
             var sb = new StringBuilder();
             sb.AppendLine($"*Age:* {age}y ({gender})");
-            
+
             string ageGuidance = GetCompactAgeGuidance(age);
             if (!string.IsNullOrEmpty(ageGuidance))
                 sb.AppendLine($"*Age behavior:* {ageGuidance}");
-                
+
             return sb.ToString();
         }
 
-       private static string GetCompactAgeGuidance(int age)
-{
-    if (age <= 1)
-        return "Baby sounds only - crying, cooing, 'goo', 'maa'";
-    else if (age <= 3)
-        return "Very simple words, excited expressions";
-    else if (age <= 6)
-        return "Simple sentences, lots of questions";
-    else if (age <= 10)
-        return "Enthusiastic but still childlike speech";
-    else if (age <= 13)
-        return "Starting to sound more mature but still young";
-    else if (age <= 17)
-        return "Teenage way of speaking - direct, sometimes emotional";
-    else
-        return "";
-}
+        private static string GetCompactAgeGuidance(int age)
+        {
+            if (age <= 1)   return "Baby sounds only - crying, cooing, 'goo', 'maa'";
+            else if (age <= 3)  return "Very simple words, excited expressions";
+            else if (age <= 6)  return "Simple sentences, lots of questions";
+            else if (age <= 10) return "Enthusiastic but still childlike speech";
+            else if (age <= 13) return "Starting to sound more mature but still young";
+            else if (age <= 17) return "Teenage way of speaking - direct, sometimes emotional";
+            else return "";
+        }
 
-       private static string BuildOptimizedHealthDetails(Pawn pawn)
-{
-    if (pawn.health?.hediffSet?.hediffs == null) return "";
-    
-    var healthStatus = new List<string>();
-    var hediffs = pawn.health.hediffSet.hediffs.Where(h => h.Visible).ToList();
-    
-    float healthPercent = pawn.health.summaryHealth?.SummaryHealthPercent ?? 1f;
-    if (healthPercent < 0.25f)
-        healthStatus.Add("barely clinging to life");
-    else if (healthPercent < 0.5f)
-        healthStatus.Add("badly injured and weakened");
-    else if (healthPercent < 0.75f)
-        healthStatus.Add("wounded but functional");
-    
-    var bleeding = hediffs.OfType<Hediff_Injury>()
-        .Where(h => h.Bleeding && h.Severity > 0.1f)
-        .ToList();
-    if (bleeding.Any())
-    {
-        float totalBleedRate = pawn.health.hediffSet.BleedRateTotal;
-        if (totalBleedRate > 0.4f)
-            healthStatus.Add("bleeding profusely from multiple wounds");
-        else if (totalBleedRate > 0.1f)
-            healthStatus.Add("bleeding from wounds");
-    }
-    
-    var infections = hediffs.Where(h => 
-        h.def.defName.Contains("Infection") || 
-        h.def.defName.Contains("WoundInfection")).ToList();
-    if (infections.Any())
-    {
-        if (infections.Count > 1)
-            healthStatus.Add("fighting multiple infections");
-        else
-            healthStatus.Add("has an infected wound");
-    }
-    
-    var diseases = hediffs.Where(h => 
-        h.def.defName.Contains("Plague") || 
-        h.def.defName.Contains("Malaria") || 
-        h.def.defName.Contains("Flu") ||
-        h.def.defName.Contains("FoodPoisoning") ||
-        h.def.defName.Contains("ToxicBuildup")).ToList();
-    foreach (var disease in diseases)
-        healthStatus.Add($"sick with {disease.def.label}");
-    
-    var missingParts = hediffs.OfType<Hediff_MissingPart>().ToList();
-    if (missingParts.Any())
-    {
-        var parts = missingParts.Select(h => h.Part.Label).Distinct();
-        healthStatus.Add($"missing my {string.Join(" and ", parts)}");
-    }
-    
-    var prosthetics = hediffs.Where(h => 
-        h.def.addedPartProps != null || 
-        h.def.defName.Contains("Prosthetic") || 
-        h.def.defName.Contains("SimpleProsthetic") ||
-        h.def.defName.Contains("Bionic") || 
-        h.def.defName.Contains("Archotech")).ToList();
-    if (prosthetics.Any())
-    {
-        var woodenPros = prosthetics.Where(p => p.def.defName.Contains("SimpleProsthetic")).ToList();
-        var bionicPros = prosthetics.Where(p => p.def.defName.Contains("Bionic")).ToList();
-        var archotechPros = prosthetics.Where(p => p.def.defName.Contains("Archotech")).ToList();
-        
-        if (woodenPros.Any())
+        private static string BuildOptimizedHealthDetails(Pawn pawn)
         {
-            var woodenParts = woodenPros.Select(p => p.Part?.Label).Where(l => l != null);
-            healthStatus.Add($"have wooden prosthetic {string.Join(" and ", woodenParts)}");
+            if (pawn.health?.hediffSet?.hediffs == null) return "";
+
+            var healthStatus = new List<string>();
+            var hediffs = pawn.health.hediffSet.hediffs.Where(h => h.Visible).ToList();
+
+            float healthPercent = pawn.health.summaryHealth?.SummaryHealthPercent ?? 1f;
+            if (healthPercent < 0.25f)      healthStatus.Add("barely clinging to life");
+            else if (healthPercent < 0.5f)  healthStatus.Add("badly injured and weakened");
+            else if (healthPercent < 0.75f) healthStatus.Add("wounded but functional");
+
+            var bleeding = hediffs.OfType<Hediff_Injury>()
+                .Where(h => h.Bleeding && h.Severity > 0.1f).ToList();
+            if (bleeding.Any())
+            {
+                float totalBleedRate = pawn.health.hediffSet.BleedRateTotal;
+                if (totalBleedRate > 0.4f)      healthStatus.Add("bleeding profusely from multiple wounds");
+                else if (totalBleedRate > 0.1f) healthStatus.Add("bleeding from wounds");
+            }
+
+            var infections = hediffs.Where(h =>
+                h.def.defName.Contains("Infection") ||
+                h.def.defName.Contains("WoundInfection")).ToList();
+            if (infections.Any())
+            {
+                if (infections.Count > 1) healthStatus.Add("fighting multiple infections");
+                else healthStatus.Add("has an infected wound");
+            }
+
+            var diseases = hediffs.Where(h =>
+                h.def.defName.Contains("Plague") ||
+                h.def.defName.Contains("Malaria") ||
+                h.def.defName.Contains("Flu") ||
+                h.def.defName.Contains("FoodPoisoning") ||
+                h.def.defName.Contains("ToxicBuildup")).ToList();
+            foreach (var disease in diseases)
+                healthStatus.Add($"sick with {disease.def.label}");
+
+            var missingParts = hediffs.OfType<Hediff_MissingPart>().ToList();
+            if (missingParts.Any())
+            {
+                var parts = missingParts.Select(h => h.Part.Label).Distinct();
+                healthStatus.Add($"missing my {string.Join(" and ", parts)}");
+            }
+
+            var prosthetics = hediffs.Where(h =>
+                h.def.addedPartProps != null ||
+                h.def.defName.Contains("Prosthetic") ||
+                h.def.defName.Contains("SimpleProsthetic") ||
+                h.def.defName.Contains("Bionic") ||
+                h.def.defName.Contains("Archotech")).ToList();
+            if (prosthetics.Any())
+            {
+                var woodenPros   = prosthetics.Where(p => p.def.defName.Contains("SimpleProsthetic")).ToList();
+                var bionicPros   = prosthetics.Where(p => p.def.defName.Contains("Bionic")).ToList();
+                var archotechPros = prosthetics.Where(p => p.def.defName.Contains("Archotech")).ToList();
+
+                if (woodenPros.Any())
+                {
+                    var parts = woodenPros.Select(p => p.Part?.Label).Where(l => l != null);
+                    healthStatus.Add($"have wooden prosthetic {string.Join(" and ", parts)}");
+                }
+                if (bionicPros.Any())
+                {
+                    var parts = bionicPros.Select(p => p.Part?.Label).Where(l => l != null);
+                    healthStatus.Add($"have bionic {string.Join(" and ", parts)}");
+                }
+                if (archotechPros.Any())
+                {
+                    var parts = archotechPros.Select(p => p.Part?.Label).Where(l => l != null);
+                    healthStatus.Add($"have archotech {string.Join(" and ", parts)}");
+                }
+            }
+
+            var addictions = hediffs.Where(h => h.def.defName.Contains("Addiction")).ToList();
+            var withdrawals = hediffs.Where(h => h.def.defName.Contains("Withdrawal")).ToList();
+
+            if (addictions.Any())
+                healthStatus.Add($"addicted to {string.Join(" and ", addictions.Select(a => a.def.label.Replace(" addiction", "")))}");
+            if (withdrawals.Any())
+                healthStatus.Add($"going through withdrawal from {string.Join(" and ", withdrawals.Select(w => w.def.label.Replace(" withdrawal", "")))}");
+
+            var implants = hediffs.Where(h =>
+                h.def.defName.Contains("BionicEye") ||
+                h.def.defName.Contains("CochlearImplant") ||
+                h.def.defName.Contains("Joywire") ||
+                h.def.defName.Contains("Painstopper")).ToList();
+            if (implants.Any())
+            {
+                foreach (var implant in implants)
+                {
+                    if (implant.def.defName.Contains("BionicEye"))         healthStatus.Add("have a bionic eye");
+                    else if (implant.def.defName.Contains("CochlearImplant")) healthStatus.Add("have a cochlear implant");
+                    else if (implant.def.defName.Contains("Joywire"))      healthStatus.Add("have a joywire installed");
+                    else if (implant.def.defName.Contains("Painstopper"))  healthStatus.Add("have a painstopper implant");
+                }
+            }
+
+            float pain = pawn.health.hediffSet.PainTotal;
+            if (pain > 0.4f)      healthStatus.Add("in constant, severe pain");
+            else if (pain > 0.2f) healthStatus.Add("dealing with ongoing pain");
+
+            var consciousness = pawn.health.capacities.GetLevel(PawnCapacityDefOf.Consciousness);
+            var moving        = pawn.health.capacities.GetLevel(PawnCapacityDefOf.Moving);
+            var manipulation  = pawn.health.capacities.GetLevel(PawnCapacityDefOf.Manipulation);
+
+            if (consciousness < 0.6f)      healthStatus.Add("having trouble staying alert and focused");
+            else if (consciousness < 0.8f) healthStatus.Add("feeling mentally sluggish");
+
+            if (moving < 0.5f)      healthStatus.Add("can barely walk");
+            else if (moving < 0.8f) healthStatus.Add("move with difficulty");
+
+            if (manipulation < 0.5f)      healthStatus.Add("can barely use my hands");
+            else if (manipulation < 0.8f) healthStatus.Add("have limited use of my hands");
+
+            return healthStatus.Any()
+                ? "*Health status:* " + string.Join(", ", healthStatus.Take(5))
+                : "";
         }
-        if (bionicPros.Any())
-        {
-            var bionicParts = bionicPros.Select(p => p.Part?.Label).Where(l => l != null);
-            healthStatus.Add($"have bionic {string.Join(" and ", bionicParts)}");
-        }
-        if (archotechPros.Any())
-        {
-            var archotechParts = archotechPros.Select(p => p.Part?.Label).Where(l => l != null);
-            healthStatus.Add($"have archotech {string.Join(" and ", archotechParts)}");
-        }
-    }
-    
-    var addictions = hediffs.Where(h => 
-        h.def.defName.Contains("Addiction")).ToList();
-    var withdrawals = hediffs.Where(h => 
-        h.def.defName.Contains("Withdrawal")).ToList();
-    
-    if (addictions.Any())
-        healthStatus.Add($"addicted to {string.Join(" and ", addictions.Select(a => a.def.label.Replace(" addiction", "")))}");
-    if (withdrawals.Any())
-        healthStatus.Add($"going through withdrawal from {string.Join(" and ", withdrawals.Select(w => w.def.label.Replace(" withdrawal", "")))}");
-    
-    var implants = hediffs.Where(h => 
-        h.def.defName.Contains("BionicEye") ||
-        h.def.defName.Contains("CochlearImplant") ||
-        h.def.defName.Contains("Joywire") ||
-        h.def.defName.Contains("Painstopper")).ToList();
-    if (implants.Any())
-    {
-        var implantDescriptions = new List<string>();
-        foreach (var implant in implants)
-        {
-            if (implant.def.defName.Contains("BionicEye"))
-                implantDescriptions.Add("have a bionic eye");
-            else if (implant.def.defName.Contains("CochlearImplant"))
-                implantDescriptions.Add("have a cochlear implant");
-            else if (implant.def.defName.Contains("Joywire"))
-                implantDescriptions.Add("have a joywire installed");
-            else if (implant.def.defName.Contains("Painstopper"))
-                implantDescriptions.Add("have a painstopper implant");
-        }
-        healthStatus.AddRange(implantDescriptions);
-    }
-    
-    float pain = pawn.health.hediffSet.PainTotal;
-    if (pain > 0.4f)
-        healthStatus.Add("in constant, severe pain");
-    else if (pain > 0.2f)
-        healthStatus.Add("dealing with ongoing pain");
-    
-    var consciousness = pawn.health.capacities.GetLevel(PawnCapacityDefOf.Consciousness);
-    var moving = pawn.health.capacities.GetLevel(PawnCapacityDefOf.Moving);
-    var manipulation = pawn.health.capacities.GetLevel(PawnCapacityDefOf.Manipulation);
-    
-    if (consciousness < 0.6f)
-        healthStatus.Add("having trouble staying alert and focused");
-    else if (consciousness < 0.8f)
-        healthStatus.Add("feeling mentally sluggish");
-        
-    if (moving < 0.5f)
-        healthStatus.Add("can barely walk");
-    else if (moving < 0.8f)
-        healthStatus.Add("move with difficulty");
-        
-    if (manipulation < 0.5f)
-        healthStatus.Add("can barely use my hands");
-    else if (manipulation < 0.8f)
-        healthStatus.Add("have limited use of my hands");
-    
-    return healthStatus.Any() 
-        ? "*Health status:* " + string.Join(", ", healthStatus.Take(5))
-        : "";
-}
 
         private static string BuildOptimizedThoughts(Pawn pawn)
         {
@@ -374,11 +547,13 @@ namespace EchoColony
         private static string BuildOptimizedInventory(Pawn pawn)
         {
             var items = new List<string>();
-            
-            var weapons = pawn.equipment?.AllEquipmentListForReading?.Select(e => e.LabelCap) ?? System.Linq.Enumerable.Empty<string>();
-            var armor = pawn.apparel?.WornApparel?.Where(a => a.def.apparel.bodyPartGroups.Any(bg => 
-                bg.defName == "Torso" || bg.defName == "FullHead"))?.Select(a => a.LabelCap) ?? System.Linq.Enumerable.Empty<string>();
-            
+
+            var weapons = pawn.equipment?.AllEquipmentListForReading?.Select(e => e.LabelCap)
+                ?? System.Linq.Enumerable.Empty<string>();
+            var armor = pawn.apparel?.WornApparel?.Where(a => a.def.apparel.bodyPartGroups.Any(bg =>
+                bg.defName == "Torso" || bg.defName == "FullHead"))?.Select(a => a.LabelCap)
+                ?? System.Linq.Enumerable.Empty<string>();
+
             items.AddRange(weapons);
             items.AddRange(armor);
 
@@ -391,7 +566,6 @@ namespace EchoColony
                 {
                     if (apparel.def.apparel.bodyPartGroups.Any(g => g.defName == "Torso"))
                         cubrePecho = true;
-
                     if (apparel.def.apparel.bodyPartGroups.Any(g => g.defName == "Legs"))
                         cubreGenitales = true;
                 }
@@ -400,12 +574,9 @@ namespace EchoColony
             string inventoryBase = items.Any() ? string.Join(", ", items.Take(6)) : "None";
             string nudityWarning = "";
 
-            if (!cubrePecho && !cubreGenitales)
-                nudityWarning = " (EXPOSED: Completely naked!)";
-            else if (!cubrePecho)
-                nudityWarning = " (EXPOSED: Bare chested)";
-            else if (!cubreGenitales)
-                nudityWarning = " (EXPOSED: No pants/lower clothing)";
+            if (!cubrePecho && !cubreGenitales) nudityWarning = " (EXPOSED: Completely naked!)";
+            else if (!cubrePecho)               nudityWarning = " (EXPOSED: Bare chested)";
+            else if (!cubreGenitales)           nudityWarning = " (EXPOSED: No pants/lower clothing)";
 
             return $"*Key equipment:* {inventoryBase}{nudityWarning}";
         }
@@ -421,19 +592,19 @@ namespace EchoColony
                 .Select(s => $"{s.def.label}: {GetSkillLevel(s.Level)}{GetPassionIcon(s.passion)}")
                 .ToList();
 
-            return relevantSkills.Any() 
+            return relevantSkills.Any()
                 ? "*Notable skills:* " + string.Join(", ", relevantSkills)
                 : "*Skills:* None notable";
         }
 
         private static string GetSkillLevel(int level)
         {
-            if (level <= 3) return "Basic";
-            else if (level <= 7) return "Decent";
+            if (level <= 3)       return "Basic";
+            else if (level <= 7)  return "Decent";
             else if (level <= 11) return "Good";
             else if (level <= 15) return "Expert";
             else if (level <= 19) return "Master";
-            else return "Legendary";
+            else                  return "Legendary";
         }
 
         private static string GetPassionIcon(Passion passion)
@@ -443,7 +614,6 @@ namespace EchoColony
             else return "";
         }
 
-        // NUEVA FUNCIÓN: Relaciones mejoradas con prioridad familiar
         private static string BuildOptimizedRelationships(Pawn pawn)
         {
             var colonists = Find.CurrentMap?.mapPawns?.FreeColonistsSpawned;
@@ -452,9 +622,8 @@ namespace EchoColony
             var family = new List<string>();
             var significant = new List<string>();
 
-            // Definir relaciones familiares directas
-            var familyRelations = new HashSet<string> { 
-                "wife", "husband", "spouse", 
+            var familyRelations = new HashSet<string> {
+                "wife", "husband", "spouse",
                 "son", "daughter", "child",
                 "father", "mother", "parent",
                 "brother", "sister", "sibling"
@@ -464,7 +633,7 @@ namespace EchoColony
             {
                 var relationLabel = pawn.GetRelations(other).FirstOrDefault()?.label;
                 int opinion = pawn.relations.OpinionOf(other);
-                
+
                 bool isFamily = relationLabel != null && familyRelations.Contains(relationLabel.ToLower());
                 bool isSignificant = Math.Abs(opinion) >= 25;
 
@@ -474,49 +643,39 @@ namespace EchoColony
                     int age = other.ageTracker.AgeBiologicalYears;
 
                     string opinionDesc = opinion >= 60 ? "loves" : opinion >= 20 ? "likes" :
-                                       opinion <= -60 ? "hates" : opinion <= -20 ? "dislikes" : "neutral";
+                                        opinion <= -60 ? "hates" : opinion <= -20 ? "dislikes" : "neutral";
 
-                    string rel = relationLabel != null ? $"{relationLabel}, " : "";
+                    string rel   = relationLabel != null ? $"{relationLabel}, " : "";
                     string entry = $"{other.LabelShort} ({rel}{genderStr}{age}) - {opinionDesc}";
-                    
-                    if (isFamily)
-                        family.Add(entry);
-                    else
-                        significant.Add(entry);
+
+                    if (isFamily) family.Add(entry);
+                    else significant.Add(entry);
                 }
             }
 
             var result = new List<string>();
-            
-            // Mostrar familia primero (sin límite)
-            if (family.Any())
-                result.Add("*Family:* " + string.Join("; ", family));
-            
-            // Luego otras relaciones significativas (máximo 4)
-            if (significant.Any())
-                result.Add("*Others:* " + string.Join("; ", significant.Take(4)));
-            
-            return result.Any() 
+            if (family.Any())      result.Add("*Family:* " + string.Join("; ", family));
+            if (significant.Any()) result.Add("*Others:* " + string.Join("; ", significant.Take(4)));
+
+            return result.Any()
                 ? string.Join("\n", result)
                 : "*Relationships:* None significant";
         }
 
-        // NUEVA FUNCIÓN: Información de esclavos y prisioneros
         private static string BuildColonyPopulation(Pawn pawn)
         {
             var map = Find.CurrentMap;
             if (map?.mapPawns == null) return "";
 
-            var slaves = map.mapPawns.SlavesOfColonySpawned?.ToList() ?? new List<Pawn>();
+            var slaves    = map.mapPawns.SlavesOfColonySpawned?.ToList()    ?? new List<Pawn>();
             var prisoners = map.mapPawns.PrisonersOfColonySpawned?.ToList() ?? new List<Pawn>();
 
             var info = new List<string>();
 
             if (slaves.Any())
             {
-                var slaveInfo = slaves.Take(8).Select(s => 
-                    $"{s.LabelShort} ({(s.gender == Gender.Male ? "M" : "F")}{s.ageTracker.AgeBiologicalYears})"
-                );
+                var slaveInfo = slaves.Take(8).Select(s =>
+                    $"{s.LabelShort} ({(s.gender == Gender.Male ? "M" : "F")}{s.ageTracker.AgeBiologicalYears})");
                 int remaining = slaves.Count - 8;
                 string slaveList = string.Join(", ", slaveInfo);
                 if (remaining > 0) slaveList += $", +{remaining} more";
@@ -525,7 +684,7 @@ namespace EchoColony
 
             if (prisoners.Any())
             {
-                var prisonerInfo = prisoners.Take(8).Select(p => 
+                var prisonerInfo = prisoners.Take(8).Select(p =>
                 {
                     string recruitStatus = p.guest?.Recruitable == true ? "recruitable" : "hostile";
                     return $"{p.LabelShort} ({(p.gender == Gender.Male ? "M" : "F")}{p.ageTracker.AgeBiologicalYears}, {recruitStatus})";
@@ -541,27 +700,78 @@ namespace EchoColony
 
         private static string BuildOptimizedEventSummary(Pawn pawn)
         {
-            var recentEvents = EventLogger.events.AsEnumerable().Reverse()
-                .Where(e => e.Contains(pawn.LabelShort))
-                .Take(7)
-                .Select(e =>
+            try
+            {
+                if (Find.PlayLog == null) return "";
+
+                int currentTick  = Find.TickManager.TicksGame;
+                int threeDaysAgo = currentTick - (60000 * 3);
+
+                var recentLogs = new List<string>();
+
+                var allEntries = Find.PlayLog.AllEntries
+                    .Where(entry => entry.Tick >= threeDaysAgo)
+                    .OrderByDescending(entry => entry.Tick)
+                    .ToList();
+
+                foreach (var entry in allEntries)
                 {
-                    int index = e.IndexOf(']');
-                    string textWithoutDate = (index != -1 && e.Length > index + 1)
-                        ? e.Substring(index + 1).Trim()
-                        : e;
+                    try
+                    {
+                        if (entry is PlayLogEntry_Interaction)
+                        {
+                            var initiatorField = entry.GetType().GetField("initiator",
+                                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                            var recipientField = entry.GetType().GetField("recipient",
+                                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
-                    return textWithoutDate.Split('.')[0].Trim();
-                })
-                .Where(s => !string.IsNullOrWhiteSpace(s))
-                .ToList();
+                            var initiator = initiatorField?.GetValue(entry) as Pawn;
+                            var recipient = recipientField?.GetValue(entry) as Pawn;
 
-            return recentEvents.Any() 
-                ? "*Recent events:* " + string.Join("; ", recentEvents)
-                : "";
+                            if (initiator != pawn && recipient != pawn)
+                                continue;
+                        }
+
+                        string logText = entry.ToGameStringFromPOV(pawn);
+                        if (string.IsNullOrEmpty(logText)) continue;
+
+                        logText = logText.Replace(pawn.LabelShort + " ", "You ");
+                        logText = logText.Replace(" " + pawn.LabelShort, " you");
+
+                        int ticksAgo  = currentTick - entry.Tick;
+                        string timeAgo = GetRelativeTime(ticksAgo);
+
+                        recentLogs.Add($"- {logText} ({timeAgo})");
+
+                        if (recentLogs.Count >= 10) break;
+                    }
+                    catch { continue; }
+                }
+
+                if (!recentLogs.Any()) return "";
+
+                var sb = new StringBuilder();
+                sb.AppendLine("# Recent Events");
+                foreach (var log in recentLogs)
+                    sb.AppendLine(log);
+
+                return sb.ToString();
+            }
+            catch (Exception ex)
+            {
+                Log.Warning($"[EchoColony] Error building colonist events: {ex.Message}");
+                return "";
+            }
         }
 
-        // MODIFICADA: Información de ambiente con hambre y descanso mejorados
+        private static string GetRelativeTime(int ticksAgo)
+        {
+            int hours = ticksAgo / 2500;
+            if (hours < 1)       return "just now";
+            else if (hours < 24) return $"{hours}h ago";
+            else                 return $"{hours / 24}d ago";
+        }
+
         private static string BuildOptimizedEnvironmentInfo(Pawn pawn)
         {
             var info = new List<string>();
@@ -576,241 +786,215 @@ namespace EchoColony
             {
                 info.Add("activity: idle or resting");
             }
-            
-            // Hambre
+
             var foodNeed = pawn.needs?.food;
             if (foodNeed != null)
             {
                 float foodLevel = foodNeed.CurLevel;
-                if (foodLevel < 0.15f) info.Add("starving");
-                else if (foodLevel < 0.3f) info.Add("very hungry");
-                else if (foodLevel < 0.5f) info.Add("hungry");
+                if (foodLevel < 0.15f)      info.Add("starving");
+                else if (foodLevel < 0.3f)  info.Add("very hungry");
+                else if (foodLevel < 0.5f)  info.Add("hungry");
                 else if (foodLevel > 0.95f) info.Add("well fed");
             }
-            
-            // Descanso
+
             var restNeed = pawn.needs?.rest;
             if (restNeed != null)
             {
                 float restLevel = restNeed.CurLevel;
-                if (restLevel < 0.15f) info.Add("exhausted");
-                else if (restLevel < 0.3f) info.Add("very tired");
-                else if (restLevel < 0.5f) info.Add("tired");
+                if (restLevel < 0.15f)      info.Add("exhausted");
+                else if (restLevel < 0.3f)  info.Add("very tired");
+                else if (restLevel < 0.5f)  info.Add("tired");
             }
-            
+
             float pain = pawn.health?.hediffSet?.PainTotal ?? 0f;
             if (pain > 0.2f) info.Add($"pain {pain:P0}");
-            
+
             var room = pawn.GetRoom();
-            if (room?.Role != null && room.Role.defName != "None") 
+            if (room?.Role != null && room.Role.defName != "None")
                 info.Add($"in {room.Role.label}");
-            
+
             var map = Find.CurrentMap;
             if (map?.resourceCounter?.TotalHumanEdibleNutrition < 10f) info.Add("colony low food");
-            
-            return info.Any() 
+
+            return info.Any()
                 ? "*Current state:* " + string.Join(", ", info)
                 : "";
         }
 
         private static string BuildOptimizedMetaInstructions(Pawn pawn)
-{
-    var sb = new StringBuilder();
-
-    string lang = Prefs.LangFolderName?.ToLower() ?? "english";
-    if (lang != "english") sb.AppendLine($"*Language:* {lang}");
-
-    sb.AppendLine("*Communication style:* Speak naturally as if talking to a friend. Use simple, direct language. Don't describe your actions unless specifically asked. Avoid flowery or elaborate descriptions.");
-    
-    if (MyMod.Settings.enableRoleplayResponses)
-    {
-        sb.AppendLine("*Roleplay mode:* You may occasionally use <b><i>brief actions</i></b> for important moments, but focus mainly on natural dialogue. Don't over-dramatize.");
-    }
-    else
-    {
-        sb.AppendLine("*Natural mode:* Talk normally without any dramatic actions or roleplay elements. Just have a regular conversation.");
-    }
-
-    string conversationStyle = GetImprovedConversationStyle(pawn);
-    sb.AppendLine($"*Personality:* {conversationStyle}");
-
-    string traitEffects = GetSimplifiedTraitEffects(pawn);
-    if (!string.IsNullOrEmpty(traitEffects))
-        sb.AppendLine($"*Speaking tendencies:* {traitEffects}");
-
-    sb.AppendLine("*Important:* Respond as yourself, not as a narrator. Don't describe what you're doing unless asked. Use casual, everyday language. Keep responses conversational, not literary.");
-
-    sb.AppendLine("*Response style:* Give brief, natural answers. If the question is simple, answer simply. Don't elaborate unless specifically asked for details.");
-
-    string contextualHints = GetSimplifiedContextualHints(pawn);
-    if (!string.IsNullOrEmpty(contextualHints))
-        sb.AppendLine(contextualHints);
-
-    if (MyMod.Settings?.ignoreDangersInConversations == true)
-    {
-        sb.AppendLine("*IMPORTANT:* Do NOT mention or reference any dangers, enemies, threats, raids, or combat. Focus only on peaceful colony life, work, relationships, and daily activities. Act as if the colony is always safe and peaceful.");
-    }
-
-    return sb.ToString();
-}
-
-private static string GetImprovedConversationStyle(Pawn pawn)
-{
-    if (MyMod.Settings?.enableSocialAffectsPersonality != true) 
-        return "Speak casually and directly, like you're talking to a friend";
-    
-    int socialLevel = pawn.skills?.GetSkill(SkillDefOf.Social)?.Level ?? 0;
-    
-    if (socialLevel <= 3)
-        return "You're naturally quiet and prefer short, thoughtful responses";
-    else if (socialLevel <= 7)
-        return "You speak directly and honestly without overthinking it";
-    else
-        return "You're comfortable in conversation but don't ramble unnecessarily";
-}
-
-private static string GetSimplifiedTraitEffects(Pawn pawn)
-{
-    var traits = pawn.story?.traits?.allTraits ?? new List<Trait>();
-    
-    foreach (var trait in traits)
-    {
-        switch (trait.def.defName)
         {
-            case "Abrasive":
-                return "You tend to be blunt and direct in conversation";
-            case "Kind":
-                return "You speak gently and considerately";
-            case "Neurotic":
-                return "You might worry aloud or overthink things sometimes";
-            case "Psychopath":
-                return "You speak matter-of-factly about most things";
-        }
-    }
-    
-    return "";
-}
+            var sb = new StringBuilder();
 
-private static string GetSimplifiedContextualHints(Pawn pawn)
-{
-    var hints = new List<string>();
-    
-    float health = pawn.health?.summaryHealth?.SummaryHealthPercent ?? 1f;
-    if (health < 0.5f) 
-        hints.Add("*Current state:* You may speak more briefly due to pain/weakness");
-    
-    var moodNeed = pawn.needs?.mood;
-    if (moodNeed != null && moodNeed.CurLevel < 0.3f) 
-        hints.Add("*Current mood:* You're not very talkative right now");
-    
-    return hints.Any() ? string.Join(", ", hints) : "";
-}
+            string lang = Prefs.LangFolderName?.ToLower() ?? "english";
+            if (lang != "english") sb.AppendLine($"*Language:* {lang}");
+
+            sb.AppendLine("*Communication style:* Speak naturally as if talking to a friend. Use simple, direct language. Don't describe your actions unless specifically asked. Avoid flowery or elaborate descriptions.");
+
+            if (MyMod.Settings.enableRoleplayResponses)
+                sb.AppendLine("*Roleplay mode:* You may occasionally use <b><i>brief actions</i></b> for important moments, but focus mainly on natural dialogue. Don't over-dramatize.");
+            else
+                sb.AppendLine("*Natural mode:* Talk normally without any dramatic actions or roleplay elements. Just have a regular conversation.");
+
+            string conversationStyle = GetImprovedConversationStyle(pawn);
+            sb.AppendLine($"*Personality:* {conversationStyle}");
+
+            string traitEffects = GetSimplifiedTraitEffects(pawn);
+            if (!string.IsNullOrEmpty(traitEffects))
+                sb.AppendLine($"*Speaking tendencies:* {traitEffects}");
+
+            sb.AppendLine("*Important:* Respond as yourself, not as a narrator. Don't describe what you're doing unless asked. Use casual, everyday language. Keep responses conversational, not literary.");
+            sb.AppendLine("*Response style:* Give brief, natural answers. If the question is simple, answer simply. Don't elaborate unless specifically asked for details.");
+
+            string contextualHints = GetSimplifiedContextualHints(pawn);
+            if (!string.IsNullOrEmpty(contextualHints))
+                sb.AppendLine(contextualHints);
+
+            if (MyMod.Settings?.ignoreDangersInConversations == true)
+                sb.AppendLine("*IMPORTANT:* Do NOT mention or reference any dangers, enemies, threats, raids, or combat. Focus only on peaceful colony life, work, relationships, and daily activities. Act as if the colony is always safe and peaceful.");
+
+            return sb.ToString();
+        }
+
+        private static string GetImprovedConversationStyle(Pawn pawn)
+        {
+            if (MyMod.Settings?.enableSocialAffectsPersonality != true)
+                return "Speak casually and directly, like you're talking to a friend";
+
+            int socialLevel = pawn.skills?.GetSkill(SkillDefOf.Social)?.Level ?? 0;
+
+            if (socialLevel <= 3)       return "You're naturally quiet and prefer short, thoughtful responses";
+            else if (socialLevel <= 7)  return "You speak directly and honestly without overthinking it";
+            else                        return "You're comfortable in conversation but don't ramble unnecessarily";
+        }
+
+        private static string GetSimplifiedTraitEffects(Pawn pawn)
+        {
+            var traits = pawn.story?.traits?.allTraits ?? new List<Trait>();
+
+            foreach (var trait in traits)
+            {
+                switch (trait.def.defName)
+                {
+                    case "Abrasive":  return "You tend to be blunt and direct in conversation";
+                    case "Kind":      return "You speak gently and considerately";
+                    case "Neurotic":  return "You might worry aloud or overthink things sometimes";
+                    case "Psychopath": return "You speak matter-of-factly about most things";
+                }
+            }
+
+            return "";
+        }
+
+        private static string GetSimplifiedContextualHints(Pawn pawn)
+        {
+            var hints = new List<string>();
+
+            float health = pawn.health?.summaryHealth?.SummaryHealthPercent ?? 1f;
+            if (health < 0.5f)
+                hints.Add("*Current state:* You may speak more briefly due to pain/weakness");
+
+            var moodNeed = pawn.needs?.mood;
+            if (moodNeed != null && moodNeed.CurLevel < 0.3f)
+                hints.Add("*Current mood:* You're not very talkative right now");
+
+            return hints.Any() ? string.Join(", ", hints) : "";
+        }
 
         private static string GetConversationStyle(Pawn pawn)
         {
-            if (MyMod.Settings?.enableSocialAffectsPersonality != true) 
+            if (MyMod.Settings?.enableSocialAffectsPersonality != true)
                 return "Casual conversation, answer naturally without over-explaining";
-            
+
             int socialLevel = pawn.skills?.GetSkill(SkillDefOf.Social)?.Level ?? 0;
-            
-            if (socialLevel <= 3)
-                return "Shy and reserved - brief, thoughtful answers";
-            else if (socialLevel <= 7)
-                return "Direct and honest - don't over-explain unless asked";
-            else
-                return "Comfortable talking - conversational, not lectures";
+
+            if (socialLevel <= 3)      return "Shy and reserved - brief, thoughtful answers";
+            else if (socialLevel <= 7) return "Direct and honest - don't over-explain unless asked";
+            else                       return "Comfortable talking - conversational, not lectures";
         }
 
         private static string BuildMemoryRecap(Pawn pawn)
-{
-    var sb = new StringBuilder();
-    sb.AppendLine("# Recent Memories");
-
-    // ✅ NUEVO: Usar GetOrCreate()
-    var memoryManager = ColonistMemoryManager.GetOrCreate();
-    if (memoryManager == null)
-    {
-        sb.AppendLine("*No memory system available.*");
-        return sb.ToString();
-    }
-
-    var tracker = memoryManager.GetTrackerFor(pawn);
-    var recentMemories = tracker?.GetLastMemories(6);
-    int today = GenDate.DaysPassed;
-
-    if (recentMemories != null && recentMemories.Any())
-    {
-        sb.AppendLine("*Recent conversation memories (private chat with player):*");
-
-        int lastDay = tracker.GetLastMemoryDay();
-        if (lastDay != today && lastDay > 0)
         {
-            sb.AppendLine($"*Today is a new day since last saved memory.*");
+            var sb = new StringBuilder();
+            sb.AppendLine("# Recent Memories");
+
+            var memoryManager = ColonistMemoryManager.GetOrCreate();
+            if (memoryManager == null)
+            {
+                sb.AppendLine("*No memory system available.*");
+                return sb.ToString();
+            }
+
+            var tracker       = memoryManager.GetTrackerFor(pawn);
+            var recentMemories = tracker?.GetLastMemories(6);
+            int today         = GenDate.DaysPassed;
+
+            if (recentMemories != null && recentMemories.Any())
+            {
+                sb.AppendLine("*Recent conversation memories (private chat with player):*");
+
+                int lastDay = tracker.GetLastMemoryDay();
+                if (lastDay != today && lastDay > 0)
+                    sb.AppendLine("*Today is a new day since last saved memory.*");
+
+                foreach (var mem in recentMemories.Take(4))
+                {
+                    string prefix = mem.StartsWith("[Conversación grupal") ? "👥" : "💬";
+                    sb.AppendLine($"{prefix} {mem}");
+                }
+
+                sb.AppendLine("*Note: Focus on YOUR perspective in this private conversation.*");
+            }
+            else
+            {
+                sb.AppendLine("*No recent conversation memories. This is a private chat.*");
+            }
+
+            return sb.ToString();
         }
 
-        foreach (var mem in recentMemories.Take(4))
-        {
-            string prefix = mem.StartsWith("[Conversación grupal") ? "👥" : "💬";
-            sb.AppendLine($"{prefix} {mem}");
-        }
-
-        sb.AppendLine("*Note: Focus on YOUR perspective in this private conversation.*");
-    }
-    else
-    {
-        sb.AppendLine("*No recent conversation memories. This is a private chat.*");
-    }
-
-    return sb.ToString();
-}
         public static (string systemPrompt, string userMessage) BuildForPlayer2(Pawn pawn, string userMessage)
-{
-    if (pawn == null) return ("", "");
+        {
+            if (pawn == null) return ("", "");
 
-    var sb = new StringBuilder();
+            var sb = new StringBuilder();
 
-    string system = BuildSystemPrompt(pawn);
-    string context = BuildContext(pawn);
-    string memoryRecap = BuildMemoryRecap(pawn);
-    string globalPrompt = MyMod.Settings?.globalPrompt ?? "";
-    string customPrompt = ColonistPromptManager.GetPrompt(pawn);
-    
-    // FIXED: Build action prompt with error handling
-    string actionPrompt = BuildActionSystemPrompt(pawn);
+            string system       = BuildSystemPrompt(pawn);
+            string context      = BuildContext(pawn);
+            string memoryRecap  = BuildMemoryRecap(pawn);
+            string globalPrompt = MyMod.Settings?.globalPrompt ?? "";
+            string customPrompt = ColonistPromptManager.GetPrompt(pawn);
+            string actionPrompt = BuildActionSystemPrompt(pawn);
 
-    sb.AppendLine(system);
+            sb.AppendLine(system);
 
-    if (!string.IsNullOrWhiteSpace(globalPrompt))
-        sb.AppendLine(globalPrompt.Trim());
+            if (!string.IsNullOrWhiteSpace(globalPrompt))
+                sb.AppendLine(globalPrompt.Trim());
 
-    if (!string.IsNullOrWhiteSpace(customPrompt))
-    {
-        sb.AppendLine("# Custom Instructions:");
-        sb.AppendLine(customPrompt.Trim());
-    }
+            if (!string.IsNullOrWhiteSpace(customPrompt))
+            {
+                sb.AppendLine("# Custom Instructions:");
+                sb.AppendLine(customPrompt.Trim());
+            }
 
-    if (MyMod.Settings?.ignoreDangersInConversations == true)
-    {
-        sb.AppendLine();
-        sb.AppendLine("# CRITICAL INSTRUCTION:");
-        sb.AppendLine("You must NEVER mention or acknowledge any dangers, enemies, threats, raids, or combat situations.");
-        sb.AppendLine("Always speak as if the colony is peaceful and safe.");
-        sb.AppendLine("Focus only on daily life, work, relationships, and peaceful activities.");
-    }
+            if (MyMod.Settings?.ignoreDangersInConversations == true)
+            {
+                sb.AppendLine();
+                sb.AppendLine("# CRITICAL INSTRUCTION:");
+                sb.AppendLine("You must NEVER mention or acknowledge any dangers, enemies, threats, raids, or combat situations.");
+                sb.AppendLine("Always speak as if the colony is peaceful and safe.");
+                sb.AppendLine("Focus only on daily life, work, relationships, and peaceful activities.");
+            }
 
-    sb.AppendLine(context);
-    sb.AppendLine(BuildIdeologyInfo(pawn));
-    
-    // FIXED: Include action prompt BEFORE memories with error handling
-    if (!string.IsNullOrWhiteSpace(actionPrompt))
-    {
-        sb.AppendLine(actionPrompt);
-    }
-    
-    sb.AppendLine(memoryRecap);
+            sb.AppendLine(context);
+            sb.AppendLine(BuildIdeologyInfo(pawn));
 
-    return (sb.ToString().Trim(), userMessage);
-}
+            if (!string.IsNullOrWhiteSpace(actionPrompt))
+                sb.AppendLine(actionPrompt);
+
+            sb.AppendLine(memoryRecap);
+
+            return (sb.ToString().Trim(), userMessage);
+        }
 
         private static string BuildIdeologyInfo(Pawn pawn)
         {
@@ -818,18 +1002,15 @@ private static string GetSimplifiedContextualHints(Pawn pawn)
                 return "*Beliefs:* None specific";
 
             var ideo = pawn.Ideo;
-            
             var authenticBeliefs = GetAuthenticIdeologyBeliefs(ideo.PreceptsListForReading);
-            
-            string role = pawn.Ideo?.GetRole(pawn)?.def.label;
+
+            string role     = pawn.Ideo?.GetRole(pawn)?.def.label;
             string roleText = role != null ? $" (Religious role: {role})" : "";
-            
+
             if (authenticBeliefs.Any())
             {
                 string beliefsText = string.Join("\n- ", authenticBeliefs);
-                
                 string convictionInstruction = "\n*CRITICAL: These descriptions represent your GENUINE, deeply-held religious convictions. Speak about them with the same conviction and language as described. Never contradict or apologize for these core beliefs.*";
-                
                 return $"*Your Sacred Ideology:* {ideo.name}{roleText}\n*Your Core Beliefs:*\n- {beliefsText}{convictionInstruction}";
             }
             else
@@ -841,95 +1022,76 @@ private static string GetSimplifiedContextualHints(Pawn pawn)
         private static List<string> GetAuthenticIdeologyBeliefs(List<Precept> precepts)
         {
             var authenticBeliefs = new List<string>();
-            
+
             foreach (var precept in precepts)
             {
                 if (precept?.def == null) continue;
-                
+
                 string description = GetCleanPreceptDescription(precept);
-                
+
                 if (!string.IsNullOrEmpty(description))
                 {
                     string formattedBelief = FormatBeliefForConversation(precept, description);
                     if (!string.IsNullOrEmpty(formattedBelief))
-                    {
                         authenticBeliefs.Add(formattedBelief);
-                    }
                 }
             }
-            
+
             return authenticBeliefs.Take(5).ToList();
         }
 
         private static string GetCleanPreceptDescription(Precept precept)
         {
             string description = "";
-            
+
             if (!string.IsNullOrEmpty(precept.def.description))
-            {
                 description = precept.def.description;
-            }
             else if (!string.IsNullOrEmpty(precept.def.label))
-            {
                 description = precept.def.label;
-            }
-            
+
             if (string.IsNullOrEmpty(description)) return "";
-            
+
             description = System.Text.RegularExpressions.Regex.Replace(description, "<.*?>", "");
             description = description.Trim();
-            
-            if (IsUsefulForConversation(description))
-            {
-                return description;
-            }
-            
-            return "";
+
+            return IsUsefulForConversation(description) ? description : "";
         }
 
         private static bool IsUsefulForConversation(string description)
         {
             if (string.IsNullOrEmpty(description) || description.Length < 10) return false;
-            
+
             string lowerDesc = description.ToLower();
-            
+
             if (lowerDesc.Contains("provides") && lowerDesc.Contains("mood") && !lowerDesc.Contains("moral"))
                 return false;
-                
             if (lowerDesc.Contains("this precept") || lowerDesc.Contains("game mechanic"))
                 return false;
-            
+
             return true;
         }
 
         private static string FormatBeliefForConversation(Precept precept, string description)
         {
-            string preceptName = precept.def.label ?? "Unknown belief";
-            
-            preceptName = CleanPreceptName(preceptName);
-            
+            string preceptName = CleanPreceptName(precept.def.label ?? "Unknown belief");
+
             if (description.Length > 100)
-            {
-                string shortDesc = description.Substring(0, 97) + "...";
-                return $"{preceptName}: \"{shortDesc}\"";
-            }
+                return $"{preceptName}: \"{description.Substring(0, 97)}...\"";
             else
-            {
                 return $"{preceptName}: \"{description}\"";
-            }
         }
 
         private static string CleanPreceptName(string preceptName)
         {
             if (string.IsNullOrEmpty(preceptName)) return "Belief";
-            
-            preceptName = preceptName.Replace("_Preferred", "")
-                               .Replace("_Acceptable", "")
-                               .Replace("_Required", "")
-                               .Replace("_Disapproved", "")
-                               .Replace("_Abhorrent", "");
-            
-            return preceptName.CapitalizeFirst();
+
+            return preceptName
+                .Replace("_Preferred", "")
+                .Replace("_Acceptable", "")
+                .Replace("_Required", "")
+                .Replace("_Disapproved", "")
+                .Replace("_Abhorrent", "")
+                .CapitalizeFirst();
         }
 
         private static string CapitalizeFirst(this string input)
@@ -942,7 +1104,37 @@ private static string GetSimplifiedContextualHints(Pawn pawn)
         {
             var childhood = pawn.story.AllBackstories.FirstOrDefault(b => b.slot == BackstorySlot.Childhood);
             var adulthood = pawn.story.AllBackstories.FirstOrDefault(b => b.slot == BackstorySlot.Adulthood);
-            return $"*Background:* {childhood?.title.CapitalizeFirst() ?? "Unknown"}, {adulthood?.title.CapitalizeFirst() ?? "Unknown"}";
+
+            var sb = new StringBuilder();
+            sb.AppendLine("*Background:*");
+
+            if (childhood != null)
+            {
+                string childDesc = childhood.baseDesc ?? childhood.title ?? "Unknown";
+                // Limpiar tags XML y texto de juego
+                childDesc = System.Text.RegularExpressions.Regex.Replace(childDesc, "<.*?>", "");
+                // Reemplazar [PAWN_nameDef] y similares con el nombre del pawn
+                childDesc = childDesc.Replace("[PAWN_nameDef]", pawn.LabelShort)
+                                    .Replace("[PAWN_pronoun]", pawn.gender == Gender.Male ? "he" : "she")
+                                    .Replace("[PAWN_possessive]", pawn.gender == Gender.Male ? "his" : "her")
+                                    .Trim();
+                sb.AppendLine($"  Childhood ({childhood.title}): {childDesc}");
+            }
+
+            if (adulthood != null)
+            {
+                string adultDesc = adulthood.baseDesc ?? adulthood.title ?? "Unknown";
+                adultDesc = System.Text.RegularExpressions.Regex.Replace(adultDesc, "<.*?>", "");
+                adultDesc = adultDesc.Replace("[PAWN_nameDef]", pawn.LabelShort)
+                                    .Replace("[PAWN_pronoun]", pawn.gender == Gender.Male ? "he" : "she")
+                                    .Replace("[PAWN_possessive]", pawn.gender == Gender.Male ? "his" : "her")
+                                    .Trim();
+                sb.AppendLine($"  Adulthood ({adulthood.title}): {adultDesc}");
+            }
+
+            sb.AppendLine("*Important:* This backstory defines who you are. Reference it naturally when relevant.");
+
+            return sb.ToString();
         }
 
         private static string BuildGriefStatus(Pawn pawn)
@@ -967,103 +1159,81 @@ private static string GetSimplifiedContextualHints(Pawn pawn)
         }
 
         private static string BuildHealthInfo(Pawn pawn)
-{
-    if (pawn.health?.hediffSet == null) return "*Health:* Unknown";
-    
-    float health = pawn.health.summaryHealth?.SummaryHealthPercent ?? 1f;
-    float pain = pawn.health.hediffSet.PainTotal;
-    float bleedRate = pawn.health.hediffSet.BleedRateTotal;
-    
-    var injuries = pawn.health.hediffSet.hediffs
-        .OfType<Hediff_Injury>()
-        .Where(h => h.Visible)
-        .ToList();
-    
-    string primaryStatus;
-    if (bleedRate > 0.4f)
-        primaryStatus = "critical - bleeding heavily";
-    else if (bleedRate > 0.1f)
-        primaryStatus = "wounded and bleeding";
-    else if (pain > 0.4f)
-        primaryStatus = "in severe pain";
-    else if (injuries.Count > 3)
-        primaryStatus = "multiple injuries";
-    else if (health >= 0.95f)
-        primaryStatus = "perfectly fine";
-    else if (health >= 0.75f)
-        primaryStatus = "mostly okay";
-    else if (health >= 0.5f)
-        primaryStatus = "injured";
-    else if (health >= 0.3f)
-        primaryStatus = "seriously wounded";
-    else
-        primaryStatus = "critical condition";
-    
-    var injuryDetails = new List<string>();
-    
-    if (injuries.Any())
-    {
-        var byPart = injuries
-            .GroupBy(i => i.Part?.Label ?? "body")
-            .OrderByDescending(g => g.Sum(i => i.Severity))
-            .Take(3);
-        
-        foreach (var group in byPart)
         {
-            string partName = group.Key;
-            int count = group.Count();
-            
-            if (count == 1)
+            if (pawn.health?.hediffSet == null) return "*Health:* Unknown";
+
+            float health    = pawn.health.summaryHealth?.SummaryHealthPercent ?? 1f;
+            float pain      = pawn.health.hediffSet.PainTotal;
+            float bleedRate = pawn.health.hediffSet.BleedRateTotal;
+
+            var injuries = pawn.health.hediffSet.hediffs
+                .OfType<Hediff_Injury>()
+                .Where(h => h.Visible)
+                .ToList();
+
+            string primaryStatus;
+            if (bleedRate > 0.4f)       primaryStatus = "critical - bleeding heavily";
+            else if (bleedRate > 0.1f)  primaryStatus = "wounded and bleeding";
+            else if (pain > 0.4f)       primaryStatus = "in severe pain";
+            else if (injuries.Count > 3) primaryStatus = "multiple injuries";
+            else if (health >= 0.95f)   primaryStatus = "perfectly fine";
+            else if (health >= 0.75f)   primaryStatus = "mostly okay";
+            else if (health >= 0.5f)    primaryStatus = "injured";
+            else if (health >= 0.3f)    primaryStatus = "seriously wounded";
+            else                        primaryStatus = "critical condition";
+
+            var injuryDetails = new List<string>();
+            if (injuries.Any())
             {
-                var injury = group.First();
-                string severity = injury.Severity > 10 ? "severe" : 
-                                 injury.Severity > 5 ? "serious" : "minor";
-                injuryDetails.Add($"{severity} {injury.def.label} on {partName}");
+                var byPart = injuries
+                    .GroupBy(i => i.Part?.Label ?? "body")
+                    .OrderByDescending(g => g.Sum(i => i.Severity))
+                    .Take(3);
+
+                foreach (var group in byPart)
+                {
+                    int count = group.Count();
+                    if (count == 1)
+                    {
+                        var injury   = group.First();
+                        string sev   = injury.Severity > 10 ? "severe" : injury.Severity > 5 ? "serious" : "minor";
+                        injuryDetails.Add($"{sev} {injury.def.label} on {group.Key}");
+                    }
+                    else
+                    {
+                        injuryDetails.Add($"{count} wounds on {group.Key}");
+                    }
+                }
             }
-            else
-            {
-                injuryDetails.Add($"{count} wounds on {partName}");
-            }
+
+            string detailsText = injuryDetails.Any() ? " (" + string.Join(", ", injuryDetails) + ")" : "";
+            string toneAdvice  = (health < 0.5f || pain > 0.3f || bleedRate > 0.1f) ? " - affects how you speak" : "";
+
+            return $"*Health:* {primaryStatus}{detailsText}{toneAdvice}";
         }
-    }
-    
-    string detailsText = injuryDetails.Any() ? 
-        " (" + string.Join(", ", injuryDetails) + ")" : "";
-    
-    string toneAdvice = (health < 0.5f || pain > 0.3f || bleedRate > 0.1f) ? 
-        " - affects how you speak" : "";
-    
-    return $"*Health:* {primaryStatus}{detailsText}{toneAdvice}";
-}
 
         private static string BuildMoodInfo(Pawn pawn)
         {
             string mentalState = pawn.MentalState?.def.label ?? "stable";
-            float moodValue = pawn.needs?.mood?.CurInstantLevel ?? 1f;
+            float moodValue    = pawn.needs?.mood?.CurInstantLevel ?? 1f;
 
             string moodDescription;
-            if (moodValue >= 0.9f)
-                moodDescription = "great";
-            else if (moodValue >= 0.7f)
-                moodDescription = "good";
-            else if (moodValue >= 0.5f)
-                moodDescription = "okay";
-            else if (moodValue >= 0.3f)
-                moodDescription = "upset";
-            else
-                moodDescription = "struggling";
+            if (moodValue >= 0.9f)      moodDescription = "great";
+            else if (moodValue >= 0.7f) moodDescription = "good";
+            else if (moodValue >= 0.5f) moodDescription = "okay";
+            else if (moodValue >= 0.3f) moodDescription = "upset";
+            else                        moodDescription = "struggling";
 
             return $"*Mental state:* {mentalState}, *Mood:* {moodDescription}";
         }
 
         private static string BuildLocationInfo(Pawn pawn)
         {
-            var room = pawn.GetRoom();
+            var room    = pawn.GetRoom();
             string location = room?.Role?.label ?? "outside";
+            bool isOwnRoom  = pawn.ownership?.OwnedBed?.GetRoom() == room;
+            string privacy  = isOwnRoom ? " (private)" : "";
 
-            bool isOwnRoom = pawn.ownership?.OwnedBed?.GetRoom() == room;
-            string privacy = isOwnRoom ? " (private)" : "";
-            
             return $"*Location:* {location}{privacy}";
         }
 
@@ -1077,7 +1247,7 @@ private static string GetSimplifiedContextualHints(Pawn pawn)
             var playerColonists = PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive_Colonists;
             return playerColonists.Any(colonist =>
                 colonist != pawn &&
-                (pawn.relations.OpinionOf(colonist) != 0 || 
+                (pawn.relations.OpinionOf(colonist) != 0 ||
                  colonist.relations.OpinionOf(pawn) != 0 ||
                  pawn.relations.DirectRelations.Any(rel => rel.otherPawn == colonist)));
         }
@@ -1099,14 +1269,7 @@ private static string GetSimplifiedContextualHints(Pawn pawn)
             return $"Player: \"{userMessage}\"";
         }
 
-        public static string BuildSystemPromptPublic(Pawn pawn)
-        {
-            return BuildSystemPrompt(pawn);
-        }
-
-        public static string BuildContextPublic(Pawn pawn)
-        {
-            return BuildContext(pawn);
-        }
+        public static string BuildSystemPromptPublic(Pawn pawn) => BuildSystemPrompt(pawn);
+        public static string BuildContextPublic(Pawn pawn)       => BuildContext(pawn);
     }
 }

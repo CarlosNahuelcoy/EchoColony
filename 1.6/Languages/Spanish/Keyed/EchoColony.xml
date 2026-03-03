@@ -233,4 +233,91 @@ Las memorias se generan automáticamente durante las conversaciones y ayudan al 
 <!-- Tooltips -->
 <EchoColony.StorytellerMessageAutoCloseTooltip>La ventana de mensaje se cerrará automáticamente después de unos segundos</EchoColony.StorytellerMessageAutoCloseTooltip>
 <EchoColony.StorytellerMessagePlaySoundTooltip>Reproduce un sonido de notificación cuando el storyteller envía un mensaje</EchoColony.StorytellerMessagePlaySoundTooltip>
+
+  <!-- Animal Chat Window -->
+  <EchoColony.AnimalChatWindowTitle>Chat con {0}</EchoColony.AnimalChatWindowTitle>
+  <EchoColony.AnimalChatYou>Tú:</EchoColony.AnimalChatYou>
+  <EchoColony.AnimalChatWaiting>Esperando respuesta...</EchoColony.AnimalChatWaiting>
+  
+  <!-- Animal Prompt Editor -->
+  <EchoColony.AnimalPromptEditorTitle>Prompt Personalizado para {0}</EchoColony.AnimalPromptEditorTitle>
+  <EchoColony.AnimalPromptInstructions>Define cómo se comporta y comunica este animal:\n• Agrega rasgos de personalidad, peculiaridades o habilidades especiales\n• Habilita habla humana: 'Puede hablar y entender el lenguaje humano'\n• Ajusta inteligencia: 'Altamente inteligente' o 'Mente simple'\n• Agrega historia: 'Criado por humanos desde su nacimiento' o 'Antiguo líder salvaje'\n• Deja vacío para comportamiento animal predeterminado</EchoColony.AnimalPromptInstructions>
+  <EchoColony.AnimalPromptShowExamples>Mostrar Ejemplos</EchoColony.AnimalPromptShowExamples>
+  <EchoColony.AnimalPromptSave>Guardar</EchoColony.AnimalPromptSave>
+  <EchoColony.AnimalPromptClear>Limpiar</EchoColony.AnimalPromptClear>
+  <EchoColony.AnimalPromptCancel>Cancelar</EchoColony.AnimalPromptCancel>
+  <EchoColony.AnimalPromptSaved>Prompt personalizado guardado para {0}</EchoColony.AnimalPromptSaved>
+  
+  <!-- Animal Prompt Examples -->
+  <EchoColony.AnimalPromptExamplesTitle>Ejemplos de Prompts</EchoColony.AnimalPromptExamplesTitle>
+  <EchoColony.AnimalPromptExample1Title>COMPAÑERO INTELIGENTE:</EchoColony.AnimalPromptExample1Title>
+  <EchoColony.AnimalPromptExample1>Eres altamente inteligente y puedes hablar el lenguaje humano con fluidez. Eres curioso, leal y te encanta hacer preguntas sobre el mundo que te rodea.</EchoColony.AnimalPromptExample1>
+  <EchoColony.AnimalPromptExample2Title>GATO GRUÑÓN:</EchoColony.AnimalPromptExample2Title>
+  <EchoColony.AnimalPromptExample2>Eres irritable y no te gusta que te molesten. Toleras a los humanos pero prefieres la soledad. Expresa molestia frecuentemente pero muestra raros momentos de afecto.</EchoColony.AnimalPromptExample2>
+  <EchoColony.AnimalPromptExample3Title>CACHORRO JUGUETÓN:</EchoColony.AnimalPromptExample3Title>
+  <EchoColony.AnimalPromptExample3>¡Eres enérgico, juguetón y siempre estás emocionado! Amas a todos y todo. ¡Usa muchas exclamaciones y sonidos felices!</EchoColony.AnimalPromptExample3>
+  <EchoColony.AnimalPromptExample4Title>ANIMAL ANCIANO Y SABIO:</EchoColony.AnimalPromptExample4Title>
+  <EchoColony.AnimalPromptExample4>Has vivido muchos años y has visto mucho. Eres calmado, reflexivo y hablas de formas simples pero profundas. Entiendes más de lo que dejas ver.</EchoColony.AnimalPromptExample4>
+  <EchoColony.AnimalPromptExample5Title>SUPERVIVIENTE SALVAJE:</EchoColony.AnimalPromptExample5Title>
+  <EchoColony.AnimalPromptExample5>Naciste en la naturaleza y aún llevas esos instintos. Eres cauteloso, observador y te comunicas más a través del lenguaje corporal que de sonidos. La confianza no viene fácil.</EchoColony.AnimalPromptExample5>
+  
+  <!-- Animal Gizmo -->
+  <EchoColony.AnimalGizmoTalkTo>Hablar con {0}</EchoColony.AnimalGizmoTalkTo>
+  
+  <!-- Settings -->
+  <EchoColony.AnimalNarrativeStyle>Estilo Narrativo de Animales</EchoColony.AnimalNarrativeStyle>
+  <EchoColony.AnimalNarrativeStyleTooltip>Cómo los animales describen sus acciones:\nPrimera Persona: "Muevo mi cola"\nTercera Persona: "El perro mueve su cola"</EchoColony.AnimalNarrativeStyleTooltip>
+  <EchoColony.AnimalNarrativeFirstPerson>Primera Persona</EchoColony.AnimalNarrativeFirstPerson>
+  <EchoColony.AnimalNarrativeThirdPerson>Tercera Persona</EchoColony.AnimalNarrativeThirdPerson>
+  
+  <!-- Divine Actions - Narratives -->
+  <EchoColony.ActionHealNarrative1>Una calidez suave fluye por el cuerpo de {0} mientras las heridas comienzan a cerrarse...</EchoColony.ActionHealNarrative1>
+  <EchoColony.ActionHealNarrative2>Las heridas de {0} se desvanecen lentamente mientras energía divina los rodea.</EchoColony.ActionHealNarrative2>
+  <EchoColony.ActionHealNarrative3>Colocas tu mano sobre {0}. Sus heridas comienzan a sanar.</EchoColony.ActionHealNarrative3>
+  <EchoColony.ActionHealNarrative4>Un brillo suave envuelve a {0}, curando sus heridas.</EchoColony.ActionHealNarrative4>
+  
+  <EchoColony.ActionRemovePainNarrative1>{0} se relaja mientras el dolor se desvanece...</EchoColony.ActionRemovePainNarrative1>
+  <EchoColony.ActionRemovePainNarrative2>El sufrimiento abandona los ojos de {0} mientras el consuelo los envuelve.</EchoColony.ActionRemovePainNarrative2>
+  <EchoColony.ActionRemovePainNarrative3>Alivias el dolor de {0} con un toque gentil.</EchoColony.ActionRemovePainNarrative3>
+  <EchoColony.ActionRemovePainNarrative4>{0} respira con más facilidad mientras el dolor disminuye.</EchoColony.ActionRemovePainNarrative4>
+  
+  <EchoColony.ActionCureDiseaseNarrative1>La enfermedad abandona el cuerpo de {0}, la vitalidad regresa.</EchoColony.ActionCureDiseaseNarrative1>
+  <EchoColony.ActionCureDiseaseNarrative2>{0} se sacude la enfermedad mientras la salud se restablece.</EchoColony.ActionCureDiseaseNarrative2>
+  <EchoColony.ActionCureDiseaseNarrative3>Luz divina purga la enfermedad de {0}.</EchoColony.ActionCureDiseaseNarrative3>
+  <EchoColony.ActionCureDiseaseNarrative4>La fiebre de {0} cede mientras la infección desaparece.</EchoColony.ActionCureDiseaseNarrative4>
+  
+  <EchoColony.ActionLearnSkillNarrative1>Los ojos de {0} se iluminan con comprensión mientras el nuevo conocimiento se asienta.</EchoColony.ActionLearnSkillNarrative1>
+  <EchoColony.ActionLearnSkillNarrative2>Guías a {0} a través de la lección. Aprende rápidamente.</EchoColony.ActionLearnSkillNarrative2>
+  <EchoColony.ActionLearnSkillNarrative3>Algo hace clic para {0} - ha dominado una nueva habilidad.</EchoColony.ActionLearnSkillNarrative3>
+  <EchoColony.ActionLearnSkillNarrative4>{0} practica intensamente y de repente comprende la técnica.</EchoColony.ActionLearnSkillNarrative4>
+  
+  <EchoColony.ActionImproveBondNarrative1>El vínculo entre tú y {0} se fortalece...</EchoColony.ActionImproveBondNarrative1>
+  <EchoColony.ActionImproveBondNarrative2>{0} se acurruca más cerca, la confianza se profundiza en sus ojos.</EchoColony.ActionImproveBondNarrative2>
+  <EchoColony.ActionImproveBondNarrative3>Un momento de conexión - {0} te entiende mejor ahora.</EchoColony.ActionImproveBondNarrative3>
+  <EchoColony.ActionImproveBondNarrative4>Tú y {0} comparten un momento significativo juntos.</EchoColony.ActionImproveBondNarrative4>
+  
+  <EchoColony.ActionTameNarrative1>{0} te mira con nueva confianza y aceptación.</EchoColony.ActionTameNarrative1>
+  <EchoColony.ActionTameNarrative2>La ferocidad se desvanece de los ojos de {0} mientras se une a tu colonia.</EchoColony.ActionTameNarrative2>
+  <EchoColony.ActionTameNarrative3>{0} finalmente te acepta como familia.</EchoColony.ActionTameNarrative3>
+  <EchoColony.ActionTameNarrative4>Algo cambia en {0} - ahora es uno de los tuyos.</EchoColony.ActionTameNarrative4>
+  
+  <EchoColony.ActionFeedNarrative1>Provees a {0} con alimento. Come contento.</EchoColony.ActionFeedNarrative1>
+  <EchoColony.ActionFeedNarrative2>El hambre de {0} se desvanece mientras el sustento aparece ante ellos.</EchoColony.ActionFeedNarrative2>
+  <EchoColony.ActionFeedNarrative3>La comida se materializa para {0}, quien la devora con entusiasmo.</EchoColony.ActionFeedNarrative3>
+  <EchoColony.ActionFeedNarrative4>Te aseguras de que {0} esté bien alimentado y satisfecho.</EchoColony.ActionFeedNarrative4>
+  
+  <EchoColony.ActionRestNarrative1>{0} se acomoda, el sueño pacífico lo invade.</EchoColony.ActionRestNarrative1>
+  <EchoColony.ActionRestNarrative2>El agotamiento abandona el cuerpo de {0} mientras se le concede descanso.</EchoColony.ActionRestNarrative2>
+  <EchoColony.ActionRestNarrative3>Facilitas que {0} caiga en un sueño cómodo y reparador.</EchoColony.ActionRestNarrative3>
+  <EchoColony.ActionRestNarrative4>{0} bosteza y se acurruca, la fatiga se desvanece.</EchoColony.ActionRestNarrative4>
+  
+  <EchoColony.ActionComfortNarrative1>Consuelas a {0}, sus ánimos se elevan visiblemente.</EchoColony.ActionComfortNarrative1>
+  <EchoColony.ActionComfortNarrative2>El humor de {0} mejora mientras la preocupación se desvanece.</EchoColony.ActionComfortNarrative2>
+  <EchoColony.ActionComfortNarrative3>Una sensación de paz envuelve a {0}.</EchoColony.ActionComfortNarrative3>
+  <EchoColony.ActionComfortNarrative4>{0} parece más feliz, el estrés abandona su comportamiento.</EchoColony.ActionComfortNarrative4>
+  
+  <EchoColony.ActionGenericNarrative>Energía divina fluye a través de {0}...</EchoColony.ActionGenericNarrative>
+  
+  <!-- Divine Actions - Notifications -->
+  <EchoColony.ActionExecutedNotification>Acciones divinas sobre {0}: {1}</EchoColony.ActionExecutedNotification>
 </LanguageData>

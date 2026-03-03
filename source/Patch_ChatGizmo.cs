@@ -7,43 +7,26 @@ using System.Linq;
 
 namespace EchoColony
 {
-    [HarmonyPatch(typeof(Pawn_DraftController))]
+    [HarmonyPatch(typeof(Pawn))]
     public static class Patch_ChatGizmo
     {
         [HarmonyPatch("GetGizmos")]
         [HarmonyPostfix]
-        public static IEnumerable<Gizmo> Postfix(IEnumerable<Gizmo> __result, Pawn_DraftController __instance)
+        public static IEnumerable<Gizmo> Postfix(IEnumerable<Gizmo> __result, Pawn __instance)
         {
-            // Devolver todos los gizmos originales primero
-            foreach (var g in __result) 
+            // Return all original gizmos first
+            foreach (var g in __result)
                 yield return g;
 
-            // VERIFICACIONES TEMPRANAS
-            if (__instance == null)
-            {
-                Log.Warning("[EchoColony] DraftController is null");
-                yield break;
-            }
+            Pawn pawn = __instance;
 
-            // OBTENER EL PAWN
-            Pawn pawn = GetPawnFromDraftController(__instance);
-            
-            if (pawn == null)
-            {
+            // Early checks
+            if (pawn == null || pawn.Map == null || !pawn.Spawned)
                 yield break;
-            }
 
-            // VERIFICACIÓN DE MAPA
-            if (pawn.Map == null || !pawn.Spawned)
-            {
-                yield break;
-            }
-
-            // VALIDACIONES BÁSICAS
             if (!IsValidChatPawn(pawn))
                 yield break;
 
-            // VERIFICAR COMPONENTES
             if (!AreComponentsInitialized())
             {
                 Log.Warning("[EchoColony] Components not initialized, skipping gizmos");
@@ -53,23 +36,20 @@ namespace EchoColony
             List<Gizmo> extraGizmos = new List<Gizmo>();
             try
             {
-                // OBTENER COLONOS CERCANOS
-                var nearbyColonists = GetNearbyColonists(pawn);
-
-                // CHAT INDIVIDUAL - siempre disponible
+                // Individual chat - always available for valid pawns
                 extraGizmos.Add(CreateIndividualChatGizmo(pawn));
 
-                // CHAT GRUPAL - solo para colonos libres y si hay otros cerca
-                if (nearbyColonists.Count >= 1 && 
-                    IsGroupChatAllowedForCurrentModel() &&
-                    IsFreeColonist(pawn)) // Solo colonos libres pueden iniciar chat grupal
+                // Group chat - only for free colonists with others nearby
+                if (IsFreeColonist(pawn) && IsGroupChatAllowedForCurrentModel())
                 {
-                    extraGizmos.Add(CreateGroupChatGizmo(pawn, nearbyColonists));
+                    var nearbyColonists = GetNearbyColonists(pawn);
+                    if (nearbyColonists.Count >= 1)
+                        extraGizmos.Add(CreateGroupChatGizmo(pawn, nearbyColonists));
                 }
             }
             catch (Exception ex)
             {
-                Log.Error($"[EchoColony] Error en Patch_ChatGizmo para {pawn?.LabelShort}: {ex.Message}");
+                Log.Error($"[EchoColony] Error in Patch_ChatGizmo for {pawn?.LabelShort}: {ex.Message}");
             }
 
             foreach (var g in extraGizmos)
@@ -83,7 +63,7 @@ namespace EchoColony
                 if (Current.Game == null) return false;
                 if (Find.CurrentMap == null) return false;
                 if (MyStoryModComponent.Instance == null) return false;
-                
+
                 var chatComponent = ChatGameComponent.Instance;
                 if (chatComponent == null) return false;
 
@@ -91,54 +71,12 @@ namespace EchoColony
             }
             catch (Exception ex)
             {
-                Log.Warning($"[EchoColony] Error verificando componentes: {ex.Message}");
+                Log.Warning($"[EchoColony] Error checking components: {ex.Message}");
                 return false;
             }
         }
 
-        private static Pawn GetPawnFromDraftController(Pawn_DraftController controller)
-        {
-            try
-            {
-                // Método 1: Propiedad directa
-                if (controller.pawn != null)
-                    return controller.pawn;
-
-                // Método 2: Traverse
-                var traverse = Traverse.Create(controller);
-                if (traverse != null)
-                {
-                    var pawnFromTraverse = traverse.Field("pawn").GetValue<Pawn>();
-                    if (pawnFromTraverse != null)
-                        return pawnFromTraverse;
-                }
-
-                // Método 3: Reflexión
-                var type = controller.GetType();
-                var pawnField = type.GetField("pawn", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                if (pawnField != null)
-                {
-                    return pawnField.GetValue(controller) as Pawn;
-                }
-
-                var pawnProperty = type.GetProperty("pawn", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                if (pawnProperty != null)
-                {
-                    return pawnProperty.GetValue(controller) as Pawn;
-                }
-            }
-            catch (Exception ex)
-            {
-                if (!(ex is NullReferenceException))
-                {
-                    Log.Warning($"[EchoColony] Error obteniendo pawn desde DraftController: {ex.Message}");
-                }
-            }
-
-            return null;
-        }
-
-        // ✅ ACTUALIZADO: Validación para incluir colonos, esclavos y prisioneros
+        // Valid chat pawns: free colonists, slaves, and prisoners belonging to the player
         private static bool IsValidChatPawn(Pawn pawn)
         {
             try
@@ -147,29 +85,29 @@ namespace EchoColony
                 if (pawn.Dead) return false;
                 if (pawn.Destroyed) return false;
                 if (!pawn.RaceProps.Humanlike) return false;
-                
-                // ✅ Permitir colonos de la facción del jugador
+
+                // Free colonists
                 if (pawn.Faction == Faction.OfPlayer)
                     return true;
-                
-                // ✅ Permitir esclavos
+
+                // Slaves
                 if (pawn.IsSlave && pawn.SlaveFaction == Faction.OfPlayer)
                     return true;
-                
-                // ✅ Permitir prisioneros
+
+                // Prisoners
                 if (pawn.IsPrisoner && pawn.guest != null && pawn.guest.HostFaction == Faction.OfPlayer)
                     return true;
-                
+
                 return false;
             }
             catch (Exception ex)
             {
-                Log.Warning($"[EchoColony] Error validando pawn {pawn?.LabelShort}: {ex.Message}");
+                Log.Warning($"[EchoColony] Error validating pawn {pawn?.LabelShort}: {ex.Message}");
                 return false;
             }
         }
 
-        // ✅ NUEVO: Verificar si es un colono libre (no esclavo ni prisionero)
+        // Only free colonists (not slaves, not prisoners) can initiate group chats
         private static bool IsFreeColonist(Pawn pawn)
         {
             if (pawn == null) return false;
@@ -179,7 +117,7 @@ namespace EchoColony
             return true;
         }
 
-        // ✅ ACTUALIZADO: Obtener colonos cercanos (incluye esclavos, excluye prisioneros)
+        // Nearby colonists for group chat: free colonists and slaves, NOT prisoners
         private static List<Pawn> GetNearbyColonists(Pawn pawn)
         {
             try
@@ -191,49 +129,43 @@ namespace EchoColony
 
                 return allPawns
                     .Where(p => p != null &&
-                               p != pawn && 
-                               !p.Dead && 
-                               !p.Destroyed &&
-                               p.RaceProps.Humanlike &&
-                               p.Spawned &&
-                               p.Position.IsValid &&
-                               pawn.Position.IsValid &&
-                               p.Position.InHorDistOf(pawn.Position, 10f) &&
-                               IsValidForGroupChat(p)) // ✅ Validación específica para grupo
+                                p != pawn &&
+                                !p.Dead &&
+                                !p.Destroyed &&
+                                p.RaceProps.Humanlike &&
+                                p.Spawned &&
+                                p.Position.IsValid &&
+                                pawn.Position.IsValid &&
+                                p.Position.InHorDistOf(pawn.Position, 10f) &&
+                                IsValidForGroupChat(p))
                     .ToList();
             }
             catch (Exception ex)
             {
-                Log.Warning($"[EchoColony] Error obteniendo colonos cercanos para {pawn?.LabelShort}: {ex.Message}");
+                Log.Warning($"[EchoColony] Error getting nearby colonists for {pawn?.LabelShort}: {ex.Message}");
                 return new List<Pawn>();
             }
         }
 
-        // ✅ NUEVO: Validar si un pawn puede participar en chat grupal
+        // Free colonists and slaves can participate in group chat, NOT prisoners
         private static bool IsValidForGroupChat(Pawn pawn)
         {
-            // Solo colonos libres y esclavos pueden participar en chats grupales
-            // Prisioneros NO pueden participar en chats grupales
             if (pawn.IsPrisoner) return false;
-            
-            // Colonos libres
+
             if (pawn.Faction == Faction.OfPlayer && !pawn.IsSlave)
                 return true;
-            
-            // Esclavos
+
             if (pawn.IsSlave && pawn.SlaveFaction == Faction.OfPlayer)
                 return true;
-            
+
             return false;
         }
 
-        // ✅ ACTUALIZADO: Gizmo individual con texto adaptado
         private static Command_Action CreateIndividualChatGizmo(Pawn pawn)
         {
-            // Adaptar el label según el tipo de pawn
             string label = "EchoColony.ChatGizmoLabel".Translate();
             string desc = "EchoColony.ChatGizmoDesc".Translate();
-            
+
             if (pawn.IsPrisoner)
             {
                 label = "Talk to Prisoner";
@@ -272,7 +204,7 @@ namespace EchoColony
                     }
                     catch (Exception ex)
                     {
-                        Log.Error($"[EchoColony] Error abriendo chat individual para {pawn?.LabelShort}: {ex.Message}\n{ex.StackTrace}");
+                        Log.Error($"[EchoColony] Error opening individual chat for {pawn?.LabelShort}: {ex.Message}\n{ex.StackTrace}");
                         Messages.Message("Error opening individual chat. Check logs for details.", MessageTypeDefOf.RejectInput);
                     }
                 }
@@ -302,11 +234,10 @@ namespace EchoColony
                             return;
                         }
 
-                        // Filtrar participantes válidos
                         var validParticipants = nearbyColonists
                             .Where(p => p != null && !p.Dead && !p.Destroyed && p.Spawned)
                             .ToList();
-                        
+
                         if (validParticipants.Count == 0)
                         {
                             Messages.Message("No valid colonists nearby for group chat.", MessageTypeDefOf.RejectInput);
@@ -319,7 +250,7 @@ namespace EchoColony
                     }
                     catch (Exception ex)
                     {
-                        Log.Error($"[EchoColony] Error abriendo chat grupal para {pawn?.LabelShort}: {ex.Message}\n{ex.StackTrace}");
+                        Log.Error($"[EchoColony] Error opening group chat for {pawn?.LabelShort}: {ex.Message}\n{ex.StackTrace}");
                         Messages.Message("Error opening group chat. Check logs for details.", MessageTypeDefOf.RejectInput);
                     }
                 }
@@ -345,7 +276,7 @@ namespace EchoColony
             }
             catch (Exception ex)
             {
-                Log.Warning($"[EchoColony] Error verificando modelo para chat grupal: {ex.Message}");
+                Log.Warning($"[EchoColony] Error checking model for group chat: {ex.Message}");
                 return false;
             }
         }
