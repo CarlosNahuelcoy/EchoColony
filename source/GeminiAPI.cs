@@ -16,7 +16,7 @@ namespace EchoColony
     {
         public string Name { get; set; }
         public bool IsAdvanced { get; set; }
-        
+
         public GeminiModelInfo(string name, bool isAdvanced = false)
         {
             Name = name;
@@ -26,17 +26,129 @@ namespace EchoColony
 
     public static class GeminiAPI
     {
-        private static readonly List<GeminiModelInfo> availableModels = new List<GeminiModelInfo>
+        // ═══════════════════════════════════════════════════════════════
+        // MODEL SELECTION — usa directamente lo que el usuario eligió
+        // ═══════════════════════════════════════════════════════════════
+
+        public static string GetSelectedModel()
         {
-            new GeminiModelInfo("gemini-2.5-flash", false),
-            new GeminiModelInfo("gemini-2.5-flash-lite", false),
-            new GeminiModelInfo("gemini-2.5-flash-preview-09-2025", false),
-            new GeminiModelInfo("gemini-2.0-flash-001", false),
-            new GeminiModelInfo("gemini-2.0-flash-lite-001", false),
-            new GeminiModelInfo("gemini-2.5-pro", true),
-            new GeminiModelInfo("gemini-2.0-flash-thinking-exp", true),
-            new GeminiModelInfo("gemini-2.0-pro-exp", true)
-        };
+            if (MyMod.Settings == null)
+                return "gemini-2.0-flash-001";
+
+            // Si el usuario eligió un modelo explícitamente, usarlo sin validar nada más
+            if (!string.IsNullOrEmpty(MyMod.Settings.selectedModel))
+            {
+                if (MyMod.Settings.debugMode)
+                    LogDebugResponse("ModelSelection", $"Using user-selected model: {MyMod.Settings.selectedModel}");
+
+                return MyMod.Settings.selectedModel;
+            }
+
+            // Fallback solo si nunca se eligió nada
+            if (MyMod.Settings.debugMode)
+                LogDebugResponse("ModelSelection", "No model selected, using default: gemini-2.0-flash-001");
+
+            return "gemini-2.0-flash-001";
+        }
+
+        // Mantener firma antigua para no romper otras partes del código que la llamen
+        public static string GetBestAvailableModel(bool useAdvanced = false)
+        {
+            return GetSelectedModel();
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // FETCH MODELS FROM API
+        // ═══════════════════════════════════════════════════════════════
+
+        public static IEnumerator FetchAvailableModels(string apiKey, Action<List<GeminiModelInfo>> onComplete)
+        {
+            if (string.IsNullOrEmpty(apiKey))
+            {
+                onComplete?.Invoke(null);
+                yield break;
+            }
+
+            string endpoint = $"https://generativelanguage.googleapis.com/v1beta/models?key={apiKey}";
+
+            var request = UnityWebRequest.Get(endpoint);
+            request.timeout = 10;
+
+            yield return request.SendWebRequest();
+
+#if UNITY_2020_2_OR_NEWER
+            bool hasError = request.result != UnityWebRequest.Result.Success;
+#else
+            bool hasError = request.isNetworkError || request.isHttpError;
+#endif
+
+            if (hasError)
+            {
+                Log.Warning($"[EchoColony] Failed to fetch Gemini models: {request.error}");
+                onComplete?.Invoke(null);
+                yield break;
+            }
+
+            try
+            {
+                var parsed = JSON.Parse(request.downloadHandler.text);
+                var modelsArray = parsed["models"]?.AsArray;
+
+                if (modelsArray == null)
+                {
+                    onComplete?.Invoke(null);
+                    yield break;
+                }
+
+                var result = new List<GeminiModelInfo>();
+
+                foreach (JSONNode modelNode in modelsArray)
+                {
+                    // Solo modelos que soporten generateContent
+                    bool supportsGenerate = false;
+                    var methods = modelNode["supportedGenerationMethods"]?.AsArray;
+                    if (methods != null)
+                    {
+                        foreach (JSONNode method in methods)
+                        {
+                            if (method.Value == "generateContent")
+                            {
+                                supportsGenerate = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!supportsGenerate) continue;
+
+                    // "models/gemini-2.0-flash-001" → "gemini-2.0-flash-001"
+                    string fullName = modelNode["name"]?.Value ?? "";
+                    string modelId = fullName.StartsWith("models/") ? fullName.Substring(7) : fullName;
+
+                    if (string.IsNullOrEmpty(modelId)) continue;
+
+                    // Badge visual únicamente — no afecta la selección
+                    bool isAdvanced = modelId.Contains("-pro") || modelId.Contains("thinking");
+
+                    result.Add(new GeminiModelInfo(modelId, isAdvanced));
+                }
+
+                // Ordenar: más recientes primero
+                result = result.OrderByDescending(m => m.Name).ToList();
+
+                Log.Message($"[EchoColony] Fetched {result.Count} Gemini models");
+                onComplete?.Invoke(result);
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"[EchoColony] Error parsing Gemini models response: {ex.Message}");
+                onComplete?.Invoke(null);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // MAIN DISPATCH
+        // ═══════════════════════════════════════════════════════════════
 
         public static IEnumerator GetResponseFromModel(Pawn pawn, string prompt, Action<string> onResponse)
         {
@@ -46,93 +158,131 @@ namespace EchoColony
                 yield break;
             }
 
+            bool isAnimal = pawn != null && pawn.RaceProps.Animal;
+
             switch (MyMod.Settings.modelSource)
             {
                 case ModelSource.Player2:
-                    yield return SendRequestToPlayer2(pawn, prompt, onResponse);
+                    if (isAnimal)
+                        yield return SendRequestToPlayer2WithPrompt(prompt, onResponse);
+                    else
+                        yield return SendRequestToPlayer2(pawn, prompt, onResponse);
                     yield break;
+
                 case ModelSource.Local:
                     yield return SendRequestToLocalModel(prompt, onResponse);
                     yield break;
+
                 case ModelSource.OpenRouter:
                     yield return SendRequestToOpenRouter(prompt, onResponse);
                     yield break;
+
                 case ModelSource.Gemini:
-                    string geminiJson = CreateGeminiRequestJson(prompt);
-                    yield return SendRequestToGemini(geminiJson, onResponse);
+                    yield return SendRequestToGemini(prompt, onResponse);
                     yield break;
+
                 default:
                     onResponse?.Invoke("⚠ ERROR: Unknown model source - Check mod settings");
                     yield break;
             }
         }
 
-        public static string GetBestAvailableModel(bool useAdvanced)
+        // ═══════════════════════════════════════════════════════════════
+        // GEMINI REQUEST
+        // ═══════════════════════════════════════════════════════════════
+
+        public static IEnumerator SendRequestToGemini(string prompt, Action<string> onResponse)
         {
-            if (MyMod.Settings?.modelPreferences != null && !MyMod.Settings.modelPreferences.useAutoSelection)
+            if (string.IsNullOrEmpty(MyMod.Settings.apiKey))
             {
-                string preferredModel = useAdvanced ? 
-                    MyMod.Settings.modelPreferences.preferredAdvancedModel : 
-                    MyMod.Settings.modelPreferences.preferredFastModel;
-                    
-                if (!string.IsNullOrEmpty(preferredModel))
+                onResponse?.Invoke("⚠ ERROR: Missing Gemini API Key\n\nSet your API key in mod settings\nGet one free at: https://ai.google.dev/");
+                yield break;
+            }
+
+            string model = GetSelectedModel();
+            string apiKey = MyMod.Settings.apiKey;
+            string endpoint = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
+            string requestJson = CreateGeminiRequestJson(prompt);
+
+            int maxRetries = 3;
+            float retryDelay = 1f;
+
+            for (int attempt = 0; attempt < maxRetries; attempt++)
+            {
+                var request = new UnityWebRequest(endpoint, "POST")
                 {
-                    var preferredExists = availableModels.Any(m => m.Name == preferredModel && m.IsAdvanced == useAdvanced);
-                    
-                    if (preferredExists)
+                    uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(requestJson)),
+                    downloadHandler = new DownloadHandlerBuffer()
+                };
+                request.SetRequestHeader("Content-Type", "application/json");
+
+                yield return request.SendWebRequest();
+
+                string responseText = request.downloadHandler.text;
+
+#if UNITY_2020_2_OR_NEWER
+                bool hasError = request.result != UnityWebRequest.Result.Success;
+#else
+                bool hasError = request.isNetworkError || request.isHttpError;
+#endif
+
+                if (!hasError)
+                {
+                    string reply = ParseGeminiReply(responseText);
+
+                    if (reply.StartsWith("⚠ ERROR:") || reply.StartsWith("ERROR:"))
+                    {
+                        onResponse?.Invoke(reply);
+                        yield break;
+                    }
+
+                    reply = TrimTextAfterHashtags(reply);
+                    reply = CleanResponse(reply);
+
+                    LogDebugResponse("GeminiAPI", $"Used model: {model}\nReply: {reply}");
+                    onResponse?.Invoke(reply);
+                    yield break;
+                }
+
+                if (request.responseCode == 429 || request.responseCode == 500 || request.responseCode == 503)
+                {
+                    if (attempt < maxRetries - 1)
                     {
                         if (MyMod.Settings?.debugMode == true)
-                        {
-                            LogDebugResponse("ModelSelection", $"Using user preferred model: {preferredModel}");
-                        }
-                        return preferredModel;
+                            LogDebugResponse("GeminiAPI_RETRY", $"Attempt {attempt + 1}/{maxRetries} failed with code {request.responseCode}. Retrying in {retryDelay}s...\n{responseText}");
+
+                        yield return new WaitForSeconds(retryDelay);
+                        retryDelay *= 2f;
+                        continue;
                     }
                 }
-            }
 
-            var candidateModels = availableModels.Where(m => m.IsAdvanced == useAdvanced).ToList();
-            
-            if (candidateModels.Count == 0)
-            {
-                candidateModels = availableModels.ToList();
+                LogDebugResponse("GeminiAPI_ERROR", $"Status: {request.responseCode}\nModel: {model}\nResponse: {responseText}");
+                onResponse?.Invoke($"⚠ ERROR: Gemini API connection failed\n\nModel: {model}\nAttempts: {maxRetries}\nError: {request.error}");
+                yield break;
             }
-
-            return SelectBestModel(candidateModels, useAdvanced);
         }
 
-        private static string SelectBestModel(List<GeminiModelInfo> candidates, bool preferAdvanced)
+        private static string CreateGeminiRequestJson(string prompt)
         {
-            var modelPriorities = new Dictionary<string, int>
-            {
-                ["gemini-2.0-flash-001"] = 105,
-                ["gemini-2.5-flash"] = 100,
-                ["gemini-2.5-flash-lite"] = 95,
-                ["gemini-2.5-flash-preview-09-2025"] = 90,
-                ["gemini-2.0-flash-lite-001"] = 80,
-                ["gemini-2.5-pro"] = 100,
-                ["gemini-2.0-flash-thinking-exp"] = 95,
-                ["gemini-2.0-pro-exp"] = 90,
-            };
+            string escapedPrompt = EscapeJson(prompt);
 
-            var sortedCandidates = candidates
-                .OrderByDescending(m => modelPriorities.ContainsKey(m.Name) ? modelPriorities[m.Name] : 0)
-                .ThenByDescending(m => m.Name)
-                .ToList();
-
-            string selectedModel = sortedCandidates.First().Name;
-            
-            if (MyMod.Settings?.debugMode == true)
-            {
-                LogDebugResponse("ModelSelection", $"Auto-selected model: {selectedModel} (Advanced: {preferAdvanced}) from {candidates.Count} candidates");
-            }
-            
-            return selectedModel;
+            return $@"{{
+  ""contents"": [
+    {{
+      ""parts"": [
+        {{
+          ""text"": ""{escapedPrompt}""
+        }}
+      ]
+    }}
+  ]
+}}";
         }
 
-        public static List<GeminiModelInfo> GetAvailableModels()
-        {
-            return new List<GeminiModelInfo>(availableModels);
-        }
+        // ═══════════════════════════════════════════════════════════════
+        // PLAYER2 REQUESTS
+        // ═══════════════════════════════════════════════════════════════
 
         public static IEnumerator SendRequestToPlayer2(Pawn pawn, string userInput, Action<string> onResponse)
         {
@@ -152,8 +302,7 @@ namespace EchoColony
                 yield break;
             }
 
-            string healthResponse = healthRequest.downloadHandler.text;
-            if (!healthResponse.Contains("client_version"))
+            if (!healthRequest.downloadHandler.text.Contains("client_version"))
             {
                 onResponse?.Invoke("⚠ ERROR: Player2 not responding correctly\n\nMake sure the app is running, or reinstall from: https://player2.game/");
                 yield break;
@@ -188,19 +337,7 @@ namespace EchoColony
                 { "content", userMessage }
             });
 
-            var jsonPayload = new JSONObject();
-            var jsonMessages = new JSONArray();
-
-            foreach (var msg in messages)
-            {
-                var jsonMsg = new JSONObject();
-                jsonMsg["role"] = msg["role"];
-                jsonMsg["content"] = msg["content"];
-                jsonMessages.Add(jsonMsg);
-            }
-
-            jsonPayload["messages"] = jsonMessages;
-            string jsonBody = jsonPayload.ToString();
+            string jsonBody = BuildMessagesJson(messages);
 
             if (MyMod.Settings?.debugMode == true)
                 LogPlayer2Debug("REQUEST", jsonBody);
@@ -215,7 +352,6 @@ namespace EchoColony
                     uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(jsonBody)),
                     downloadHandler = new DownloadHandlerBuffer()
                 };
-
                 request.SetRequestHeader("Content-Type", "application/json");
                 request.SetRequestHeader("player2-game-key", "Rimworld-EchoColony");
 
@@ -253,9 +389,7 @@ namespace EchoColony
                     if (attempt < maxRetries - 1)
                     {
                         if (MyMod.Settings?.debugMode == true)
-                        {
                             LogPlayer2Debug("RETRY", $"Attempt {attempt + 1}/{maxRetries} failed with code {request.responseCode}. Retrying in {retryDelay}s...\n{responseText}");
-                        }
 
                         yield return new WaitForSeconds(retryDelay);
                         retryDelay *= 2f;
@@ -270,6 +404,195 @@ namespace EchoColony
                 yield break;
             }
         }
+
+        public static IEnumerator SendRequestToPlayer2WithPrompt(string fullPrompt, Action<string> onResponse)
+        {
+            string healthCheckUrl = "http://127.0.0.1:4315/v1/health";
+            UnityWebRequest healthRequest = UnityWebRequest.Get(healthCheckUrl);
+            healthRequest.timeout = 2;
+
+            yield return healthRequest.SendWebRequest();
+
+#if UNITY_2020_2_OR_NEWER
+            if (healthRequest.result != UnityWebRequest.Result.Success)
+#else
+            if (healthRequest.isNetworkError || healthRequest.isHttpError)
+#endif
+            {
+                onResponse?.Invoke("⚠ ERROR: Player2 is not running\n\nDownload Player2 for free from: https://player2.game/");
+                yield break;
+            }
+
+            if (!healthRequest.downloadHandler.text.Contains("client_version"))
+            {
+                onResponse?.Invoke("⚠ ERROR: Player2 not responding correctly\n\nMake sure the app is running, or reinstall from: https://player2.game/");
+                yield break;
+            }
+
+            string endpoint = "http://127.0.0.1:4315/v1/chat/completions";
+
+            var messages = new List<Dictionary<string, string>>
+            {
+                new Dictionary<string, string> { { "role", "user" }, { "content", fullPrompt } }
+            };
+
+            string jsonBody = BuildMessagesJson(messages);
+
+            if (MyMod.Settings?.debugMode == true)
+                LogPlayer2Debug("PROMPT_REQUEST", jsonBody);
+
+            int maxRetries = 3;
+            float retryDelay = 1f;
+
+            for (int attempt = 0; attempt < maxRetries; attempt++)
+            {
+                var request = new UnityWebRequest(endpoint, "POST")
+                {
+                    uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(jsonBody)),
+                    downloadHandler = new DownloadHandlerBuffer()
+                };
+                request.SetRequestHeader("Content-Type", "application/json");
+                request.SetRequestHeader("player2-game-key", "Rimworld-EchoColony");
+
+                yield return request.SendWebRequest();
+
+                string responseText = request.downloadHandler.text;
+
+#if UNITY_2020_2_OR_NEWER
+                bool hasError = request.result != UnityWebRequest.Result.Success;
+#else
+                bool hasError = request.isNetworkError || request.isHttpError;
+#endif
+
+                if (!hasError)
+                {
+                    if (MyMod.Settings?.debugMode == true)
+                        LogPlayer2Debug("PROMPT_RESPONSE", responseText);
+
+                    string reply = ParseStandardLLMResponse(responseText);
+                    reply = TrimTextAfterHashtags(reply);
+                    reply = CleanResponse(reply);
+
+                    if (MyMod.Settings?.debugMode == true)
+                        LogPlayer2Debug("PROMPT_FINAL", reply);
+
+                    onResponse?.Invoke(reply);
+                    yield break;
+                }
+
+                if (request.responseCode == 429 || request.responseCode == 500 || request.responseCode == 503)
+                {
+                    if (attempt < maxRetries - 1)
+                    {
+                        if (MyMod.Settings?.debugMode == true)
+                            LogPlayer2Debug("PROMPT_RETRY", $"Attempt {attempt + 1}/{maxRetries} failed with code {request.responseCode}. Retrying in {retryDelay}s...\n{responseText}");
+
+                        yield return new WaitForSeconds(retryDelay);
+                        retryDelay *= 2f;
+                        continue;
+                    }
+                }
+
+                if (MyMod.Settings?.debugMode == true)
+                    LogPlayer2Debug("PROMPT_ERROR", $"Status: {request.responseCode}\n{responseText}");
+
+                onResponse?.Invoke($"⚠ ERROR: Player2 connection failed after {maxRetries} attempts\n\nError: {request.error}");
+                yield break;
+            }
+        }
+
+        public static IEnumerator SendRequestToPlayer2Storyteller(string jsonPrompt, Action<string> onResponse)
+        {
+            string healthCheckUrl = "http://127.0.0.1:4315/v1/health";
+            UnityWebRequest healthRequest = UnityWebRequest.Get(healthCheckUrl);
+            healthRequest.timeout = 2;
+
+            yield return healthRequest.SendWebRequest();
+
+#if UNITY_2020_2_OR_NEWER
+            if (healthRequest.result != UnityWebRequest.Result.Success)
+#else
+            if (healthRequest.isNetworkError || healthRequest.isHttpError)
+#endif
+            {
+                onResponse?.Invoke("⚠ ERROR: Player2 is not running\n\nDownload Player2 for free from: https://player2.game/");
+                yield break;
+            }
+
+            if (!healthRequest.downloadHandler.text.Contains("client_version"))
+            {
+                onResponse?.Invoke("⚠ ERROR: Player2 not responding correctly\n\nMake sure the app is running, or reinstall from: https://player2.game/");
+                yield break;
+            }
+
+            string endpoint = "http://127.0.0.1:4315/v1/chat/completions";
+
+            if (MyMod.Settings?.debugMode == true)
+                LogPlayer2Debug("STORYTELLER_REQUEST", jsonPrompt);
+
+            int maxRetries = 3;
+            float retryDelay = 1f;
+
+            for (int attempt = 0; attempt < maxRetries; attempt++)
+            {
+                var request = new UnityWebRequest(endpoint, "POST")
+                {
+                    uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(jsonPrompt)),
+                    downloadHandler = new DownloadHandlerBuffer()
+                };
+                request.SetRequestHeader("Content-Type", "application/json");
+                request.SetRequestHeader("player2-game-key", "Rimworld-EchoColony");
+
+                yield return request.SendWebRequest();
+
+                string responseText = request.downloadHandler.text;
+
+#if UNITY_2020_2_OR_NEWER
+                bool hasError = request.result != UnityWebRequest.Result.Success;
+#else
+                bool hasError = request.isNetworkError || request.isHttpError;
+#endif
+
+                if (!hasError)
+                {
+                    if (MyMod.Settings?.debugMode == true)
+                        LogPlayer2Debug("STORYTELLER_RESPONSE", responseText);
+
+                    string reply = ParseStandardLLMResponse(responseText);
+                    reply = TrimTextAfterHashtags(reply);
+                    reply = CleanResponse(reply);
+
+                    if (MyMod.Settings?.debugMode == true)
+                        LogPlayer2Debug("STORYTELLER_FINAL", reply);
+
+                    onResponse?.Invoke(reply);
+                    yield break;
+                }
+
+                if (request.responseCode == 429 || request.responseCode == 500 || request.responseCode == 503)
+                {
+                    if (attempt < maxRetries - 1)
+                    {
+                        if (MyMod.Settings?.debugMode == true)
+                            LogPlayer2Debug("STORYTELLER_RETRY", $"Attempt {attempt + 1}/{maxRetries} failed with code {request.responseCode}. Retrying in {retryDelay}s...\n{responseText}");
+
+                        yield return new WaitForSeconds(retryDelay);
+                        retryDelay *= 2f;
+                        continue;
+                    }
+                }
+
+                if (MyMod.Settings?.debugMode == true)
+                    LogPlayer2Debug("STORYTELLER_ERROR", $"Status: {request.responseCode}\n{responseText}");
+
+                onResponse?.Invoke($"⚠ ERROR: Player2 storyteller connection failed\n\nAttempts: {maxRetries}\nError: {request.error}");
+                yield break;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // LOCAL MODEL
+        // ═══════════════════════════════════════════════════════════════
 
         public static IEnumerator SendRequestToLocalModel(string prompt, Action<string> onResponse)
         {
@@ -314,13 +637,13 @@ namespace EchoColony
             }
 
             string text = ParseStandardLLMResponse(responseText);
-            
+
             if (text.StartsWith("⚠ ERROR:") || text.StartsWith("ERROR:"))
             {
                 onResponse?.Invoke(text);
                 yield break;
             }
-            
+
             text = TrimTextAfterHashtags(text);
             text = CleanResponse(text);
 
@@ -328,99 +651,9 @@ namespace EchoColony
             onResponse?.Invoke(text);
         }
 
-        public static IEnumerator SendRequestToGemini(string prompt, Action<string> onResponse)
-        {
-            if (string.IsNullOrEmpty(MyMod.Settings.apiKey))
-            {
-                onResponse?.Invoke("⚠ ERROR: Missing Gemini API Key\n\nSet your API key in mod settings\nGet one free at: https://ai.google.dev/");
-                yield break;
-            }
-
-            string model = GetBestAvailableModel(MyMod.Settings.ShouldUseAdvancedModel());
-            string apiKey = MyMod.Settings.apiKey;
-            string endpoint = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
-
-            string requestJson = CreateGeminiRequestJson(prompt);
-
-            int maxRetries = 3;
-            float retryDelay = 1f;
-
-            for (int attempt = 0; attempt < maxRetries; attempt++)
-            {
-                var request = new UnityWebRequest(endpoint, "POST")
-                {
-                    uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(requestJson)),
-                    downloadHandler = new DownloadHandlerBuffer()
-                };
-                request.SetRequestHeader("Content-Type", "application/json");
-
-                yield return request.SendWebRequest();
-
-                string responseText = request.downloadHandler.text;
-
-#if UNITY_2020_2_OR_NEWER
-                bool hasError = request.result != UnityWebRequest.Result.Success;
-#else
-                bool hasError = request.isNetworkError || request.isHttpError;
-#endif
-
-                if (!hasError)
-                {
-                    string reply = ParseGeminiReply(responseText);
-                    
-                    if (reply.StartsWith("⚠ ERROR:") || reply.StartsWith("ERROR:"))
-                    {
-                        onResponse?.Invoke(reply);
-                        yield break;
-                    }
-                    
-                    reply = TrimTextAfterHashtags(reply);
-                    reply = CleanResponse(reply);
-
-                    LogDebugResponse("GeminiAPI", $"Used model: {model}\nReply: {reply}");
-                    onResponse?.Invoke(reply);
-                    yield break;
-                }
-
-                if (request.responseCode == 429 || request.responseCode == 500 || request.responseCode == 503)
-                {
-                    if (attempt < maxRetries - 1)
-                    {
-                        if (MyMod.Settings?.debugMode == true)
-                        {
-                            LogDebugResponse("GeminiAPI_RETRY", $"Attempt {attempt + 1}/{maxRetries} failed with code {request.responseCode}. Retrying in {retryDelay}s...\n{responseText}");
-                        }
-
-                        yield return new WaitForSeconds(retryDelay);
-                        retryDelay *= 2f;
-                        continue;
-                    }
-                }
-
-                LogDebugResponse("GeminiAPI_ERROR", $"Status: {request.responseCode}\nModel: {model}\nResponse: {responseText}");
-                onResponse?.Invoke($"⚠ ERROR: Gemini API connection failed\n\nModel: {model}\nAttempts: {maxRetries}\nError: {request.error}");
-                yield break;
-            }
-        }
-
-        private static string CreateGeminiRequestJson(string prompt)
-        {
-            string escapedPrompt = EscapeJson(prompt);
-            
-            string json = $@"{{
-  ""contents"": [
-    {{
-      ""parts"": [
-        {{
-          ""text"": ""{escapedPrompt}""
-        }}
-      ]
-    }}
-  ]
-}}";
-
-            return json;
-        }
+        // ═══════════════════════════════════════════════════════════════
+        // OPENROUTER
+        // ═══════════════════════════════════════════════════════════════
 
         public static IEnumerator SendRequestToOpenRouter(string prompt, Action<string> onResponse)
         {
@@ -452,13 +685,13 @@ namespace EchoColony
             }
 
             string text = ParseStandardLLMResponse(responseText);
-            
+
             if (text.StartsWith("⚠ ERROR:") || text.StartsWith("ERROR:"))
             {
                 onResponse?.Invoke(text);
                 yield break;
             }
-            
+
             text = TrimTextAfterHashtags(text);
             text = CleanResponse(text);
 
@@ -466,166 +699,9 @@ namespace EchoColony
             onResponse?.Invoke(text);
         }
 
-        public static IEnumerator SendRequestToPlayer2Storyteller(string jsonPrompt, Action<string> onResponse)
-        {
-            string healthCheckUrl = "http://127.0.0.1:4315/v1/health";
-            UnityWebRequest healthRequest = UnityWebRequest.Get(healthCheckUrl);
-            healthRequest.timeout = 2;
-
-            yield return healthRequest.SendWebRequest();
-
-#if UNITY_2020_2_OR_NEWER
-            if (healthRequest.result != UnityWebRequest.Result.Success)
-#else
-            if (healthRequest.isNetworkError || healthRequest.isHttpError)
-#endif
-            {
-                onResponse?.Invoke("⚠ ERROR: Player2 is not running\n\nDownload Player2 for free from: https://player2.game/");
-                yield break;
-            }
-
-            string healthResponse = healthRequest.downloadHandler.text;
-            if (!healthResponse.Contains("client_version"))
-            {
-                onResponse?.Invoke("⚠ ERROR: Player2 not responding correctly\n\nMake sure the app is running, or reinstall from: https://player2.game/");
-                yield break;
-            }
-
-            string endpoint = "http://127.0.0.1:4315/v1/chat/completions";
-
-            if (MyMod.Settings?.debugMode == true)
-                LogPlayer2Debug("STORYTELLER_REQUEST", jsonPrompt);
-
-            int maxRetries = 3;
-            float retryDelay = 1f;
-
-            for (int attempt = 0; attempt < maxRetries; attempt++)
-            {
-                var request = new UnityWebRequest(endpoint, "POST")
-                {
-                    uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(jsonPrompt)),
-                    downloadHandler = new DownloadHandlerBuffer()
-                };
-
-                request.SetRequestHeader("Content-Type", "application/json");
-                request.SetRequestHeader("player2-game-key", "Rimworld-EchoColony");
-
-                yield return request.SendWebRequest();
-
-                string responseText = request.downloadHandler.text;
-
-#if UNITY_2020_2_OR_NEWER
-                bool hasError = request.result != UnityWebRequest.Result.Success;
-#else
-                bool hasError = request.isNetworkError || request.isHttpError;
-#endif
-
-                if (!hasError)
-                {
-                    if (MyMod.Settings?.debugMode == true)
-                        LogPlayer2Debug("STORYTELLER_RESPONSE", responseText);
-
-                    string reply = ParseStandardLLMResponse(responseText);
-                    reply = TrimTextAfterHashtags(reply);
-                    reply = CleanResponse(reply);
-
-                    if (MyMod.Settings?.debugMode == true)
-                        LogPlayer2Debug("STORYTELLER_FINAL", reply);
-
-                    onResponse?.Invoke(reply);
-                    yield break;
-                }
-
-                if (request.responseCode == 429 || request.responseCode == 500 || request.responseCode == 503)
-                {
-                    if (attempt < maxRetries - 1)
-                    {
-                        if (MyMod.Settings?.debugMode == true)
-                        {
-                            LogPlayer2Debug("STORYTELLER_RETRY", $"Attempt {attempt + 1}/{maxRetries} failed with code {request.responseCode}. Retrying in {retryDelay}s...\n{responseText}");
-                        }
-
-                        yield return new WaitForSeconds(retryDelay);
-                        retryDelay *= 2f;
-                        continue;
-                    }
-                }
-
-                if (MyMod.Settings?.debugMode == true)
-                    LogPlayer2Debug("STORYTELLER_ERROR", $"Status: {request.responseCode}\n{responseText}");
-
-                onResponse?.Invoke($"⚠ ERROR: Player2 storyteller connection failed\n\nAttempts: {maxRetries}\nError: {request.error}");
-                yield break;
-            }
-        }
-
-        private static string ParseGeminiReply(string json)
-        {
-            try
-            {
-                var parsed = JSON.Parse(json);
-                
-                if (parsed["candidates"] != null && parsed["candidates"].AsArray.Count > 0)
-                {
-                    var candidate = parsed["candidates"][0];
-                    if (candidate["content"] != null && candidate["content"]["parts"] != null)
-                    {
-                        var parts = candidate["content"]["parts"].AsArray;
-                        if (parts.Count > 0 && parts[0]["text"] != null)
-                        {
-                            return parts[0]["text"].Value;
-                        }
-                    }
-                }
-                
-                if (parsed["text"] != null)
-                    return parsed["text"].Value;
-                    
-                var textNodes = FindTextInJSON(parsed);
-                if (textNodes.Count > 0)
-                    return textNodes[0];
-                
-                return "⚠ ERROR: No text found in Gemini response\n\nThe API returned an unexpected format";
-            }
-            catch (Exception ex)
-            {
-                LogDebugResponse("ParseGemini_ERROR", $"JSON: {json}\nError: {ex.Message}");
-                return "⚠ ERROR: Failed to parse Gemini response\n\nTry again or check debug logs";
-            }
-        }
-        
-        private static List<string> FindTextInJSON(JSONNode node)
-        {
-            var results = new List<string>();
-            
-            if (node.IsString && !string.IsNullOrEmpty(node.Value) && node.Value.Length > 10)
-            {
-                results.Add(node.Value);
-            }
-            else if (node.IsArray)
-            {
-                foreach (JSONNode item in node.AsArray)
-                {
-                    results.AddRange(FindTextInJSON(item));
-                }
-            }
-            else if (node.IsObject)
-            {
-                foreach (var kvp in node.AsObject)
-                {
-                    if (kvp.Key == "text" && kvp.Value.IsString && !string.IsNullOrEmpty(kvp.Value.Value))
-                    {
-                        results.Add(kvp.Value.Value);
-                    }
-                    else
-                    {
-                        results.AddRange(FindTextInJSON(kvp.Value));
-                    }
-                }
-            }
-            
-            return results;
-        }
+        // ═══════════════════════════════════════════════════════════════
+        // MEMORY
+        // ═══════════════════════════════════════════════════════════════
 
         public static class EchoMemory
         {
@@ -648,11 +724,94 @@ namespace EchoColony
             {
                 return new List<Tuple<string, string>>(recentTurns);
             }
-    
+
             public static void Clear()
             {
                 recentTurns.Clear();
             }
+        }
+
+        public static void RebuildMemoryFromChat(Pawn pawn)
+        {
+            EchoMemory.Clear();
+            var lines = ChatGameComponent.Instance.GetChat(pawn);
+            foreach (var line in lines)
+            {
+                if (line.StartsWith("[USER]"))
+                {
+                    string text = line.Substring(6).Trim();
+                    EchoMemory.AddTurn("user", text);
+                }
+                else if (line.StartsWith(pawn.LabelShort + ":"))
+                {
+                    string text = line.Substring(pawn.LabelShort.Length + 1).Trim();
+                    EchoMemory.AddTurn("assistant", text);
+                }
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // PARSING
+        // ═══════════════════════════════════════════════════════════════
+
+        private static string ParseGeminiReply(string json)
+        {
+            try
+            {
+                var parsed = JSON.Parse(json);
+
+                if (parsed["candidates"] != null && parsed["candidates"].AsArray.Count > 0)
+                {
+                    var candidate = parsed["candidates"][0];
+                    if (candidate["content"] != null && candidate["content"]["parts"] != null)
+                    {
+                        var parts = candidate["content"]["parts"].AsArray;
+                        if (parts.Count > 0 && parts[0]["text"] != null)
+                            return parts[0]["text"].Value;
+                    }
+                }
+
+                if (parsed["text"] != null)
+                    return parsed["text"].Value;
+
+                var textNodes = FindTextInJSON(parsed);
+                if (textNodes.Count > 0)
+                    return textNodes[0];
+
+                return "⚠ ERROR: No text found in Gemini response\n\nThe API returned an unexpected format";
+            }
+            catch (Exception ex)
+            {
+                LogDebugResponse("ParseGemini_ERROR", $"JSON: {json}\nError: {ex.Message}");
+                return "⚠ ERROR: Failed to parse Gemini response\n\nTry again or check debug logs";
+            }
+        }
+
+        private static List<string> FindTextInJSON(JSONNode node)
+        {
+            var results = new List<string>();
+
+            if (node.IsString && !string.IsNullOrEmpty(node.Value) && node.Value.Length > 10)
+            {
+                results.Add(node.Value);
+            }
+            else if (node.IsArray)
+            {
+                foreach (JSONNode item in node.AsArray)
+                    results.AddRange(FindTextInJSON(item));
+            }
+            else if (node.IsObject)
+            {
+                foreach (var kvp in node.AsObject)
+                {
+                    if (kvp.Key == "text" && kvp.Value.IsString && !string.IsNullOrEmpty(kvp.Value.Value))
+                        results.Add(kvp.Value.Value);
+                    else
+                        results.AddRange(FindTextInJSON(kvp.Value));
+                }
+            }
+
+            return results;
         }
 
         private static string ParseStandardLLMResponse(string json)
@@ -677,22 +836,41 @@ namespace EchoColony
                 {
                     string fullText = parsed["text"];
                     if (fullText.StartsWith("\"") && fullText.EndsWith("\"") && fullText.Length < 50)
-                    {
                         return fullText.Substring(1, fullText.Length - 2);
-                    }
                     return fullText;
                 }
-                
+
                 var quoted = Regex.Match(json, "\"([^\"]{100,})\"");
                 if (quoted.Success)
                     return quoted.Groups[1].Value;
-                    
+
                 return "⚠ ERROR: Unrecognized response format\n\nThe API returned an unexpected structure";
             }
             catch
             {
                 return "⚠ ERROR: Failed to parse API response\n\nCheck debug logs for details";
             }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // UTILITIES
+        // ═══════════════════════════════════════════════════════════════
+
+        private static string BuildMessagesJson(List<Dictionary<string, string>> messages)
+        {
+            var jsonPayload = new JSONObject();
+            var jsonMessages = new JSONArray();
+
+            foreach (var msg in messages)
+            {
+                var jsonMsg = new JSONObject();
+                jsonMsg["role"] = msg["role"];
+                jsonMsg["content"] = msg["content"];
+                jsonMessages.Add(jsonMsg);
+            }
+
+            jsonPayload["messages"] = jsonMessages;
+            return jsonPayload.ToString();
         }
 
         private static string CleanResponse(string text)
@@ -703,7 +881,7 @@ namespace EchoColony
             text = text.Trim();
 
             var colonistNamePattern = @"^([A-Za-z]+):\s*\1:\s*(.*)$";
-            var match = System.Text.RegularExpressions.Regex.Match(text, colonistNamePattern);
+            var match = Regex.Match(text, colonistNamePattern);
             if (match.Success)
             {
                 text = match.Groups[2].Value.Trim();
@@ -711,33 +889,21 @@ namespace EchoColony
             else
             {
                 var simpleNamePattern = @"^([A-Za-z]+):\s*(.*)$";
-                var simpleMatch = System.Text.RegularExpressions.Regex.Match(text, simpleNamePattern);
+                var simpleMatch = Regex.Match(text, simpleNamePattern);
                 if (simpleMatch.Success)
-                {
                     text = simpleMatch.Groups[2].Value.Trim();
-                }
             }
 
             if (text.StartsWith("\"") && text.EndsWith("\""))
             {
                 string unwrapped = text.Substring(1, text.Length - 2);
-                
-                if (text.Length < 30 || 
-                    !unwrapped.Contains(" ") || 
-                    unwrapped.Split(' ').Length < 3)
-                {
+                if (text.Length < 30 || !unwrapped.Contains(" ") || unwrapped.Split(' ').Length < 3)
                     return unwrapped.Trim();
-                }
             }
 
             string[] prefixesToRemove = {
-                "As a colonist, ",
-                "As someone who ",
-                "I would say ",
-                "My response would be ",
-                "I think ",
-                "Well, ",
-                "You know, "
+                "As a colonist, ", "As someone who ", "I would say ",
+                "My response would be ", "I think ", "Well, ", "You know, "
             };
 
             foreach (string prefix in prefixesToRemove)
@@ -749,12 +915,7 @@ namespace EchoColony
                 }
             }
 
-            string[] suffixesToRemove = {
-                " #",
-                " [END]",
-                " </response>",
-                " ```"
-            };
+            string[] suffixesToRemove = { " #", " [END]", " </response>", " ```" };
 
             foreach (string suffix in suffixesToRemove)
             {
@@ -768,26 +929,8 @@ namespace EchoColony
             return text;
         }
 
-        public static void RebuildMemoryFromChat(Pawn pawn)
-        {
-            EchoMemory.Clear();
-            var lines = ChatGameComponent.Instance.GetChat(pawn);
-            foreach (var line in lines)
-            {
-                if (line.StartsWith("[USER]"))
-                {
-                    string text = line.Substring(6).Trim();
-                    EchoMemory.AddTurn("user", text);
-                }
-                else if (line.StartsWith(pawn.LabelShort + ":"))
-                {
-                    string text = line.Substring(pawn.LabelShort.Length + 1).Trim();
-                    EchoMemory.AddTurn("assistant", text);
-                }
-            }
-        }
-
-        private static string EscapeJson(string text) => text.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r");
+        private static string EscapeJson(string text) =>
+            text.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r");
 
         private static string TrimTextAfterHashtags(string text)
         {
@@ -797,25 +940,23 @@ namespace EchoColony
 
         private static void LogDebugResponse(string sourceName, string responseText)
         {
-            if (MyMod.Settings?.debugMode != true)
-                return;
+            if (MyMod.Settings?.debugMode != true) return;
             try
             {
                 string safeSource = sourceName.Replace(" ", "_");
                 string filename = $"{safeSource}_Response_LATEST.txt";
                 string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
                 string folderPath = Path.Combine(desktopPath, "EchoColony_Debug");
-                
+
                 if (!Directory.Exists(folderPath))
                     Directory.CreateDirectory(folderPath);
-                
+
                 string fullPath = Path.Combine(folderPath, filename);
-                
                 string debugContent = $"=== {sourceName} RESPONSE DEBUG LOG ===\n";
                 debugContent += $"Last Updated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n";
                 debugContent += "".PadRight(50, '=') + "\n\n";
                 debugContent += responseText;
-                
+
                 File.WriteAllText(fullPath, debugContent);
             }
             catch (Exception ex)
@@ -826,19 +967,17 @@ namespace EchoColony
 
         private static void LogPlayer2Debug(string type, string content)
         {
-            if (MyMod.Settings?.debugMode != true)
-                return;
+            if (MyMod.Settings?.debugMode != true) return;
             try
             {
                 string filename = $"Player2_{type}_LATEST.txt";
                 string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
                 string folderPath = Path.Combine(desktopPath, "EchoColony_Debug");
-                
+
                 if (!Directory.Exists(folderPath))
                     Directory.CreateDirectory(folderPath);
-                
-                string fullPath = Path.Combine(folderPath, filename);
 
+                string fullPath = Path.Combine(folderPath, filename);
                 string debugContent = $"=== PLAYER2 {type} DEBUG LOG ===\n";
                 debugContent += $"Last Updated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n";
                 debugContent += $"Type: {type}\n";

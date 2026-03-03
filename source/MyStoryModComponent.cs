@@ -61,9 +61,7 @@ namespace EchoColony
 
             GroupMemoryTracker = ColonistMemoryManager.GetGroupMemoryTracker();
 
-            // ═══════════════════════════════════════════════════════════
-            // NUEVO: Initialize SpontaneousMessageTracker
-            // ═══════════════════════════════════════════════════════════
+            // Initialize SpontaneousMessageTracker
             var spontaneousTracker = Current.Game.GetComponent<SpontaneousMessages.SpontaneousMessageTracker>();
             if (spontaneousTracker == null)
             {
@@ -75,7 +73,34 @@ namespace EchoColony
             {
                 Log.Message("[EchoColony] SpontaneousMessageTracker already exists");
             }
-            // ═══════════════════════════════════════════════════════════
+
+            // Initialize Animal Chat Components
+            var animalChatComponent = Current.Game.GetComponent<Animals.AnimalChatGameComponent>();
+            if (animalChatComponent == null)
+            {
+                animalChatComponent = new Animals.AnimalChatGameComponent(Current.Game);
+                Current.Game.components.Add(animalChatComponent);
+                Log.Message("[EchoColony] AnimalChatGameComponent added to game");
+            }
+            else
+            {
+                Log.Message("[EchoColony] AnimalChatGameComponent already exists");
+            }
+
+            var animalPromptManager = Current.Game.GetComponent<Animals.AnimalPromptManager>();
+            if (animalPromptManager == null)
+            {
+                animalPromptManager = new Animals.AnimalPromptManager(Current.Game);
+                Current.Game.components.Add(animalPromptManager);
+                Log.Message("[EchoColony] AnimalPromptManager added to game");
+            }
+            else
+            {
+                Log.Message("[EchoColony] AnimalPromptManager already exists");
+            }
+
+            // Initialize Animal Action Registry (always, even if actions disabled - for safety)
+            Animals.Actions.AnimalActionRegistry.Initialize();
 
             EnsurePlayer2HeartbeatExists();
 
@@ -89,11 +114,12 @@ namespace EchoColony
             if (MyMod.Settings != null && MyMod.Settings.enableDivineActions && !actionsInitialized)
             {
                 Log.Message("[EchoColony] Divine Actions enabled. Initializing action system...");
-                Actions.ActionRegistry.Initialize();
+                Actions.ActionRegistry.Initialize(); // Colonist actions
+                Animals.Actions.AnimalActionRegistry.Initialize(); // Animal actions
                 actionsInitialized = true;
             }
 
-            // Inicializar sistema de mensajes espontáneos del storyteller
+            // Initialize storyteller spontaneous message system
             if (MyMod.Settings.IsStorytellerMessagesActive())
             {
                 StorytellerSpontaneousMessageSystem.StartSystem();
@@ -141,7 +167,8 @@ namespace EchoColony
             if (MyMod.Settings != null && MyMod.Settings.enableDivineActions && !actionsInitialized)
             {
                 Log.Message("[EchoColony] Divine Actions enabled during runtime. Initializing...");
-                Actions.ActionRegistry.Initialize();
+                Actions.ActionRegistry.Initialize(); // Colonist actions
+                Animals.Actions.AnimalActionRegistry.Initialize(); // Animal actions
                 actionsInitialized = true;
             }
             else if (MyMod.Settings != null && !MyMod.Settings.enableDivineActions && actionsInitialized)
@@ -159,6 +186,7 @@ namespace EchoColony
                 if (currentTick - lastCleanupTick > CLEANUP_INTERVAL)
                 {
                     Actions.Mood.AddPlayerThoughtAction.CleanupOldCooldowns();
+                    Animals.Actions.AnimalActionParser.CleanupOldCooldowns();
                     lastCleanupTick = currentTick;
                     Log.Message("[EchoColony] Cleaned up old action cooldowns");
                 }
