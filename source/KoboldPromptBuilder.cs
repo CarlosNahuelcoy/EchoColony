@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 namespace EchoColony
 {
@@ -49,20 +50,56 @@ string langDisplay = idiomaJuego.StartsWith("es") ? "Spanish"
             List<string> personalEvents = new List<string>();
             List<string> colonyEvents = new List<string>();
 
-            foreach (var e in EventLogger.events.AsEnumerable().Reverse())
+            try
             {
-                string cleanEvent = CleanText(e);
+                if (Find.PlayLog != null)
+                {
+                    int currentTick = Find.TickManager.TicksGame;
+                    int threeDaysAgo = currentTick - (60000 * 3); // 3 in-game days
 
-                if (e.Contains(pawn.LabelShort))
-                {
-                    personalEvents.Add("- " + cleanEvent);
-                    if (personalEvents.Count >= maxPersonal) continue;
+                    var recentLogs = Find.PlayLog.AllEntries
+                        .Where(entry => entry.Tick >= threeDaysAgo)
+                        .OrderByDescending(entry => entry.Tick)
+                        .ToList();
+
+                    foreach (var entry in recentLogs)
+                    {
+                        try
+                        {
+                            string logText = entry.ToGameStringFromPOV(pawn);
+                            string cleanEvent = CleanText(logText);
+
+                            if (logText.Contains(pawn.LabelShort))
+                            {
+                                if (personalEvents.Count < maxPersonal)
+                                {
+                                    personalEvents.Add("- " + cleanEvent);
+                                }
+                            }
+                            else if (logText.Contains("explosion") || logText.Contains("constructed") || 
+                                    logText.Contains("born") || logText.Contains("died") || 
+                                    logText.Contains("relationship"))
+                            {
+                                if (colonyEvents.Count < maxColony)
+                                {
+                                    colonyEvents.Add("- " + cleanEvent);
+                                }
+                            }
+                            
+                            // Stop if we have enough of both
+                            if (personalEvents.Count >= maxPersonal && colonyEvents.Count >= maxColony)
+                                break;
+                        }
+                        catch
+                        {
+                            continue;
+                        }
+                    }
                 }
-                else if (e.Contains("explosion") || e.Contains("constructed") || e.Contains("born") || e.Contains("died") || e.Contains("relationship"))
-                {
-                    colonyEvents.Add("- " + cleanEvent);
-                    if (colonyEvents.Count >= maxColony) continue;
-                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning($"[EchoColony] Error loading events in KoboldPromptBuilder: {ex.Message}");
             }
 
             string summary = "";

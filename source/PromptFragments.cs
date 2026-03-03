@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using RimWorld;
 using Verse;
 using UnityEngine;
+using System;
 
 namespace EchoColony
 {
@@ -37,34 +38,66 @@ namespace EchoColony
         }
 
         public static string BuildEventSummary(Pawn pawn, int maxPersonal, int maxColony)
+{
+    List<string> personal = new List<string>();
+    List<string> colony = new List<string>();
+
+    try
+    {
+        if (Find.PlayLog == null) return "";
+
+        int currentTick = Find.TickManager.TicksGame;
+        int threeDaysAgo = currentTick - (60000 * 3);
+
+        var recentLogs = Find.PlayLog.AllEntries
+            .Where(entry => entry.Tick >= threeDaysAgo)
+            .OrderByDescending(entry => entry.Tick)
+            .ToList();
+
+        foreach (var entry in recentLogs)
         {
-            List<string> personal = new List<string>();
-            List<string> colony = new List<string>();
-            string name = pawn.LabelShort;
-
-            foreach (string entry in EventLogger.events.AsEnumerable().Reverse())
+            try
             {
-                string clean = CleanText(entry);
-                if (entry.Contains(name) && personal.Count < maxPersonal)
+                string logText = entry.ToGameStringFromPOV(pawn);
+                string clean = CleanText(logText);
+
+                if (logText.Contains(pawn.LabelShort) && personal.Count < maxPersonal)
+                {
                     personal.Add("- " + clean);
-                else if ((entry.Contains("explosion") || entry.Contains("died") || entry.Contains("constructed")) && colony.Count < maxColony)
+                }
+                else if ((logText.Contains("explosion") || logText.Contains("died") || 
+                         logText.Contains("constructed")) && colony.Count < maxColony)
+                {
                     colony.Add("- " + clean);
+                }
+                
+                if (personal.Count >= maxPersonal && colony.Count >= maxColony)
+                    break;
             }
-
-            StringBuilder sb = new StringBuilder();
-            if (personal.Any())
+            catch
             {
-                sb.AppendLine("*Recent personal events:*");
-                sb.AppendLine(string.Join("\n", personal));
+                continue;
             }
-            if (colony.Any())
-            {
-                sb.AppendLine("*Recent colony events:*");
-                sb.AppendLine(string.Join("\n", colony));
-            }
-            return sb.ToString();
         }
+    }
+    catch (Exception ex)
+    {
+        Log.Warning($"[EchoColony] Error in BuildEventSummary: {ex.Message}");
+    }
 
+    StringBuilder sb = new StringBuilder();
+    if (personal.Any())
+    {
+        sb.AppendLine("*Recent personal events:*");
+        sb.AppendLine(string.Join("\n", personal));
+    }
+    if (colony.Any())
+    {
+        sb.AppendLine("*Recent colony events:*");
+        sb.AppendLine(string.Join("\n", colony));
+    }
+    return sb.ToString();
+}
         public static string BuildThoughts(Pawn pawn)
         {
             List<string> thoughts = new List<string>();

@@ -257,4 +257,91 @@ Memories are automatically generated during conversations and help the colonist 
 <!-- Tooltips -->
 <EchoColony.StorytellerMessageAutoCloseTooltip>Message window will close automatically after a few seconds</EchoColony.StorytellerMessageAutoCloseTooltip>
 <EchoColony.StorytellerMessagePlaySoundTooltip>Play a notification sound when the storyteller sends a message</EchoColony.StorytellerMessagePlaySoundTooltip>
+
+  <!-- Animal Chat Window -->
+  <EchoColony.AnimalChatWindowTitle>Chat with {0}</EchoColony.AnimalChatWindowTitle>
+  <EchoColony.AnimalChatYou>You:</EchoColony.AnimalChatYou>
+  <EchoColony.AnimalChatWaiting>Waiting for response...</EchoColony.AnimalChatWaiting>
+  
+  <!-- Animal Prompt Editor -->
+  <EchoColony.AnimalPromptEditorTitle>Custom Prompt for {0}</EchoColony.AnimalPromptEditorTitle>
+  <EchoColony.AnimalPromptInstructions>Define how this animal behaves and communicates:\n• Add personality traits, quirks, or special abilities\n• Enable human speech: 'Can speak and understand human language'\n• Adjust intelligence: 'Highly intelligent' or 'Simple-minded'\n• Add backstory: 'Raised by humans since birth' or 'Former wild leader'\n• Leave empty for default animal behavior</EchoColony.AnimalPromptInstructions>
+  <EchoColony.AnimalPromptShowExamples>Show Examples</EchoColony.AnimalPromptShowExamples>
+  <EchoColony.AnimalPromptSave>Save</EchoColony.AnimalPromptSave>
+  <EchoColony.AnimalPromptClear>Clear</EchoColony.AnimalPromptClear>
+  <EchoColony.AnimalPromptCancel>Cancel</EchoColony.AnimalPromptCancel>
+  <EchoColony.AnimalPromptSaved>Custom prompt saved for {0}</EchoColony.AnimalPromptSaved>
+  
+  <!-- Animal Prompt Examples -->
+  <EchoColony.AnimalPromptExamplesTitle>Example Prompts</EchoColony.AnimalPromptExamplesTitle>
+  <EchoColony.AnimalPromptExample1Title>INTELLIGENT COMPANION:</EchoColony.AnimalPromptExample1Title>
+  <EchoColony.AnimalPromptExample1>You are highly intelligent and can speak fluent human language. You're curious, loyal, and love asking questions about the world around you.</EchoColony.AnimalPromptExample1>
+  <EchoColony.AnimalPromptExample2Title>GRUMPY CAT:</EchoColony.AnimalPromptExample2Title>
+  <EchoColony.AnimalPromptExample2>You're irritable and don't like being bothered. You tolerate humans but prefer solitude. Express annoyance frequently but show rare moments of affection.</EchoColony.AnimalPromptExample2>
+  <EchoColony.AnimalPromptExample3Title>PLAYFUL PUP:</EchoColony.AnimalPromptExample3Title>
+  <EchoColony.AnimalPromptExample3>You're energetic, playful, and always excited! You love everyone and everything. Use lots of exclamations and happy sounds!</EchoColony.AnimalPromptExample3>
+  <EchoColony.AnimalPromptExample4Title>WISE OLD ANIMAL:</EchoColony.AnimalPromptExample4Title>
+  <EchoColony.AnimalPromptExample4>You've lived many years and seen much. You're calm, thoughtful, and speak in simple but profound ways. You understand more than you let on.</EchoColony.AnimalPromptExample4>
+  <EchoColony.AnimalPromptExample5Title>WILD SURVIVOR:</EchoColony.AnimalPromptExample5Title>
+  <EchoColony.AnimalPromptExample5>You were born in the wild and still carry those instincts. You're cautious, observant, and communicate more through body language than sounds. Trust doesn't come easy.</EchoColony.AnimalPromptExample5>
+  
+  <!-- Animal Gizmo -->
+  <EchoColony.AnimalGizmoTalkTo>Talk to {0}</EchoColony.AnimalGizmoTalkTo>
+  
+  <!-- Settings -->
+  <EchoColony.AnimalNarrativeStyle>Animal Narrative Style</EchoColony.AnimalNarrativeStyle>
+  <EchoColony.AnimalNarrativeStyleTooltip>How animals describe their actions:\nFirst Person: "I wag my tail"\nThird Person: "The dog wags its tail"</EchoColony.AnimalNarrativeStyleTooltip>
+  <EchoColony.AnimalNarrativeFirstPerson>First Person</EchoColony.AnimalNarrativeFirstPerson>
+  <EchoColony.AnimalNarrativeThirdPerson>Third Person</EchoColony.AnimalNarrativeThirdPerson>
+  
+  <!-- Divine Actions - Narratives -->
+  <EchoColony.ActionHealNarrative1>A gentle warmth flows through {0}'s body as wounds begin to close...</EchoColony.ActionHealNarrative1>
+  <EchoColony.ActionHealNarrative2>{0}'s injuries slowly fade as divine energy surrounds them.</EchoColony.ActionHealNarrative2>
+  <EchoColony.ActionHealNarrative3>You place your hand on {0}. Their wounds start healing.</EchoColony.ActionHealNarrative3>
+  <EchoColony.ActionHealNarrative4>A soft glow envelops {0}, mending their injuries.</EchoColony.ActionHealNarrative4>
+  
+  <EchoColony.ActionRemovePainNarrative1>{0} relaxes as the pain fades away...</EchoColony.ActionRemovePainNarrative1>
+  <EchoColony.ActionRemovePainNarrative2>The suffering leaves {0}'s eyes as comfort washes over them.</EchoColony.ActionRemovePainNarrative2>
+  <EchoColony.ActionRemovePainNarrative3>You ease {0}'s pain with a gentle touch.</EchoColony.ActionRemovePainNarrative3>
+  <EchoColony.ActionRemovePainNarrative4>{0} breathes easier as the ache subsides.</EchoColony.ActionRemovePainNarrative4>
+  
+  <EchoColony.ActionCureDiseaseNarrative1>The sickness leaves {0}'s body, vitality returning.</EchoColony.ActionCureDiseaseNarrative1>
+  <EchoColony.ActionCureDiseaseNarrative2>{0} shakes off the illness as health is restored.</EchoColony.ActionCureDiseaseNarrative2>
+  <EchoColony.ActionCureDiseaseNarrative3>Divine light purges the disease from {0}.</EchoColony.ActionCureDiseaseNarrative3>
+  <EchoColony.ActionCureDiseaseNarrative4>{0}'s fever breaks as the infection clears.</EchoColony.ActionCureDiseaseNarrative4>
+  
+  <EchoColony.ActionLearnSkillNarrative1>{0}'s eyes light up with understanding as new knowledge takes hold.</EchoColony.ActionLearnSkillNarrative1>
+  <EchoColony.ActionLearnSkillNarrative2>You guide {0} through the lesson. They learn quickly.</EchoColony.ActionLearnSkillNarrative2>
+  <EchoColony.ActionLearnSkillNarrative3>Something clicks for {0} - they've mastered a new skill.</EchoColony.ActionLearnSkillNarrative3>
+  <EchoColony.ActionLearnSkillNarrative4>{0} practices intently and suddenly grasps the technique.</EchoColony.ActionLearnSkillNarrative4>
+  
+  <EchoColony.ActionImproveBondNarrative1>The bond between you and {0} grows stronger...</EchoColony.ActionImproveBondNarrative1>
+  <EchoColony.ActionImproveBondNarrative2>{0} nuzzles closer, trust deepening in their eyes.</EchoColony.ActionImproveBondNarrative2>
+  <EchoColony.ActionImproveBondNarrative3>A moment of connection - {0} understands you better now.</EchoColony.ActionImproveBondNarrative3>
+  <EchoColony.ActionImproveBondNarrative4>You and {0} share a meaningful moment together.</EchoColony.ActionImproveBondNarrative4>
+  
+  <EchoColony.ActionTameNarrative1>{0} looks at you with newfound trust and acceptance.</EchoColony.ActionTameNarrative1>
+  <EchoColony.ActionTameNarrative2>The wildness fades from {0}'s eyes as they join your colony.</EchoColony.ActionTameNarrative2>
+  <EchoColony.ActionTameNarrative3>{0} finally accepts you as family.</EchoColony.ActionTameNarrative3>
+  <EchoColony.ActionTameNarrative4>Something shifts in {0} - they're one of yours now.</EchoColony.ActionTameNarrative4>
+  
+  <EchoColony.ActionFeedNarrative1>You provide {0} with nourishment. They eat contentedly.</EchoColony.ActionFeedNarrative1>
+  <EchoColony.ActionFeedNarrative2>{0}'s hunger fades as sustenance appears before them.</EchoColony.ActionFeedNarrative2>
+  <EchoColony.ActionFeedNarrative3>Food materializes for {0}, who devours it eagerly.</EchoColony.ActionFeedNarrative3>
+  <EchoColony.ActionFeedNarrative4>You ensure {0} is well-fed and satisfied.</EchoColony.ActionFeedNarrative4>
+  
+  <EchoColony.ActionRestNarrative1>{0} settles down, peaceful sleep overtaking them.</EchoColony.ActionRestNarrative1>
+  <EchoColony.ActionRestNarrative2>Exhaustion leaves {0}'s body as rest is granted.</EchoColony.ActionRestNarrative2>
+  <EchoColony.ActionRestNarrative3>You ease {0} into comfortable, restorative slumber.</EchoColony.ActionRestNarrative3>
+  <EchoColony.ActionRestNarrative4>{0} yawns and curls up, fatigue melting away.</EchoColony.ActionRestNarrative4>
+  
+  <EchoColony.ActionComfortNarrative1>You comfort {0}, their spirits visibly lifting.</EchoColony.ActionComfortNarrative1>
+  <EchoColony.ActionComfortNarrative2>{0}'s mood brightens as worry fades away.</EchoColony.ActionComfortNarrative2>
+  <EchoColony.ActionComfortNarrative3>A sense of peace washes over {0}.</EchoColony.ActionComfortNarrative3>
+  <EchoColony.ActionComfortNarrative4>{0} seems happier, stress leaving their demeanor.</EchoColony.ActionComfortNarrative4>
+  
+  <EchoColony.ActionGenericNarrative>Divine energy flows through {0}...</EchoColony.ActionGenericNarrative>
+  
+  <!-- Divine Actions - Notifications -->
+  <EchoColony.ActionExecutedNotification>Divine actions on {0}: {1}</EchoColony.ActionExecutedNotification>
 </LanguageData>
