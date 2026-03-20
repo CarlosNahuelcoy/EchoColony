@@ -27,11 +27,11 @@ namespace EchoColony
 
         public ColonistMemoryManager ColonistMemoryManager;
         public DailyGroupMemoryTracker GroupMemoryTracker;
-        
+
         private Player2Heartbeat player2HeartbeatComponent;
         private bool ttsInitialized = false;
         private bool actionsInitialized = false;
-        
+
         // Cleanup tracking
         private int lastCleanupTick = 0;
         private const int CLEANUP_INTERVAL = 60000; // Every in-game day
@@ -51,6 +51,13 @@ namespace EchoColony
         {
             Log.Message("[EchoColony] Start() executed in MyStoryModComponent");
 
+            // Guard: Current.Game puede ser null durante generación de mundo nuevo
+            if (Current.Game == null)
+            {
+                Log.Warning("[EchoColony] Init() called but Current.Game is null — skipping until game is ready");
+                return;
+            }
+
             // Initialize ColonistMemoryManager
             ColonistMemoryManager = Current.Game.GetComponent<ColonistMemoryManager>();
             if (ColonistMemoryManager == null)
@@ -60,6 +67,9 @@ namespace EchoColony
             }
 
             GroupMemoryTracker = ColonistMemoryManager.GetGroupMemoryTracker();
+
+            // Reset monologue state on game load
+            Conversations.PawnMonologueManager.OnGameLoaded();
 
             // Initialize SpontaneousMessageTracker
             var spontaneousTracker = Current.Game.GetComponent<SpontaneousMessages.SpontaneousMessageTracker>();
@@ -102,6 +112,9 @@ namespace EchoColony
             // Initialize Animal Action Registry (always, even if actions disabled - for safety)
             Animals.Actions.AnimalActionRegistry.Initialize();
 
+            // Initialize Mech Action Registry
+            Mechs.Actions.MechActionRegistry.Initialize();
+
             EnsurePlayer2HeartbeatExists();
 
             if (MyMod.Settings != null && MyMod.Settings.enableTTS && !ttsInitialized)
@@ -110,20 +123,47 @@ namespace EchoColony
                 StartCoroutine(TTSVoiceCache.LoadVoices());
                 ttsInitialized = true;
             }
-            
+
             if (MyMod.Settings != null && MyMod.Settings.enableDivineActions && !actionsInitialized)
             {
                 Log.Message("[EchoColony] Divine Actions enabled. Initializing action system...");
-                Actions.ActionRegistry.Initialize(); // Colonist actions
-                Animals.Actions.AnimalActionRegistry.Initialize(); // Animal actions
+                Actions.ActionRegistry.Initialize();
+                Animals.Actions.AnimalActionRegistry.Initialize();
+                Mechs.Actions.MechActionRegistry.Initialize();
                 actionsInitialized = true;
             }
 
             // Initialize storyteller spontaneous message system
-            if (MyMod.Settings.IsStorytellerMessagesActive())
+            if (MyMod.Settings != null && MyMod.Settings.IsStorytellerMessagesActive())
             {
                 StorytellerSpontaneousMessageSystem.StartSystem();
                 Log.Message("[EchoColony] Storyteller spontaneous message system started");
+            }
+
+            // Initialize Mech Chat Component
+            var mechChatComponent = Current.Game.GetComponent<Mechs.MechChatGameComponent>();
+            if (mechChatComponent == null)
+            {
+                mechChatComponent = new Mechs.MechChatGameComponent(Current.Game);
+                Current.Game.components.Add(mechChatComponent);
+                Log.Message("[EchoColony] MechChatGameComponent added to game");
+            }
+            else
+            {
+                Log.Message("[EchoColony] MechChatGameComponent already exists");
+            }
+
+            // Initialize Mech Prompt Manager
+            var mechPromptManager = Current.Game.GetComponent<Mechs.MechPromptManager>();
+            if (mechPromptManager == null)
+            {
+                mechPromptManager = new Mechs.MechPromptManager(Current.Game);
+                Current.Game.components.Add(mechPromptManager);
+                Log.Message("[EchoColony] MechPromptManager added to game");
+            }
+            else
+            {
+                Log.Message("[EchoColony] MechPromptManager already exists");
             }
         }
 
@@ -163,12 +203,13 @@ namespace EchoColony
             {
                 ttsInitialized = false;
             }
-            
+
             if (MyMod.Settings != null && MyMod.Settings.enableDivineActions && !actionsInitialized)
             {
                 Log.Message("[EchoColony] Divine Actions enabled during runtime. Initializing...");
-                Actions.ActionRegistry.Initialize(); // Colonist actions
-                Animals.Actions.AnimalActionRegistry.Initialize(); // Animal actions
+                Actions.ActionRegistry.Initialize();
+                Animals.Actions.AnimalActionRegistry.Initialize();
+                Mechs.Actions.MechActionRegistry.Initialize();
                 actionsInitialized = true;
             }
             else if (MyMod.Settings != null && !MyMod.Settings.enableDivineActions && actionsInitialized)
@@ -177,17 +218,19 @@ namespace EchoColony
             }
 
             EnsurePlayer2HeartbeatExists();
-            
+
             // Periodic cleanup of action cooldowns
             if (Find.TickManager != null && MyMod.Settings != null && MyMod.Settings.enableDivineActions)
             {
                 int currentTick = Find.TickManager.TicksGame;
-                
+
                 if (currentTick - lastCleanupTick > CLEANUP_INTERVAL)
                 {
                     Actions.Mood.AddPlayerThoughtAction.CleanupOldCooldowns();
                     Animals.Actions.AnimalActionParser.CleanupOldCooldowns();
+                    Mechs.Actions.MechActionParser.CleanupOldCooldowns();
                     lastCleanupTick = currentTick;
+                    Conversations.PawnMonologueManager.Tick();
                     Log.Message("[EchoColony] Cleaned up old action cooldowns");
                 }
             }

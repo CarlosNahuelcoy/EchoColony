@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+  EchoColony keybinding definitions.
+  The toggle is intentionally left unbound (None) — use the button
+  in EchoColony mod settings instead.
+  The KeyBindingCategoryDef is still required for DefOf compilation.
+-->
+<Defs>
+
+  <KeyBindingCategoryDef>
+    <defName>EchoColony_KeyCategory</defName>
+    <label>EchoColony</label>
+    <description>Keybindings for the EchoColony mod.</description>
+  </KeyBindingCategoryDef>
+
+  <KeyBindingDef>
+    <defName>EchoColony_ToggleChatLog</defName>
+    <label>Toggle conversation log</label>
+    <description>Show or hide the EchoColony conversation chat log overlay. Assign a key here or use the button in EchoColony mod settings.</description>
+    <category>EchoColony_KeyCategory</category>
+    <defaultKeyCodeA>None</defaultKeyCodeA>
+  </KeyBindingDef>
+
+</Defs>

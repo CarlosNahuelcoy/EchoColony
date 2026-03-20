@@ -320,4 +320,136 @@ Las memorias se generan automáticamente durante las conversaciones y ayudan al 
   
   <!-- Divine Actions - Notifications -->
   <EchoColony.ActionExecutedNotification>Acciones divinas sobre {0}: {1}</EchoColony.ActionExecutedNotification>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+       Conversaciones entre colonos — UI de ajustes
+       ═══════════════════════════════════════════════════════════════════════ -->
+
+  <!-- Encabezado y descripción de sección -->
+  <EchoColony.ConvSectionHeader>💬  Conversaciones entre colonos</EchoColony.ConvSectionHeader>
+  <EchoColony.ConvSectionDesc>Los colonos (y animales) generan burbujas de diálogo con IA durante sus interacciones.</EchoColony.ConvSectionDesc>
+  <EchoColony.ConvSectionDescTooltip>Requiere el mod 'Interaction Bubbles'. Las burbujas reflejan la personalidad, salud, relaciones y estado de ánimo de cada colono.</EchoColony.ConvSectionDescTooltip>
+
+  <!-- Interruptor principal -->
+  <EchoColony.ConvEnableLabel>Activar conversaciones entre colonos</EchoColony.ConvEnableLabel>
+  <EchoColony.ConvEnableTooltip>Cuando está activo, los colonos generarán burbujas de diálogo cortas con IA durante sus interacciones.</EchoColony.ConvEnableTooltip>
+  <EchoColony.ConvDisabledHint>  ↳ Activa el sistema para acceder a los ajustes.</EchoColony.ConvDisabledHint>
+
+  <!-- Líneas por colono -->
+  <!-- {0} = líneas por colono, {1} = total de burbujas -->
+  <EchoColony.ConvLinesLabel>Líneas por colono: {0}   (burbujas totales = {1})</EchoColony.ConvLinesLabel>
+  <EchoColony.ConvLinesTooltip>Cuántas líneas de diálogo aporta cada colono. 1 por colono = 2 burbujas en total. Se recomienda mantenerlo bajo.</EchoColony.ConvLinesTooltip>
+
+  <!-- Retardo entre burbujas -->
+  <!-- {0} = segundos (ej. 1.5) -->
+  <EchoColony.ConvDelayLabel>Retardo entre burbujas: {0}s</EchoColony.ConvDelayLabel>
+  <EchoColony.ConvDelayTooltip>Segundos entre la aparición de cada burbuja. Valores más altos se sienten más naturales.</EchoColony.ConvDelayTooltip>
+
+  <!-- Tiempo de espera -->
+  <!-- {0} = horas (entero) -->
+  <EchoColony.ConvCooldownLabel>Espera (misma pareja): {0}h</EchoColony.ConvCooldownLabel>
+  <EchoColony.ConvCooldownNoneLabel>Espera (misma pareja): Sin espera</EchoColony.ConvCooldownNoneLabel>
+  <EchoColony.ConvCooldownTooltip>Horas mínimas en el juego antes de que la misma pareja de colonos pueda tener otra conversación. Evita el spam entre colonos que interactúan constantemente.</EchoColony.ConvCooldownTooltip>
+
+  <!-- Modo animal -->
+  <EchoColony.ConvAnimalModeLabel>Participación de animales:</EchoColony.ConvAnimalModeLabel>
+  <EchoColony.ConvAnimalModeTooltip>Las colonias pueden tener cientos de animales — controla cuáles participan en las conversaciones.</EchoColony.ConvAnimalModeTooltip>
+  <EchoColony.ConvAnimalModeDisabled>Desactivado</EchoColony.ConvAnimalModeDisabled>
+  <EchoColony.ConvAnimalModeIntelligentOnly>Solo inteligentes</EchoColony.ConvAnimalModeIntelligentOnly>
+  <EchoColony.ConvAnimalModeAll>Todos los animales</EchoColony.ConvAnimalModeAll>
+  <EchoColony.ConvAnimalModeHintDisabled>  Los animales nunca inician conversaciones.</EchoColony.ConvAnimalModeHintDisabled>
+  <EchoColony.ConvAnimalModeHintIntelligentOnly>  Solo los animales marcados como inteligentes en su editor de prompts.</EchoColony.ConvAnimalModeHintIntelligentOnly>
+  <EchoColony.ConvAnimalModeHintAll>  Todos los animales de la colonia pueden iniciar conversaciones (puede ser ruidoso).</EchoColony.ConvAnimalModeHintAll>
+
+  <!-- Filtros de participantes -->
+  <EchoColony.ConvFiltersLabel>Filtros de participantes:</EchoColony.ConvFiltersLabel>
+  <EchoColony.ConvIncludePrisoners>Incluir prisioneros</EchoColony.ConvIncludePrisoners>
+  <EchoColony.ConvIncludePrisonersTooltip>Los prisioneros pueden participar en las conversaciones con burbujas.</EchoColony.ConvIncludePrisonersTooltip>
+  <EchoColony.ConvIncludeSlaves>Incluir esclavos</EchoColony.ConvIncludeSlaves>
+  <EchoColony.ConvIncludeSlavesTooltip>Los esclavos pueden participar en las conversaciones con burbujas.</EchoColony.ConvIncludeSlavesTooltip>
+  <EchoColony.ConvIncludeGuests>Incluir huéspedes y visitantes</EchoColony.ConvIncludeGuests>
+  <EchoColony.ConvIncludeGuestsTooltip>Permite que colonos ajenos a la colonia (huéspedes de misiones, visitantes aliados, comerciantes) participen en conversaciones. Los prisioneros y esclavos siempre se tratan como parte de la colonia independientemente de este ajuste.</EchoColony.ConvIncludeGuestsTooltip>
+
+  <!-- Opinión mínima -->
+  <!-- {0} = valor de opinión (entero) -->
+  <EchoColony.ConvMinOpinionLabel>Opinión mínima para activar: {0}</EchoColony.ConvMinOpinionLabel>
+  <EchoColony.ConvMinOpinionNoFilter>Opinión mínima para activar: Sin filtro</EchoColony.ConvMinOpinionNoFilter>
+  <EchoColony.ConvMinOpinionTooltip>Solo se activan conversaciones entre colonos cuya opinión mutua supere este umbral. −100 desactiva el filtro. Los enemigos seguirán discutiendo con cualquier ajuste.</EchoColony.ConvMinOpinionTooltip>
+
+  <!-- Tamaño máximo de colonia -->
+  <!-- {0} = número de colonos (entero) -->
+  <EchoColony.ConvMaxColonySizeLabel>Desactivar automáticamente si supera: {0} colonos</EchoColony.ConvMaxColonySizeLabel>
+  <EchoColony.ConvMaxColonySizeNever>Desactivar automáticamente si supera: Nunca</EchoColony.ConvMaxColonySizeNever>
+  <EchoColony.ConvMaxColonySizeTooltip>Desactiva las conversaciones automáticamente cuando la colonia es demasiado grande. 0 = sin límite. Útil para evitar sobrecarga de la API en megacolonias.</EchoColony.ConvMaxColonySizeTooltip>
+
+  <!-- Desactivar por velocidad -->
+  <!-- {0} = multiplicador de velocidad (entero, ej. 3) -->
+  <EchoColony.ConvDisableAtSpeedLabel>Desactivar IA a velocidad de juego: ×{0}+</EchoColony.ConvDisableAtSpeedLabel>
+  <EchoColony.ConvDisableAtSpeedNever>Desactivar IA a velocidad de juego: Nunca</EchoColony.ConvDisableAtSpeedNever>
+  <EchoColony.ConvDisableAtSpeedTooltip>Deja de generar diálogos con IA cuando el juego va a esta velocidad o más rápido. Evita desperdiciar llamadas a la API al avanzar rápido. 0 = generar siempre.</EchoColony.ConvDisableAtSpeedTooltip>
+
+  <!-- Conversaciones simultáneas -->
+  <EchoColony.ConvAllowSimultaneous>Permitir conversaciones simultáneas</EchoColony.ConvAllowSimultaneous>
+  <EchoColony.ConvAllowSimultaneousTooltip>Cuando está desactivado (por defecto), una pareja de colonos no puede iniciar una nueva conversación con IA mientras hay una en curso. Evita burbujas duplicadas. Actívalo solo si usas un tiempo de espera muy bajo.</EchoColony.ConvAllowSimultaneousTooltip>
+
+  <!-- Prompt global -->
+  <EchoColony.ConvGlobalPromptLabel>Prompt global de conversaciones (opcional):</EchoColony.ConvGlobalPromptLabel>
+  <EchoColony.ConvGlobalPromptTooltip>Instrucciones extra que se añaden a cada prompt de conversación entre colonos. Úsalo para definir el tono general, lore del mundo o reglas de dialecto. Se añade tras el contexto generado, antes de la instrucción de salida.</EchoColony.ConvGlobalPromptTooltip>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       Monólogos — UI de ajustes
+       ═══════════════════════════════════════════════════════════════════════ -->
+
+  <!-- Encabezado y descripción de sección -->
+  <EchoColony.MonoSectionHeader>Monólogos (líneas de IA en solitario)</EchoColony.MonoSectionHeader>
+  <EchoColony.MonoSectionDesc>Los colonos ocasionalmente murmuran, reaccionan o piensan en voz alta. Se activan por probabilidad horaria aleatoria o por eventos emocionales significativos.</EchoColony.MonoSectionDesc>
+
+  <!-- Interruptor principal -->
+  <EchoColony.MonoEnableLabel>Activar monólogos</EchoColony.MonoEnableLabel>
+  <EchoColony.MonoEnableTooltip>Interruptor principal. Cuando está activo, los colonos pueden decir una línea generada por IA cuando ocurre algo notable o simplemente a intervalos aleatorios.</EchoColony.MonoEnableTooltip>
+
+  <!-- Tiempo de espera -->
+  <!-- {0} = horas (entero) -->
+  <EchoColony.MonoCooldownLabel>Espera entre monólogos: {0}h</EchoColony.MonoCooldownLabel>
+  <EchoColony.MonoCooldownTooltip>Horas mínimas antes de que el mismo colono pueda producir otro monólogo.</EchoColony.MonoCooldownTooltip>
+
+  <!-- Probabilidad horaria -->
+  <!-- {0} = porcentaje (entero, ej. 15) -->
+  <EchoColony.MonoChanceLabel>Probabilidad aleatoria por hora: {0}%</EchoColony.MonoChanceLabel>
+  <EchoColony.MonoChanceOffLabel>Probabilidad aleatoria por hora: Desactivado</EchoColony.MonoChanceOffLabel>
+  <EchoColony.MonoChanceTooltip>Cada hora de juego, cada colono elegible tiene esta probabilidad de hablar espontáneamente. Pon 0 para desactivar los monólogos aleatorios (los activados por pensamientos seguirán funcionando).</EchoColony.MonoChanceTooltip>
+
+  <!-- Umbral de impacto emocional -->
+  <!-- {0} = valor de ánimo (entero, ej. 5) -->
+  <EchoColony.MonoThoughtImpactLabel>Impacto mínimo de pensamiento para activar: ±{0} de ánimo</EchoColony.MonoThoughtImpactLabel>
+  <EchoColony.MonoThoughtImpactTooltip>Los pensamientos con impacto en el ánimo inferior a este umbral no activarán un monólogo inmediato. Valores más altos = solo los eventos importantes hacen hablar a los colonos. Por defecto: ±5.</EchoColony.MonoThoughtImpactTooltip>
+
+  <!-- Botón de toggle del chat log (en settings) -->
+  <EchoColony.ChatLogShow>📋 Mostrar registro de conversaciones</EchoColony.ChatLogShow>
+  <EchoColony.ChatLogHide>📋 Ocultar registro de conversaciones</EchoColony.ChatLogHide>
+
+  <!-- Selector de tecla para el chat log -->
+  <EchoColony.ChatLogHotkeyLabel>Atajo de teclado (abrir/cerrar):</EchoColony.ChatLogHotkeyLabel>
+  <EchoColony.ChatLogHotkeyNone>[Sin asignar]</EchoColony.ChatLogHotkeyNone>
+  <EchoColony.ChatLogHotkeyPress>Pulsa una tecla... (Esc cancela, Supr borra)</EchoColony.ChatLogHotkeyPress>
+
+  <EchoColony.ChatLogHint>  También puedes asignar una tecla en Opciones → Controles → EchoColony.</EchoColony.ChatLogHint>
+
+
+  <!-- Botón de toggle del log (en ajustes del mod) -->
+  <EchoColony.ChatLogShow>📋 Abrir registro de conversaciones</EchoColony.ChatLogShow>
+  <EchoColony.ChatLogHide>📋 Cerrar registro de conversaciones</EchoColony.ChatLogHide>
+
+  <!-- Selector de tecla para el chat log -->
+  <EchoColony.ChatLogHotkeyLabel>Atajo de teclado (abrir/cerrar):</EchoColony.ChatLogHotkeyLabel>
+  <EchoColony.ChatLogHotkeyNone>[Sin asignar]</EchoColony.ChatLogHotkeyNone>
+  <EchoColony.ChatLogHotkeyPress>Pulsa una tecla... (Esc cancela, Supr borra)</EchoColony.ChatLogHotkeyPress>
+
+  <!-- Tamaño de fuente -->
+  <EchoColony.ChatLogLargeFont>Texto más grande en el registro</EchoColony.ChatLogLargeFont>
+  <EchoColony.ChatLogHotkeyLabel>Atajo de teclado (abrir/cerrar):</EchoColony.ChatLogHotkeyLabel>
+  <EchoColony.ChatLogHotkeyNone>[Sin asignar]</EchoColony.ChatLogHotkeyNone>
+  <EchoColony.ChatLogHotkeyPress>Pulsa una tecla... (Esc cancela, Supr borra)</EchoColony.ChatLogHotkeyPress>
+
+  <EchoColony.ChatLogHint>  El registro guarda todos los diálogos de IA en tiempo real. Arrastra la barra de título para moverlo.</EchoColony.ChatLogHint>
 </LanguageData>

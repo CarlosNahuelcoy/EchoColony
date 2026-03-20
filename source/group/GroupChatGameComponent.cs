@@ -8,47 +8,66 @@ namespace EchoColony
     {
         private Dictionary<string, GroupChatSession> groupChats;
 
-        public static GroupChatGameComponent Instance
-        {
-            get { return Current.Game.GetComponent<GroupChatGameComponent>(); }
-        }
+        public static GroupChatGameComponent Instance =>
+            Current.Game.GetComponent<GroupChatGameComponent>();
 
         public GroupChatGameComponent(Game game)
         {
             groupChats = new Dictionary<string, GroupChatSession>();
         }
 
+        // Returns an existing session whose participant set matches EXACTLY,
+        // or creates a new one. Subset matching is intentionally avoided —
+        // it was causing sessions with extra participants to be reused.
         public GroupChatSession GetOrCreateSession(List<Pawn> participants)
         {
-            foreach (KeyValuePair<string, GroupChatSession> pair in groupChats)
-            {
-                GroupChatSession session = pair.Value;
-                bool allIncluded = true;
-                foreach (Pawn p in participants)
-                {
-                    if (!session.HasParticipant(p))
-                    {
-                        allIncluded = false;
-                        break;
-                    }
-                }
+            var requestedIds = participants
+            .Where(p => p != null)
+            .Select(p => p.ThingID.ToString())
+            .OrderBy(rid => rid) 
+            .ToList();
 
-                if (allIncluded)
-                {
-                    return session;
-                }
-            }
+        foreach (var pair in groupChats)
+        {
+            var session = pair.Value;
+            if (session?.ParticipantIds == null) continue;
 
-            string id = System.Guid.NewGuid().ToString();
-            GroupChatSession newSession = new GroupChatSession(id, participants);
-            groupChats[id] = newSession;
+            var sessionIds = session.ParticipantIds.OrderBy(sid => sid).ToList(); 
+
+            if (sessionIds.SequenceEqual(requestedIds))
+                return session;
+        }
+
+            // No matching session found — create a fresh one
+            string id        = System.Guid.NewGuid().ToString();
+            var newSession   = new GroupChatSession(id, participants);
+            groupChats[id]   = newSession;
             return newSession;
+        }
+
+        // Updates the participant list of an existing session.
+        // Called when a participant is added or removed mid-conversation.
+        public GroupChatSession UpdateSessionParticipants(GroupChatSession existing, List<Pawn> newParticipants)
+        {
+            // Remove the old entry
+            var oldKey = groupChats.FirstOrDefault(kv => kv.Value == existing).Key;
+            if (oldKey != null)
+                groupChats.Remove(oldKey);
+
+            // Update the session's participant list in-place
+            existing.ParticipantIds = newParticipants
+                .Where(p => p != null)
+                .Select(p => p.ThingID.ToString())
+                .ToList();
+            existing.CachedParticipants = new List<Pawn>(newParticipants);
+
+            groupChats[existing.SessionId] = existing;
+            return existing;
         }
 
         public void AddLine(List<Pawn> participants, string line)
         {
-            GroupChatSession session = GetOrCreateSession(participants);
-            session.AddMessage(line);
+            GetOrCreateSession(participants).AddMessage(line);
         }
 
         public List<string> GetChatHistory(List<Pawn> participants)
@@ -58,8 +77,7 @@ namespace EchoColony
 
         public void ClearGroupChat(List<Pawn> participants)
         {
-            GroupChatSession session = GetOrCreateSession(participants);
-            session.History.Clear();
+            GetOrCreateSession(participants).History.Clear();
         }
 
         public override void ExposeData()
@@ -71,16 +89,18 @@ namespace EchoColony
                 if (groupChats == null)
                     groupChats = new Dictionary<string, GroupChatSession>();
 
-                // Filtrar sesiones corruptas que no tienen participantes
-                var invalidSessions = groupChats
-                    .Where(kv => kv.Value == null || kv.Value.ParticipantIds == null || kv.Value.ParticipantIds.Count == 0)
+                // Remove corrupt sessions that have no participants
+                var invalid = groupChats
+                    .Where(kv => kv.Value == null ||
+                                 kv.Value.ParticipantIds == null ||
+                                 kv.Value.ParticipantIds.Count == 0)
                     .Select(kv => kv.Key)
                     .ToList();
 
-                foreach (var id in invalidSessions)
+                foreach (var key in invalid)
                 {
-                    Log.Warning($"[EchoColony] Sesión inválida eliminada al cargar: {id}");
-                    groupChats.Remove(id);
+                    Log.Warning($"[EchoColony] Removed invalid group chat session on load: {key}");
+                    groupChats.Remove(key);
                 }
             }
         }
