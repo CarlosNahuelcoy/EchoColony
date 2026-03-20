@@ -1,7 +1,8 @@
-using Verse;
-using System.Collections.Generic;
 using RimWorld;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using Verse;
 
 namespace EchoColony
 {
@@ -153,10 +154,45 @@ namespace EchoColony
             return pawnVoiceMap.TryGetValue(pawn.ThingID.ToString(), out var voiceId) ? voiceId : null;
         }
 
+        public void CleanupOrphanedChats()
+        {
+            // Obtenemos todos los IDs de peones que el juego aún reconoce (vivos, muertos en tumbas, etc.)
+            var validPawnIDs = new HashSet<string>(
+                PawnsFinder.AllMapsWorldAndTemporary_AliveOrDead
+                    .Where(p => p != null)
+                    .Select(p => p.ThingID)
+            );
+
+            // Listas para identificar qué claves borrar
+            List<string> keysToRemove = new List<string>();
+
+            foreach (var key in savedChats.Keys)
+            {
+                // Si el ID del chat no está en la lista de peones válidos del juego, marcar para borrar
+                if (!validPawnIDs.Contains(key))
+                {
+                    keysToRemove.Add(key);
+                }
+            }
+
+            // Ejecutar la eliminación
+            foreach (var key in keysToRemove)
+            {
+                savedChats.Remove(key);
+                lastChatDay.Remove(key);
+                if (pawnVoiceMap.ContainsKey(key)) pawnVoiceMap.Remove(key);
+
+                Log.Message($"[EchoColony] Cleaned up orphaned chat data for Pawn ID: {key} (Pawn no longer exists in world)");
+            }
+        }
+
         // Automatically executed when loading a saved game
         public override void FinalizeInit()
         {
             base.FinalizeInit();
+
+            // Limpiar chats de peones inexistentes al cargar
+            CleanupOrphanedChats();
 
             // Restore TTS voice assignments if TTS is enabled
             if (MyMod.Settings.enableTTS)
