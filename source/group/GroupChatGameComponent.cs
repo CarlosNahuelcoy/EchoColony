@@ -1,6 +1,7 @@
-using Verse;
+using RimWorld;
 using System.Collections.Generic;
 using System.Linq;
+using Verse;
 
 namespace EchoColony
 {
@@ -80,8 +81,52 @@ namespace EchoColony
             GetOrCreateSession(participants).History.Clear();
         }
 
+        //public void CleanupOrphanedGroupChats()
+        //{
+        //    if (groupChats == null) return;
+
+        //    // 1. Obtener todos los IDs de peones que el juego aún reconoce como existentes
+        //    var validPawnIDs = new HashSet<string>(
+        //        PawnsFinder.AllMapsWorldAndTemporary_AliveOrDead
+        //            .Where(p => p != null)
+        //            .Select(p => p.ThingID)
+        //    );
+
+        //    // 2. Identificar sesiones a eliminar
+        //    List<string> sessionsToRemove = new List<string>();
+
+        //    foreach (var kvp in groupChats)
+        //    {
+        //        GroupChatSession session = kvp.Value;
+
+        //        // Criterios de eliminación:
+        //        // - La sesión es nula
+        //        // - No tiene participantes
+        //        // - Al menos UNO de los participantes ya no existe en el mundo
+        //        if (session == null ||
+        //            session.ParticipantIds == null ||
+        //            session.ParticipantIds.Count == 0 ||
+        //            session.ParticipantIds.Any(id => !validPawnIDs.Contains(id)))
+        //        {
+        //            sessionsToRemove.Add(kvp.Key);
+        //        }
+        //    }
+
+        //    // 3. Ejecutar la limpieza
+        //    foreach (var sessionId in sessionsToRemove)
+        //    {
+        //        groupChats.Remove(sessionId);
+        //    }
+
+        //    if (sessionsToRemove.Count > 0)
+        //    {
+        //        Log.Message($"[EchoColony] Se eliminaron {sessionsToRemove.Count} sesiones de chat grupal (participantes inexistentes o datos corruptos).");
+        //    }
+        //}
+
         public override void ExposeData()
         {
+            base.ExposeData();
             Scribe_Collections.Look(ref groupChats, "groupChats", LookMode.Value, LookMode.Deep);
 
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
@@ -102,6 +147,17 @@ namespace EchoColony
                     Log.Warning($"[EchoColony] Removed invalid group chat session on load: {key}");
                     groupChats.Remove(key);
                 }
+            }
+
+            // 3. Ejecutar la eliminación
+            foreach (string sessionId in sessionsToRemove)
+            {
+                groupChats.Remove(sessionId);
+            }
+
+            if (sessionsToRemove.Count > 0)
+            {
+                Log.Message($"[EchoColony] Limpieza de Grupos: Se eliminaron {sessionsToRemove.Count} sesiones porque uno o más miembros ya no existen.");
             }
         }
     }

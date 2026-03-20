@@ -1,5 +1,7 @@
-using Verse;
+using RimWorld;
 using System.Collections.Generic;
+using System.Linq;
+using Verse;
 
 namespace EchoColony
 {
@@ -40,16 +42,43 @@ namespace EchoColony
                 voicesByColonist = new Dictionary<string, string>();
         }
 
-        public override void FinalizeInit()
-{
-    base.FinalizeInit();
+        public void CleanupOrphanedPrompts()
+        {
+            // Verificamos que los diccionarios no sean nulos antes de empezar
+            if (promptsByColonist == null) return;
 
-    // 🔁 Agregar TTSVoiceLoaderComponent si no está
-    if (Current.Game.GetComponent<TTSVoiceLoaderComponent>() == null)
-    {
-        Current.Game.components.Add(new TTSVoiceLoaderComponent(Current.Game));
-        Log.Message("[EchoColony] 🔁 TTSVoiceLoaderComponent agregado desde PromptStorageComponent");
-    }
-}
+            // PawnsFinder requiere System.Linq para el .Select y .Where
+            var validPawnIDs = new HashSet<string>(
+                PawnsFinder.AllMapsWorldAndTemporary_AliveOrDead
+                    .Where(p => p != null)
+                    .Select(p => p.ThingID)
+            );
+
+            List<string> keysToRemove = promptsByColonist.Keys
+                .Where(key => !validPawnIDs.Contains(key))
+                .ToList();
+
+            foreach (var key in keysToRemove)
+            {
+                promptsByColonist.Remove(key);
+                voicesByColonist?.Remove(key);
+                ignoreAgeByColonist?.Remove(key);
+                Log.Message($"[EchoColony] Cleaned up data for obsolete Pawn ID: {key}");
+            }
+        }
+
+        public override void FinalizeInit()
+        {
+            base.FinalizeInit();
+
+            CleanupOrphanedPrompts();
+
+            // 🔁 Agregar TTSVoiceLoaderComponent si no está
+            if (Current.Game.GetComponent<TTSVoiceLoaderComponent>() == null)
+            {
+                Current.Game.components.Add(new TTSVoiceLoaderComponent(Current.Game));
+                Log.Message("[EchoColony] 🔁 TTSVoiceLoaderComponent agregado desde PromptStorageComponent");
+            }
+        }
     }
 }
