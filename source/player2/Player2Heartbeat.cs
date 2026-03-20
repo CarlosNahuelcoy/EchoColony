@@ -8,203 +8,165 @@ namespace EchoColony
 {
     public class Player2Heartbeat : MonoBehaviour
     {
-        private float timer = 0f;
-        private const float Interval = 60f; // 60 segundos = 1 minuto
-        private const float InitialCheckDelay = 5f; // Esperar 5 segundos al inicio
-        private bool hasPerformedInitialCheck = false;
-        private bool isCheckingPlayer2 = false;
+        private float timer              = 0f;
+        private const float Interval     = 60f;
+        private const float InitialDelay = 5f;
+
+        private bool hasPerformedInitialAuth = false;
+        private bool isPinging               = false;
+
+        private int consecutiveFailures    = 0;
+        private const int MAX_LOG_FAILURES = 3;
 
         void Start()
         {
-            // Realizar check inicial después de un pequeño delay
-            StartCoroutine(InitialPlayer2Check());
+            StartCoroutine(InitialAuthAndCheck());
         }
 
         void Update()
         {
-            // ✅ CORRECTO: Solo hacer heartbeat si Player2 está seleccionado como fuente de modelo
-            // Esto es para telemetría de uso, no para detección
-            if (MyMod.Settings.modelSource != ModelSource.Player2) 
+            if (MyMod.Settings == null) return;
+            if (MyMod.Settings.modelSource != ModelSource.Player2)
             {
-                // ✅ IMPORTANTE: Resetear timer cuando no está en uso
                 timer = 0f;
                 return;
             }
 
-            // ✅ VERIFICAR: Asegurar que Time.unscaledDeltaTime funciona correctamente
-            float deltaTime = Time.unscaledDeltaTime;
-            
-            if (MyMod.Settings.debugMode && deltaTime > 0)
-            {
-                
-            }
-
-            timer += deltaTime;
+            timer += Time.unscaledDeltaTime;
 
             if (timer >= Interval)
             {
-                if (MyMod.Settings.debugMode)
-                {
-                    Log.Message("[EchoColony] Sending Player2 usage heartbeat...");
-                }
-                
-                timer = 0f; // ✅ Resetear ANTES de enviar
-                PingPlayer2();
+                timer = 0f;
+                StartCoroutine(PingWebApi());
             }
         }
 
-        private IEnumerator InitialPlayer2Check()
+        // ── Initial auth ──────────────────────────────────────────────────────────
+
+        private IEnumerator InitialAuthAndCheck()
         {
-            yield return new WaitForSeconds(InitialCheckDelay);
-            
-            if (!hasPerformedInitialCheck)
+            yield return new WaitForSeconds(InitialDelay);
+
+            if (hasPerformedInitialAuth) yield break;
+            hasPerformedInitialAuth = true;
+
+            if (MyMod.Settings == null) yield break;
+            if (MyMod.Settings.modelSource != ModelSource.Player2) yield break;
+
+            // If we already have a stored key, validate it first
+            if (Player2AuthManager.IsAuthenticated)
             {
-                hasPerformedInitialCheck = true;
-                CheckPlayer2Availability();
-            }
-        }
+                Log.Message("[EchoColony] Player2: Stored key found, validating...");
+                bool valid = false;
+                yield return ValidateStoredKey(ok => valid = ok);
 
-        private void CheckPlayer2Availability()
-        {
-            if (isCheckingPlayer2) return;
-            
-            isCheckingPlayer2 = true;
-            
-            string endpoint = "http://127.0.0.1:4315/v1/health";
-            UnityWebRequest request = UnityWebRequest.Get(endpoint);
-            request.SetRequestHeader("Accept", "application/json; charset=utf-8");
-            request.SetRequestHeader("player2-game-key", "Rimworld-EchoColony");
-            request.timeout = 3; // Timeout más corto para check inicial
-
-            UnityWebRequestAsyncOperation op = request.SendWebRequest();
-            op.completed += OnInitialCheckCompleted;
-        }
-
-        private void OnInitialCheckCompleted(AsyncOperation op)
-        {
-            UnityWebRequestAsyncOperation webOp = op as UnityWebRequestAsyncOperation;
-            UnityWebRequest request = webOp.webRequest;
-
-            bool player2Available = false;
-
-            if (request != null)
-            {
-                if (!request.isNetworkError && !request.isHttpError)
+                if (valid)
                 {
-                    player2Available = true;
-                    
-                    // Si Player2 está disponible y aún no está seleccionado como modelo, seleccionarlo automáticamente
-                    if (MyMod.Settings.modelSource != ModelSource.Player2)
-                    {
-                        MyMod.Settings.modelSource = ModelSource.Player2;
-                        // Notificar al jugador
-                        Messages.Message("EchoColony: Player2 detected and selected automatically", MessageTypeDefOf.PositiveEvent);
-                        
-                        // ✅ NUEVO: Iniciar timer de telemetría cuando se auto-selecciona
-                        timer = 0f;
-                        if (MyMod.Settings.debugMode)
-                        {
-                            Log.Message("[EchoColony] Player2 usage tracking started");
-                        }
-                    }
+                    Log.Message("[EchoColony] Player2: Stored key is valid");
+                    Player2AuthManager.OnStoredKeyValidated();
+                    yield break;
                 }
 
-                request.Dispose();
+                Log.Warning("[EchoColony] Player2: Stored key invalid or expired, re-authenticating...");
+                MyMod.Settings.player2ApiKey = "";
             }
 
-            isCheckingPlayer2 = false;
-
-            if (MyMod.Settings.debugMode)
+            // Try silent auto-auth via local app
+            yield return Player2AuthManager.AuthenticateAuto(success =>
             {
-                Log.Message("[EchoColony] Initial Player2 check completed. Available: " + player2Available);
-            }
-        }
-
-        private void PingPlayer2()
-        {
-            if (isCheckingPlayer2) return;
-            
-            // ✅ VERIFICAR: Solo enviar si Player2 sigue seleccionado
-            if (MyMod.Settings.modelSource != ModelSource.Player2) 
-            {
-                if (MyMod.Settings.debugMode)
-                {
-                    Log.Message("[EchoColony] Cancelling heartbeat - Player2 no longer selected");
-                }
-                return;
-            }
-            
-            isCheckingPlayer2 = true;
-            
-            string endpoint = "http://127.0.0.1:4315/v1/health";
-            UnityWebRequest request = UnityWebRequest.Get(endpoint);
-            request.SetRequestHeader("Accept", "application/json; charset=utf-8");
-            request.SetRequestHeader("player2-game-key", "Rimworld-EchoColony");
-            
-            // ✅ NUEVO: Agregar header de telemetría para indicar uso activo
-            request.SetRequestHeader("player2-usage-heartbeat", "true");
-            request.SetRequestHeader("player2-session-time", $"{Time.realtimeSinceStartup:F0}");
-            
-            request.timeout = 5;
-
-            UnityWebRequestAsyncOperation op = request.SendWebRequest();
-            op.completed += OnPingCompleted;
-        }
-
-        private void OnPingCompleted(AsyncOperation op)
-        {
-            UnityWebRequestAsyncOperation webOp = op as UnityWebRequestAsyncOperation;
-            UnityWebRequest request = webOp.webRequest;
-
-            if (request != null)
-            {
-                if (request.isNetworkError || request.isHttpError)
-                {
-                    if (MyMod.Settings.debugMode)
-                    {
-                        Log.Warning($"[EchoColony] Player2 usage heartbeat failed: {request.error}");
-                    }
-                    
-                    // ✅ OPCIONAL: Desactivar automáticamente si falla repetidamente
-                    // MyMod.Settings.modelSource = ModelSource.Gemini;
-                }
+                if (success)
+                    Log.Message("[EchoColony] Player2: Silent auto-auth completed");
                 else
-                {
-                    if (MyMod.Settings.debugMode)
-                    {
-                        Log.Message("[EchoColony] Player2 usage heartbeat sent successfully");
-                    }
-                }
-
-                request.Dispose();
-            }
-            
-            isCheckingPlayer2 = false;
+                    Log.Message("[EchoColony] Player2: Auto-auth not available. " +
+                                "User can connect manually in Mod Settings.");
+            });
         }
 
-        // Método público para forzar un nuevo check (útil para botones en la UI)
+        // ── Periodic health ping ──────────────────────────────────────────────────
+
+        private IEnumerator PingWebApi()
+        {
+            if (isPinging) yield break;
+            if (MyMod.Settings == null) yield break;
+            if (MyMod.Settings.modelSource != ModelSource.Player2) yield break;
+
+            isPinging = true;
+
+            var request = UnityWebRequest.Get(Player2AuthManager.WebApiBase + "/health");
+            request.SetRequestHeader("player2-game-key", "Rimworld-EchoColony");
+
+            string authHeader = Player2AuthManager.GetAuthHeader();
+            if (!string.IsNullOrEmpty(authHeader))
+                request.SetRequestHeader("Authorization", authHeader);
+
+            request.timeout = 5;
+            yield return request.SendWebRequest();
+
+#if UNITY_2020_2_OR_NEWER
+            bool ok = request.result == UnityWebRequest.Result.Success;
+#else
+            bool ok = !request.isNetworkError && !request.isHttpError;
+#endif
+
+            if (ok)
+            {
+                consecutiveFailures = 0;
+                if (MyMod.Settings.debugMode)
+                    Log.Message("[EchoColony] Player2 Web API heartbeat OK");
+            }
+            else
+            {
+                consecutiveFailures++;
+
+                // 401 = key expired → re-auth silently
+                if (request.responseCode == 401 && !string.IsNullOrEmpty(MyMod.Settings.player2ApiKey))
+                {
+                    Log.Warning("[EchoColony] Player2: API key expired, attempting re-auth...");
+                    MyMod.Settings.player2ApiKey = "";
+                    hasPerformedInitialAuth = false;
+                    StartCoroutine(InitialAuthAndCheck());
+                }
+                else if (MyMod.Settings.debugMode && consecutiveFailures <= MAX_LOG_FAILURES)
+                {
+                    Log.Warning($"[EchoColony] Player2 heartbeat failed " +
+                                $"({consecutiveFailures}): {request.responseCode} {request.error}");
+                }
+            }
+
+            request.Dispose();
+            isPinging = false;
+        }
+
+        // ── Key validation ────────────────────────────────────────────────────────
+
+        private IEnumerator ValidateStoredKey(System.Action<bool> onResult)
+        {
+            var request = UnityWebRequest.Get(Player2AuthManager.WebApiBase + "/health");
+            request.SetRequestHeader("player2-game-key", "Rimworld-EchoColony");
+
+            string authHeader = Player2AuthManager.GetAuthHeader();
+            if (!string.IsNullOrEmpty(authHeader))
+                request.SetRequestHeader("Authorization", authHeader);
+
+            request.timeout = 5;
+            yield return request.SendWebRequest();
+
+#if UNITY_2020_2_OR_NEWER
+            bool ok = request.result == UnityWebRequest.Result.Success;
+#else
+            bool ok = !request.isNetworkError && !request.isHttpError;
+#endif
+
+            request.Dispose();
+            onResult?.Invoke(ok && request.responseCode != 401);
+        }
+
+        // ── Public API ────────────────────────────────────────────────────────────
+
         public void ForceCheckPlayer2()
         {
-            if (!isCheckingPlayer2)
-            {
-                CheckPlayer2Availability();
-            }
-        }
-        
-        // ✅ NUEVO: Método para obtener tiempo de uso actual
-        public float GetCurrentUsageTime()
-        {
-            return MyMod.Settings.modelSource == ModelSource.Player2 ? timer : 0f;
-        }
-        
-        // ✅ NUEVO: Método para forzar heartbeat inmediato (útil para testing)
-        public void ForceSendHeartbeat()
-        {
-            if (MyMod.Settings.modelSource == ModelSource.Player2 && !isCheckingPlayer2)
-            {
-                timer = 0f;
-                PingPlayer2();
-            }
+            hasPerformedInitialAuth = false;
+            StartCoroutine(InitialAuthAndCheck());
         }
     }
 }

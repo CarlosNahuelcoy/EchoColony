@@ -20,6 +20,8 @@ namespace EchoColony
         {
             Harmony harmony = new Harmony("EchoColony");
             harmony.PatchAll();
+            // Suppress vanilla Interaction Bubbles entries when AI conversations are active
+            Conversations.Patch_SuppressVanillaBubble.TryApply(harmony);
         }
     }
 }

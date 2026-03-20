@@ -344,4 +344,133 @@ Memories are automatically generated during conversations and help the colonist 
   
   <!-- Divine Actions - Notifications -->
   <EchoColony.ActionExecutedNotification>Divine actions on {0}: {1}</EchoColony.ActionExecutedNotification>
+
+   <!-- Section header & description -->
+  <EchoColony.ConvSectionHeader>💬  Pawn Conversations</EchoColony.ConvSectionHeader>
+  <EchoColony.ConvSectionDesc>Colonists (and animals) generate AI dialogue bubbles during interactions.</EchoColony.ConvSectionDesc>
+  <EchoColony.ConvSectionDescTooltip>Requires the 'Interaction Bubbles' mod. Bubbles reflect each pawn's personality, health, relationships and current mood.</EchoColony.ConvSectionDescTooltip>
+
+  <!-- Master switch -->
+  <EchoColony.ConvEnableLabel>Enable Pawn Conversations</EchoColony.ConvEnableLabel>
+  <EchoColony.ConvEnableTooltip>When enabled, colonists will generate short AI dialogue bubbles during interactions.</EchoColony.ConvEnableTooltip>
+  <EchoColony.ConvDisabledHint>  ↳ Enable to access conversation settings.</EchoColony.ConvDisabledHint>
+
+  <!-- Lines per colonist -->
+  <!-- {0} = lines per pawn, {1} = total bubbles -->
+  <EchoColony.ConvLinesLabel>Lines per colonist: {0}   (total bubbles = {1})</EchoColony.ConvLinesLabel>
+  <EchoColony.ConvLinesTooltip>How many dialogue lines each pawn contributes. 1 per colonist = 2 bubbles total. Recommended to keep low.</EchoColony.ConvLinesTooltip>
+
+  <!-- Bubble delay -->
+  <!-- {0} = delay in seconds (e.g. 1.5) -->
+  <EchoColony.ConvDelayLabel>Delay between bubbles: {0}s</EchoColony.ConvDelayLabel>
+  <EchoColony.ConvDelayTooltip>Seconds between each bubble appearing. Higher = more natural pacing.</EchoColony.ConvDelayTooltip>
+
+  <!-- Cooldown -->
+  <!-- {0} = hours (integer) -->
+  <EchoColony.ConvCooldownLabel>Cooldown (same pair): {0}h</EchoColony.ConvCooldownLabel>
+  <EchoColony.ConvCooldownNoneLabel>Cooldown (same pair): No cooldown</EchoColony.ConvCooldownNoneLabel>
+  <EchoColony.ConvCooldownTooltip>Minimum in-game hours before the same two pawns can have another conversation. Prevents spam between pawns who interact constantly.</EchoColony.ConvCooldownTooltip>
+
+  <!-- Animal mode -->
+  <EchoColony.ConvAnimalModeLabel>Animal participation:</EchoColony.ConvAnimalModeLabel>
+  <EchoColony.ConvAnimalModeTooltip>Colonies can have hundreds of animals — control which ones generate conversations.</EchoColony.ConvAnimalModeTooltip>
+  <EchoColony.ConvAnimalModeDisabled>Disabled</EchoColony.ConvAnimalModeDisabled>
+  <EchoColony.ConvAnimalModeIntelligentOnly>Intelligent only</EchoColony.ConvAnimalModeIntelligentOnly>
+  <EchoColony.ConvAnimalModeAll>All animals</EchoColony.ConvAnimalModeAll>
+  <EchoColony.ConvAnimalModeHintDisabled>  Animals never trigger conversations.</EchoColony.ConvAnimalModeHintDisabled>
+  <EchoColony.ConvAnimalModeHintIntelligentOnly>  Only animals marked as intelligent in their prompt editor.</EchoColony.ConvAnimalModeHintIntelligentOnly>
+  <EchoColony.ConvAnimalModeHintAll>  All colony animals can trigger conversations (may be noisy).</EchoColony.ConvAnimalModeHintAll>
+
+  <!-- Participant filters -->
+  <EchoColony.ConvFiltersLabel>Participant filters:</EchoColony.ConvFiltersLabel>
+  <EchoColony.ConvIncludePrisoners>Include prisoners</EchoColony.ConvIncludePrisoners>
+  <EchoColony.ConvIncludePrisonersTooltip>Prisoners can be part of bubble conversations.</EchoColony.ConvIncludePrisonersTooltip>
+  <EchoColony.ConvIncludeSlaves>Include slaves</EchoColony.ConvIncludeSlaves>
+  <EchoColony.ConvIncludeSlavesTooltip>Slaves can be part of bubble conversations.</EchoColony.ConvIncludeSlavesTooltip>
+  <EchoColony.ConvIncludeGuests>Include guests &amp; visitors</EchoColony.ConvIncludeGuests>
+  <EchoColony.ConvIncludeGuestsTooltip>Allow non-colony pawns (quest lodgers, allied visitors, traders) to appear in conversations. Prisoners and slaves are always treated as colony regardless of this setting.</EchoColony.ConvIncludeGuestsTooltip>
+
+  <!-- Minimum opinion -->
+  <!-- {0} = opinion value (integer) -->
+  <EchoColony.ConvMinOpinionLabel>Minimum opinion to trigger: {0}</EchoColony.ConvMinOpinionLabel>
+  <EchoColony.ConvMinOpinionNoFilter>Minimum opinion to trigger: No filter</EchoColony.ConvMinOpinionNoFilter>
+  <EchoColony.ConvMinOpinionTooltip>Only trigger between pawns whose mutual opinion meets this threshold. −100 disables the filter. Enemies will still argue at any setting.</EchoColony.ConvMinOpinionTooltip>
+
+  <!-- Max colony size -->
+  <!-- {0} = pawn count (integer) -->
+  <EchoColony.ConvMaxColonySizeLabel>Auto-disable above colony size: {0} pawns</EchoColony.ConvMaxColonySizeLabel>
+  <EchoColony.ConvMaxColonySizeNever>Auto-disable above colony size: Never</EchoColony.ConvMaxColonySizeNever>
+  <EchoColony.ConvMaxColonySizeTooltip>Automatically disables conversations when the colony is too large. 0 = no limit. Useful to avoid API overload on mega-colonies.</EchoColony.ConvMaxColonySizeTooltip>
+
+  <!-- Disable at speed -->
+  <!-- {0} = speed multiplier (integer, e.g. 3) -->
+  <EchoColony.ConvDisableAtSpeedLabel>Disable AI at game speed: ×{0}+</EchoColony.ConvDisableAtSpeedLabel>
+  <EchoColony.ConvDisableAtSpeedNever>Disable AI at game speed: Never</EchoColony.ConvDisableAtSpeedNever>
+  <EchoColony.ConvDisableAtSpeedTooltip>Stops generating AI dialogue when the game runs at or above this speed. Helps avoid wasting API calls during fast-forward. 0 = always generate.</EchoColony.ConvDisableAtSpeedTooltip>
+
+  <!-- Allow simultaneous -->
+  <EchoColony.ConvAllowSimultaneous>Allow simultaneous conversations</EchoColony.ConvAllowSimultaneous>
+  <EchoColony.ConvAllowSimultaneousTooltip>When off (default), a pawn pair cannot start a new AI conversation while one is already in progress. Prevents duplicate bubbles. Turn on only if you set a very low cooldown.</EchoColony.ConvAllowSimultaneousTooltip>
+
+  <!-- Global prompt -->
+  <EchoColony.ConvGlobalPromptLabel>Global conversation prompt (optional):</EchoColony.ConvGlobalPromptLabel>
+  <EchoColony.ConvGlobalPromptTooltip>Extra instructions appended to every pawn conversation prompt. Use this to set colony tone, world lore, or dialect rules. Appended after the built context, before the output instruction.</EchoColony.ConvGlobalPromptTooltip>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       Monologues — Settings UI
+       ═══════════════════════════════════════════════════════════════════════ -->
+
+  <!-- Section header & description -->
+  <EchoColony.MonoSectionHeader>Monologues (solo AI lines)</EchoColony.MonoSectionHeader>
+  <EchoColony.MonoSectionDesc>Colonists occasionally mutter, react, or think aloud by themselves. Triggered by random chance each hour and by significant emotional events.</EchoColony.MonoSectionDesc>
+
+  <!-- Master switch -->
+  <EchoColony.MonoEnableLabel>Enable monologues</EchoColony.MonoEnableLabel>
+  <EchoColony.MonoEnableTooltip>Master switch. When enabled, pawns may speak a single AI-generated line when something notable happens or just at random intervals.</EchoColony.MonoEnableTooltip>
+
+  <!-- Cooldown -->
+  <!-- {0} = hours (integer) -->
+  <EchoColony.MonoCooldownLabel>Cooldown between monologues: {0}h</EchoColony.MonoCooldownLabel>
+  <EchoColony.MonoCooldownTooltip>Minimum hours before the same pawn can produce another monologue.</EchoColony.MonoCooldownTooltip>
+
+  <!-- Hourly chance -->
+  <!-- {0} = percentage (integer, e.g. 15) -->
+  <EchoColony.MonoChanceLabel>Random chance per hour: {0}%</EchoColony.MonoChanceLabel>
+  <EchoColony.MonoChanceOffLabel>Random chance per hour: Off</EchoColony.MonoChanceOffLabel>
+  <EchoColony.MonoChanceTooltip>Each game hour, every eligible pawn rolls this chance to speak spontaneously. Set to 0 to disable random monologues (thought-triggered ones still fire).</EchoColony.MonoChanceTooltip>
+
+  <!-- Thought impact threshold -->
+  <!-- {0} = mood value (integer, e.g. 5) -->
+  <EchoColony.MonoThoughtImpactLabel>Minimum thought impact to trigger: ±{0} mood</EchoColony.MonoThoughtImpactLabel>
+  <EchoColony.MonoThoughtImpactTooltip>Thoughts with mood impact below this threshold won't trigger an immediate monologue. Higher values = only big events make pawns speak. Default: ±5.</EchoColony.MonoThoughtImpactTooltip>
+
+  <!-- Chat log toggle button (in settings) -->
+  <EchoColony.ChatLogShow>📋 Show conversation log</EchoColony.ChatLogShow>
+  <EchoColony.ChatLogHide>📋 Hide conversation log</EchoColony.ChatLogHide>
+
+  <!-- Chat log hotkey selector -->
+  <EchoColony.ChatLogHotkeyLabel>Hotkey (open/close log):</EchoColony.ChatLogHotkeyLabel>
+  <EchoColony.ChatLogHotkeyNone>[Not set]</EchoColony.ChatLogHotkeyNone>
+  <EchoColony.ChatLogHotkeyPress>Press a key... (Esc to cancel, Del to clear)</EchoColony.ChatLogHotkeyPress>
+
+  <EchoColony.ChatLogHint>  You can also bind a key in Options → Controls → EchoColony.</EchoColony.ChatLogHint>
+
+
+  <!-- Chat log toggle button (in mod settings) -->
+  <EchoColony.ChatLogShow>📋 Open Conversation Log</EchoColony.ChatLogShow>
+  <EchoColony.ChatLogHide>📋 Close Conversation Log</EchoColony.ChatLogHide>
+
+  <!-- Chat log hotkey selector -->
+  <EchoColony.ChatLogHotkeyLabel>Hotkey (open/close log):</EchoColony.ChatLogHotkeyLabel>
+  <EchoColony.ChatLogHotkeyNone>[Not set]</EchoColony.ChatLogHotkeyNone>
+  <EchoColony.ChatLogHotkeyPress>Press a key... (Esc to cancel, Del to clear)</EchoColony.ChatLogHotkeyPress>
+
+  <!-- Font size option -->
+  <EchoColony.ChatLogLargeFont>Larger text in conversation log</EchoColony.ChatLogLargeFont>
+  <EchoColony.ChatLogHotkeyLabel>Hotkey (open/close log):</EchoColony.ChatLogHotkeyLabel>
+  <EchoColony.ChatLogHotkeyNone>[Not set]</EchoColony.ChatLogHotkeyNone>
+  <EchoColony.ChatLogHotkeyPress>Press a key... (Esc to cancel, Del to clear)</EchoColony.ChatLogHotkeyPress>
+
+  <EchoColony.ChatLogHint>  The log records all AI dialogue as it happens. Drag the title bar to move it.</EchoColony.ChatLogHint>
+
 </LanguageData>

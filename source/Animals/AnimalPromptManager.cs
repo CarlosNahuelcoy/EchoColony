@@ -1,12 +1,21 @@
 using System.Collections.Generic;
+using System.Linq;
 using Verse;
 
 namespace EchoColony.Animals
 {
+    /// <summary>
+    /// Stores per-animal prompt and intelligence flag, saved with the game.
+    /// </summary>
     public class AnimalPromptManager : GameComponent
     {
-        private Dictionary<string, string> animalPrompts = new Dictionary<string, string>();
-        
+        // ── Persistent data ──────────────────────────────────────────────────────
+        private Dictionary<string, AnimalSaveData> animalData = new Dictionary<string, AnimalSaveData>();
+
+        // Legacy migration: old saves stored only a string prompt
+        private Dictionary<string, string> animalPrompts_LEGACY = null;
+
+        // ── Singleton ────────────────────────────────────────────────────────────
         private static AnimalPromptManager instance;
         public static AnimalPromptManager Instance
         {
@@ -27,93 +36,114 @@ namespace EchoColony.Animals
 
         public AnimalPromptManager(Game game) { }
 
+        // ── Public API ───────────────────────────────────────────────────────────
+
         public static string GetPrompt(Pawn animal)
         {
-            if (animal == null) return "";
-            
-            var instance = Instance;
-            if (instance == null) return "";
-            
-            string key = animal.ThingID;
-            if (instance.animalPrompts.TryGetValue(key, out string prompt))
-            {
-                return prompt;
-            }
-            
-            return "";
+            var data = GetData(animal);
+            return data?.customPrompt ?? "";
         }
 
         public static void SetPrompt(Pawn animal, string prompt)
         {
-            if (animal == null) return;
-            
-            var instance = Instance;
-            if (instance == null) return;
-            
-            string key = animal.ThingID;
-            
-            if (string.IsNullOrWhiteSpace(prompt))
-            {
-                instance.animalPrompts.Remove(key);
-            }
-            else
-            {
-                instance.animalPrompts[key] = prompt.Trim();
-            }
+            var data = GetOrCreateData(animal);
+            if (data == null) return;
+            data.customPrompt = string.IsNullOrWhiteSpace(prompt) ? "" : prompt.Trim();
         }
+
+        public static bool GetIsIntelligent(Pawn animal)
+        {
+            return GetData(animal)?.isIntelligent ?? false;
+        }
+
+        public static void SetIsIntelligent(Pawn animal, bool value)
+        {
+            var data = GetOrCreateData(animal);
+            if (data == null) return;
+            data.isIntelligent = value;
+        }
+
+        // ── Internal helpers ─────────────────────────────────────────────────────
+
+        private static AnimalSaveData GetData(Pawn animal)
+        {
+            if (animal == null) return null;
+            var inst = Instance;
+            if (inst == null) return null;
+            inst.animalData.TryGetValue(animal.ThingID, out var data);
+            return data;
+        }
+
+        private static AnimalSaveData GetOrCreateData(Pawn animal)
+        {
+            if (animal == null) return null;
+            var inst = Instance;
+            if (inst == null) return null;
+            string key = animal.ThingID;
+            if (!inst.animalData.ContainsKey(key))
+                inst.animalData[key] = new AnimalSaveData();
+            return inst.animalData[key];
+        }
+
+        // ── Persistence ──────────────────────────────────────────────────────────
 
         public override void ExposeData()
         {
             base.ExposeData();
-            Scribe_Collections.Look(ref animalPrompts, "animalPrompts", LookMode.Value, LookMode.Value);
-            
-            if (Scribe.mode == LoadSaveMode.LoadingVars && animalPrompts == null)
+
+            // Migrate old string-only saves
+            Scribe_Collections.Look(ref animalPrompts_LEGACY, "animalPrompts", LookMode.Value, LookMode.Value);
+            if (animalPrompts_LEGACY != null && animalPrompts_LEGACY.Count > 0)
             {
-                animalPrompts = new Dictionary<string, string>();
+                if (animalData == null) animalData = new Dictionary<string, AnimalSaveData>();
+                foreach (var kvp in animalPrompts_LEGACY)
+                {
+                    if (!animalData.ContainsKey(kvp.Key))
+                        animalData[kvp.Key] = new AnimalSaveData { customPrompt = kvp.Value };
+                }
+                animalPrompts_LEGACY = null;
             }
+
+            Scribe_Collections.Look(ref animalData, "animalData", LookMode.Value, LookMode.Deep);
+
+            if (Scribe.mode == LoadSaveMode.LoadingVars && animalData == null)
+                animalData = new Dictionary<string, AnimalSaveData>();
         }
+
+        // ── Cleanup ──────────────────────────────────────────────────────────────
 
         public override void GameComponentTick()
         {
             base.GameComponentTick();
-            
-            // Cleanup dead animals every 2000 ticks (~1 in-game hour)
             if (Find.TickManager.TicksGame % 2000 == 0)
-            {
                 CleanupDeadAnimals();
-            }
         }
 
         private void CleanupDeadAnimals()
         {
-            if (animalPrompts == null || animalPrompts.Count == 0) return;
-            
-            var toRemove = new List<string>();
-            
-            foreach (var key in animalPrompts.Keys)
-            {
-                bool stillExists = false;
-                
-                foreach (var map in Find.Maps)
-                {
-                    var animal = map.mapPawns.AllPawns.FirstOrDefault(p => p.ThingID == key);
-                    if (animal != null && !animal.Dead)
-                    {
-                        stillExists = true;
-                        break;
-                    }
-                }
-                
-                if (!stillExists)
-                {
-                    toRemove.Add(key);
-                }
-            }
-            
+            if (animalData == null || animalData.Count == 0) return;
+
+            var toRemove = animalData.Keys
+                .Where(key => !Find.Maps.Any(map =>
+                    map.mapPawns.AllPawns.Any(p => p.ThingID == key && !p.Dead)))
+                .ToList();
+
             foreach (var key in toRemove)
-            {
-                animalPrompts.Remove(key);
-            }
+                animalData.Remove(key);
+        }
+    }
+
+    // ── Save data class ───────────────────────────────────────────────────────────
+
+    public class AnimalSaveData : IExposable
+    {
+        public string customPrompt = "";
+        public bool isIntelligent = false;
+
+        public void ExposeData()
+        {
+            Scribe_Values.Look(ref customPrompt, "customPrompt", "");
+            Scribe_Values.Look(ref isIntelligent, "isIntelligent", false);
         }
     }
 }
