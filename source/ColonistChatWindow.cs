@@ -36,11 +36,8 @@ namespace EchoColony
         private int conversationTurnCount = 0;
         private int lastSavedTurnCount = 0;
 
-        // ─── VISION ───────────────────────────────────────────────────
         // Captured once when the window opens (game is paused, overlay not yet visible).
-        // Reused for all messages in this session.
         private string _visionBase64 = null;
-        // ──────────────────────────────────────────────────────────────
 
         public ColonistChatWindow(Pawn pawn)
         {
@@ -53,20 +50,14 @@ namespace EchoColony
 
             forceScrollToBottom = true;
 
-            // ─── VISION: capture BEFORE the window is drawn ───────────
-            // forcePause=true means the game is paused and this constructor
-            // runs on the main thread before the first DoWindowContents call.
-            // The screen still shows the map without the chat overlay. Perfect.
             if (MyMod.Settings?.enableVision == true)
             {
                 _visionBase64 = GeminiAPI.CaptureScreenshotBase64();
-
                 if (_visionBase64 != null)
                     Log.Message($"[EchoColony] Vision ready for {pawn.LabelShort}");
                 else
                     Log.Warning($"[EchoColony] Vision capture failed for {pawn.LabelShort} — will send text only");
             }
-            // ─────────────────────────────────────────────────────────
 
             UpdateContextPrompt();
 
@@ -76,15 +67,9 @@ namespace EchoColony
             foreach (string line in rawChat)
             {
                 if (line.StartsWith("[USER]"))
-                {
-                    string content = line.Substring(6).Trim();
-                    messageHistory.Add(new GeminiMessage("user", content));
-                }
+                    messageHistory.Add(new GeminiMessage("user", line.Substring(6).Trim()));
                 else if (line.StartsWith(pawn.LabelShort + ":"))
-                {
-                    string content = line.Substring(pawn.LabelShort.Length + 1).Trim();
-                    messageHistory.Add(new GeminiMessage("model", content));
-                }
+                    messageHistory.Add(new GeminiMessage("model", line.Substring(pawn.LabelShort.Length + 1).Trim()));
             }
 
             CalculateTurnCountFromHistory();
@@ -103,7 +88,6 @@ namespace EchoColony
             int userMessages  = messageHistory.Count(m => m.role == "user");
             int modelMessages = messageHistory.Count(m => m.role == "model");
             conversationTurnCount = Math.Min(userMessages, modelMessages);
-
             Log.Message($"[EchoColony] Calculated turn count from history: {conversationTurnCount} turns ({userMessages} user, {modelMessages} model messages)");
         }
 
@@ -120,27 +104,16 @@ namespace EchoColony
                 else
                     contextPrompt = ColonistPromptContextBuilder.Build(pawn, "");
             }
-            else if (MyMod.Settings.modelSource == ModelSource.OpenRouter)
-            {
-                contextPrompt = ColonistPromptContextBuilder.Build(pawn, "");
-            }
-            else if (MyMod.Settings.modelSource == ModelSource.Player2)
-            {
-                contextPrompt = ColonistPromptContextBuilder.Build(pawn, "");
-            }
             else
             {
+                // Gemini, OpenRouter, Player2, Custom — all use the standard context builder
                 contextPrompt = ColonistPromptContextBuilder.Build(pawn, "");
             }
 
             if (messageHistory.Count > 0 && messageHistory[0].role == "user")
-            {
                 messageHistory[0] = new GeminiMessage("user", contextPrompt);
-            }
             else
-            {
                 messageHistory.Insert(0, new GeminiMessage("user", contextPrompt));
-            }
         }
 
         public class GeminiMessage
@@ -155,11 +128,6 @@ namespace EchoColony
             }
         }
 
-        /// <summary>
-        /// Builds the Gemini-format JSON body for the API call.
-        /// When imageBase64 is provided, the LAST user message gets an additional
-        /// inlineData part so the model can see the screenshot.
-        /// </summary>
         private string BuildGeminiChatJson(List<GeminiMessage> history, string imageBase64 = null)
         {
             var sb = new System.Text.StringBuilder();
@@ -172,12 +140,10 @@ namespace EchoColony
                 var    msg  = history[i];
                 string role = msg.role == "model" ? "model" : "user";
                 string text = EscapeJson(msg.content);
-
                 bool isLastUserMsg = (i == history.Count - 1) && msg.role == "user";
 
                 if (useVision && isLastUserMsg)
                 {
-                    // Multi-part: text + inlineData image
                     sb.Append($"{{\"role\": \"{role}\", \"parts\": [" +
                               $"{{\"text\": \"{text}\"}}," +
                               $"{{\"inlineData\": {{\"mimeType\": \"image/jpeg\", \"data\": \"{imageBase64}\"}}}}" +
@@ -188,41 +154,28 @@ namespace EchoColony
                     sb.Append($"{{\"role\": \"{role}\", \"parts\": [{{\"text\": \"{text}\"}}]}}");
                 }
 
-                if (i < history.Count - 1)
-                    sb.Append(",");
+                if (i < history.Count - 1) sb.Append(",");
             }
 
             sb.Append("]}");
             return sb.ToString();
         }
 
-        public static string CleanText(string input)
-        {
-            return System.Text.RegularExpressions.Regex.Replace(input, "<.*?>", string.Empty);
-        }
+        public static string CleanText(string input) =>
+            System.Text.RegularExpressions.Regex.Replace(input, "<.*?>", string.Empty);
 
-        string CleanColors(string input)
-        {
-            return System.Text.RegularExpressions.Regex.Replace(input, "<color=#[A-Fa-f0-9]{6,8}>|</color>", "");
-        }
+        string CleanColors(string input) =>
+            System.Text.RegularExpressions.Regex.Replace(input, "<color=#[A-Fa-f0-9]{6,8}>|</color>", "");
 
-        private static string EscapeJson(string text)
-        {
-            return text
-                .Replace("\\", "\\\\")
-                .Replace("\"", "\\\"")
-                .Replace("\n", "\\n")
-                .Replace("\r", "\\r");
-        }
+        private static string EscapeJson(string text) =>
+            text.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r");
 
         public override Vector2 InitialSize => new Vector2(850f, 540f);
 
         public override void DoWindowContents(Rect inRect)
         {
             if (cachedChatLog == null || cachedChatLog.Count != chatLog.Count)
-            {
                 cachedChatLog = new List<string>(chatLog);
-            }
 
             Rect portraitRect = new Rect(0f, 0f, 60f, 60f);
             GUI.DrawTexture(portraitRect, PortraitsCache.Get(pawn, new Vector2(60f, 60f), Rot4.South, default, 1.25f));
@@ -231,7 +184,6 @@ namespace EchoColony
             Widgets.Label(new Rect(45f, 10f, inRect.width - 50f, 30f), "EchoColony.TalkingWithLabel".Translate(pawn.LabelCap));
             Text.Font = GameFont.Small;
 
-            // Vision indicator (top-left, small)
             if (MyMod.Settings?.enableVision == true)
             {
                 string visionLabel = _visionBase64 != null ? "👁 Vision" : "👁 ✗";
@@ -240,9 +192,8 @@ namespace EchoColony
                 GUI.color = Color.white;
             }
 
-            float chatHeight = inRect.height - 110f;
-            Rect  scrollRect = new Rect(0, 45f, inRect.width - 20f, chatHeight);
-
+            float chatHeight       = inRect.height - 110f;
+            Rect  scrollRect       = new Rect(0, 45f, inRect.width - 20f, chatHeight);
             float scrollBarWidth   = 16f;
             float effectiveViewWidth = scrollRect.width - scrollBarWidth;
 
@@ -255,10 +206,7 @@ namespace EchoColony
             {
                 string msg   = cachedChatLog[i];
                 float  width = msg.StartsWith("[DATE_SEPARATOR]") ? effectiveViewWidth : effectiveViewWidth - 200f;
-
-                string actualDisplayText = GetDisplayMessage(msg);
-
-                float height = Text.CalcHeight(actualDisplayText, width) + 4f;
+                float  height = Text.CalcHeight(GetDisplayMessage(msg), width) + 4f;
                 heights.Add(height);
                 viewHeight += height + 10f;
             }
@@ -268,7 +216,7 @@ namespace EchoColony
 
             if (forceScrollToBottom)
             {
-                scrollPos.y      = viewHeight;
+                scrollPos.y         = viewHeight;
                 forceScrollToBottom = false;
             }
 
@@ -309,21 +257,17 @@ namespace EchoColony
                 GUI.FocusControl("ChatInputField");
             }
 
-            var textStyle = new GUIStyle(GUI.skin.textArea)
-            {
-                fontSize = 14,
-                padding  = new RectOffset(6, 6, 6, 6)
-            };
+            var textStyle = new GUIStyle(GUI.skin.textArea) { fontSize = 14, padding = new RectOffset(6, 6, 6, 6) };
             input = GUI.TextArea(inputRect, input, 500, textStyle);
 
-            Rect sendRect  = new Rect(inRect.width - 100f, inRect.height - 60f, 100f, 30f);
+            Rect sendRect   = new Rect(inRect.width - 100f, inRect.height - 60f, 100f, 30f);
             bool sendClicked = Widgets.ButtonText(sendRect, "EchoColony.SendButton".Translate());
 
             if (!waitingForResponse && (sendClicked || sendRequestedViaEnter))
             {
                 SendMessage();
                 sendRequestedViaEnter = false;
-                GUI.FocusControl(null);
+                GUI.FocusControl("ChatInputField");
             }
 
             Rect clearRect = new Rect(inRect.width - 330f, 10f, 100f, 30f);
@@ -344,24 +288,18 @@ namespace EchoColony
             Rect exportRect = new Rect(inRect.width - 110f, 10f, 100f, 30f);
             if (Widgets.ButtonText(exportRect, "EchoColony.ExportButton".Translate()))
             {
-                int   ticks     = Find.TickManager.TicksGame;
-                float longitude = Find.WorldGrid.LongLatOf(Find.CurrentMap.Tile).x;
-
-                int    year    = GenDate.Year(ticks, longitude);
-                string quadrum = GenDate.Quadrum(ticks, longitude).ToString();
-                int    day     = GenDate.DayOfSeason(ticks, longitude);
-
-                string date     = $"Year{year}_Day{day}_{quadrum}";
-                string filename = $"{pawn.Name.ToStringShort}_chat_{date}.txt";
-
-                string folder = Path.Combine(GenFilePaths.SaveDataFolderPath, "ColonistChats");
-                if (!Directory.Exists(folder))
-                    Directory.CreateDirectory(folder);
-
+                int    ticks     = Find.TickManager.TicksGame;
+                float  longitude = Find.WorldGrid.LongLatOf(Find.CurrentMap.Tile).x;
+                int    year      = GenDate.Year(ticks, longitude);
+                string quadrum   = GenDate.Quadrum(ticks, longitude).ToString();
+                int    day       = GenDate.DayOfSeason(ticks, longitude);
+                string filename  = $"{pawn.Name.ToStringShort}_chat_Year{year}_Day{day}_{quadrum}.txt";
+                string folder    = Path.Combine(GenFilePaths.SaveDataFolderPath, "ColonistChats");
+                if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
                 string fullPath = Path.Combine(folder, filename);
                 try
                 {
-                    List<string> cleanLog = new List<string>();
+                    var cleanLog = new List<string>();
                     foreach (var line in chatLog)
                     {
                         string clean = line;
@@ -372,7 +310,6 @@ namespace EchoColony
                         clean = clean.Replace("</color>", "");
                         cleanLog.Add(clean);
                     }
-
                     File.WriteAllLines(fullPath, cleanLog);
                     Messages.Message($"Conversation exported to:\n{fullPath}", MessageTypeDefOf.TaskCompletion, false);
                 }
@@ -385,9 +322,7 @@ namespace EchoColony
 
             Rect personalizeRect = new Rect(inRect.width - 220f, 10f, 100f, 30f);
             if (Widgets.ButtonText(personalizeRect, "EchoColony.PersonalizeButton".Translate()))
-            {
                 Find.WindowStack.Add(new ColonistPromptEditor(pawn));
-            }
         }
 
         private void TrySpeakLastLine(Pawn pawn)
@@ -398,131 +333,70 @@ namespace EchoColony
 
             if (string.IsNullOrEmpty(voiceId))
             {
-                if (TTSVoiceCache.Voices != null && TTSVoiceCache.Voices.Count > 0)
+                if (TTSVoiceCache.Voices == null || TTSVoiceCache.Voices.Count == 0)
                 {
-                    string targetGender;
-                    switch (pawn.gender)
-                    {
-                        case Gender.Male:   targetGender = "male";   break;
-                        case Gender.Female: targetGender = "female"; break;
-                        default:            targetGender = Rand.Bool ? "male" : "female"; break;
-                    }
-
-                    var matchingVoices = TTSVoiceCache.Voices
-                        .Where(v => v.gender == targetGender && v.language.ToLowerInvariant().Contains("english"))
-                        .ToList();
-
-                    if (matchingVoices.Count == 0)
-                    {
-                        matchingVoices = TTSVoiceCache.Voices
-                            .Where(v => v.language.ToLowerInvariant().Contains("english"))
-                            .ToList();
-                        Log.Warning($"[EchoColony] No English voices found for gender '{targetGender}', using any English voice for {pawn.LabelShort}.");
-                    }
-
-                    if (matchingVoices.Count == 0)
-                    {
-                        matchingVoices = TTSVoiceCache.Voices.ToList();
-                        Log.Warning($"[EchoColony] No English voices found at all. Using any voice for {pawn.LabelShort}.");
-                    }
-
-                    var selectedVoice = matchingVoices.RandomElement();
-                    voiceId = selectedVoice.id;
-
-                    ChatGameComponent.Instance.SetVoiceForPawn(pawn, voiceId);
-                    ColonistVoiceManager.SetVoice(pawn, voiceId);
-
-                    Log.Message($"[EchoColony] Assigned {selectedVoice.gender} voice '{selectedVoice.name}' ({selectedVoice.language}) to {pawn.LabelShort}.");
-                }
-                else
-                {
-                    Log.Warning($"[EchoColony] No TTS voices available to assign to {pawn.LabelShort}. Auto-TTS skipped.");
+                    Log.Warning($"[EchoColony] No TTS voices available. Auto-TTS skipped.");
                     return;
                 }
+
+                string targetGender = pawn.gender == Gender.Male ? "male" : pawn.gender == Gender.Female ? "female" : Rand.Bool ? "male" : "female";
+                var matchingVoices  = TTSVoiceCache.Voices.Where(v => v.gender == targetGender && v.language.ToLowerInvariant().Contains("english")).ToList();
+                if (matchingVoices.Count == 0) matchingVoices = TTSVoiceCache.Voices.Where(v => v.language.ToLowerInvariant().Contains("english")).ToList();
+                if (matchingVoices.Count == 0) matchingVoices = TTSVoiceCache.Voices.ToList();
+
+                var selectedVoice = matchingVoices.RandomElement();
+                voiceId = selectedVoice.id;
+                ChatGameComponent.Instance.SetVoiceForPawn(pawn, voiceId);
+                ColonistVoiceManager.SetVoice(pawn, voiceId);
+                Log.Message($"[EchoColony] Assigned {selectedVoice.gender} voice '{selectedVoice.name}' to {pawn.LabelShort}.");
             }
 
-            string lastLine = ChatGameComponent.Instance.GetChat(pawn)
-                .LastOrDefault(l => l.StartsWith(pawn.LabelShort + ":"));
-
+            string lastLine = ChatGameComponent.Instance.GetChat(pawn).LastOrDefault(l => l.StartsWith(pawn.LabelShort + ":"));
             if (!string.IsNullOrWhiteSpace(lastLine))
             {
-                string text      = lastLine.Substring(pawn.LabelShort.Length + 1).Trim();
-                string cleanText = CleanTextForTTS(text);
-
+                string cleanText = CleanTextForTTS(lastLine.Substring(pawn.LabelShort.Length + 1).Trim());
                 if (!string.IsNullOrWhiteSpace(cleanText))
                 {
-                    Log.Message($"[EchoColony] TTS will speak: '{cleanText}' with voice ID: {voiceId}");
-
-                    string voiceGender       = "female";
-                    var    selectedVoiceInfo = TTSVoiceCache.Voices?.FirstOrDefault(v => v.id == voiceId);
-                    if (selectedVoiceInfo != null)
-                        voiceGender = selectedVoiceInfo.gender;
-
-                    MyStoryModComponent.Instance.StartCoroutine(
-                        TTSManager.Speak(cleanText, voiceId, voiceGender, "en_US", 1f)
-                    );
-                }
-                else
-                {
-                    Log.Message($"[EchoColony] No dialogue found after removing actions for {pawn.LabelShort}");
+                    string voiceGender = TTSVoiceCache.Voices?.FirstOrDefault(v => v.id == voiceId)?.gender ?? "female";
+                    MyStoryModComponent.Instance.StartCoroutine(TTSManager.Speak(cleanText, voiceId, voiceGender, "en_US", 1f));
                 }
             }
         }
 
         public static string GetPawnCombatStatusDetailed(Pawn pawn)
         {
-            var  job       = pawn.CurJob;
-            bool isFighting = job != null &&
-                (job.def == JobDefOf.AttackMelee ||
-                 job.def == JobDefOf.AttackStatic ||
-                 job.def == JobDefOf.Wait_Combat);
-
-            Thing  target     = job?.targetA.Thing;
+            var  job        = pawn.CurJob;
+            bool isFighting = job != null && (job.def == JobDefOf.AttackMelee || job.def == JobDefOf.AttackStatic || job.def == JobDefOf.Wait_Combat);
+            Thing  target   = job?.targetA.Thing;
             string combatLine = "";
 
-            if (isFighting && target != null && target is Pawn enemy)
-            {
-                string enemyLabel = enemy.LabelShort ?? "an unknown target";
-                string enemyKind  = enemy.kindDef?.label ?? "unknown kind";
-                int    distance   = (int)IntVec3Utility.DistanceTo(pawn.Position, enemy.Position);
-                combatLine = $"I am attacking {enemyLabel}, a {enemyKind}, located {distance} tiles away.";
-            }
+            if (isFighting && target is Pawn enemy)
+                combatLine = $"I am attacking {enemy.LabelShort ?? "an unknown target"}, a {enemy.kindDef?.label ?? "unknown kind"}, located {(int)IntVec3Utility.DistanceTo(pawn.Position, enemy.Position)} tiles away.";
             else if (isFighting)
-            {
                 combatLine = "I am actively engaged in combat.";
-            }
 
-            var targetedBy = Find.CurrentMap.attackTargetsCache.TargetsHostileToColony
-                .OfType<Pawn>()
-                .Where(e => e.Spawned && e.CurJob?.targetA.Thing == pawn)
-                .ToList();
-
+            var targetedBy = Find.CurrentMap.attackTargetsCache.TargetsHostileToColony.OfType<Pawn>()
+                .Where(e => e.Spawned && e.CurJob?.targetA.Thing == pawn).ToList();
             string targetedLine = "";
             if (targetedBy.Count > 0)
             {
-                var grouped = targetedBy.GroupBy(p => p.kindDef.label)
-                    .Select(g => $"{g.Count()} {g.Key}")
-                    .ToList();
-
-                var avgDistance = targetedBy.Average(p => IntVec3Utility.DistanceTo(p.Position, pawn.Position));
-                targetedLine = $"I am currently being targeted by {string.Join(", ", grouped)}. Average distance to me: {avgDistance:F0} tiles.";
+                var grouped = targetedBy.GroupBy(p => p.kindDef.label).Select(g => $"{g.Count()} {g.Key}").ToList();
+                targetedLine = $"I am currently being targeted by {string.Join(", ", grouped)}. Average distance: {targetedBy.Average(p => IntVec3Utility.DistanceTo(p.Position, pawn.Position)):F0} tiles.";
             }
 
-            float bleed        = pawn.health.hediffSet.BleedRateTotal;
-            string bleedingLine = "";
-            if (bleed > 0.4f)       bleedingLine = "I am bleeding heavily from my wounds.";
-            else if (bleed > 0.1f)  bleedingLine = "I have moderate bleeding.";
-            else if (bleed > 0.01f) bleedingLine = "I have light bleeding.";
+            float  bleed       = pawn.health.hediffSet.BleedRateTotal;
+            string bleedingLine = bleed > 0.4f ? "I am bleeding heavily." : bleed > 0.1f ? "I have moderate bleeding." : bleed > 0.01f ? "I have light bleeding." : "";
 
-            List<string> lines = new List<string>();
+            var lines = new List<string>();
             if (!string.IsNullOrWhiteSpace(combatLine))   lines.Add(combatLine);
             if (!string.IsNullOrWhiteSpace(targetedLine)) lines.Add(targetedLine);
             if (!string.IsNullOrWhiteSpace(bleedingLine)) lines.Add(bleedingLine);
-
-            return lines.Any()
-                ? string.Join(" ", lines)
-                : "I am not in combat, not being targeted, and have no bleeding.";
+            return lines.Any() ? string.Join(" ", lines) : "I am not in combat, not being targeted, and have no bleeding.";
         }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SEND MESSAGE — change 1 of 5
+        // ═══════════════════════════════════════════════════════════════
 
         private void SendMessage()
         {
@@ -533,18 +407,14 @@ namespace EchoColony
 
             ChatGameComponent.Instance.AddLine(pawn, "[USER] " + "EchoColony.UserPrefix".Translate() + userMsg);
             ChatGameComponent.Instance.AddLine(pawn, pawn.LabelShort + ": ...");
-
-            cachedChatLog = null;
-
+            cachedChatLog       = null;
             UpdateContextPrompt();
-            waitingForResponse    = true;
-            forceScrollToBottom   = true;
+            waitingForResponse  = true;
+            forceScrollToBottom = true;
 
-            bool isKobold = MyMod.Settings.modelSource == ModelSource.Local &&
-                            MyMod.Settings.localModelProvider == LocalModelProvider.KoboldAI;
-
-            bool isLMStudio = MyMod.Settings.modelSource == ModelSource.Local &&
-                              MyMod.Settings.localModelProvider == LocalModelProvider.LMStudio;
+            bool isKobold   = MyMod.Settings.modelSource == ModelSource.Local && MyMod.Settings.localModelProvider == LocalModelProvider.KoboldAI;
+            bool isLMStudio = MyMod.Settings.modelSource == ModelSource.Local && MyMod.Settings.localModelProvider == LocalModelProvider.LMStudio;
+            bool isCustom   = MyMod.Settings.modelSource == ModelSource.Custom;
 
             string prompt;
 
@@ -556,10 +426,14 @@ namespace EchoColony
             {
                 prompt = LMStudioPromptBuilder.Build(pawn, userMsg);
             }
+            else if (isCustom)
+            {
+                // Custom provider receives plain text — no Gemini JSON wrapping
+                prompt = ColonistPromptContextBuilder.Build(pawn, userMsg);
+            }
             else
             {
                 messageHistory.Add(new GeminiMessage("user", userMsg));
-                // Pass _visionBase64 so the Gemini JSON builder injects inlineData when vision is on
                 prompt = BuildGeminiChatJson(messageHistory, _visionBase64);
             }
 
@@ -567,74 +441,78 @@ namespace EchoColony
 
             if (isKobold || isLMStudio || MyMod.Settings.modelSource == ModelSource.Local)
             {
-                // Local models don't support vision
                 coroutine = GeminiAPI.SendRequestToLocalModel(prompt, OnResponse);
             }
             else if (MyMod.Settings.modelSource == ModelSource.Player2)
             {
-                // Player2: pass userMsg + optional screenshot
                 coroutine = GeminiAPI.SendRequestToPlayer2(pawn, userMsg, OnResponse, _visionBase64);
             }
             else if (MyMod.Settings.modelSource == ModelSource.OpenRouter)
             {
-                // OpenRouter: pass full prompt + optional screenshot
                 coroutine = GeminiAPI.SendRequestToOpenRouter(prompt, OnResponse, _visionBase64);
+            }
+            else if (isCustom)
+            {
+                // Custom: no vision support
+                coroutine = GeminiAPI.SendRequestToCustomProvider(prompt, OnResponse);
             }
             else
             {
-                // Gemini: prompt already contains inlineData if vision is on (via BuildGeminiChatJson)
+                // Gemini: prompt already has inlineData if vision is on
                 coroutine = GeminiAPI.SendRequestToGemini(prompt, OnResponse);
             }
 
             if (MyMod.Settings.modelSource == ModelSource.Player2 && MyMod.Settings.enableTTS)
             {
                 string voiceId = ChatGameComponent.Instance.GetVoiceForPawn(pawn);
-                if (string.IsNullOrEmpty(voiceId))
-                    TryAssignVoiceToPawn(pawn);
+                if (string.IsNullOrEmpty(voiceId)) TryAssignVoiceToPawn(pawn);
             }
 
             MyStoryModComponent.Instance.StartCoroutine(coroutine);
         }
 
+        // ═══════════════════════════════════════════════════════════════
+        // ON RESPONSE — change 2 of 5
+        // ═══════════════════════════════════════════════════════════════
+
         private void OnResponse(string response)
         {
             var    chat        = ChatGameComponent.Instance.GetChat(pawn);
             string thinkingMsg = pawn.LabelShort + ": ...";
-
-            if (chat.LastOrDefault() == thinkingMsg)
-                chat.RemoveAt(chat.Count - 1);
+            if (chat.LastOrDefault() == thinkingMsg) chat.RemoveAt(chat.Count - 1);
 
             if (string.IsNullOrWhiteSpace(response))
             {
                 Log.Error("[EchoColony] Received empty response from API");
                 string errorMsg = "<color=#FF6B6B>⚠ ERROR: No response received from AI</color>\n<color=#FFAA00>Check your settings:</color>\n";
 
-                if (MyMod.Settings.modelSource == ModelSource.Gemini)
+                switch (MyMod.Settings.modelSource)
                 {
-                    errorMsg += "• Verify your Gemini API key is correct\n";
-                    errorMsg += "• Check your internet connection\n";
-                    errorMsg += $"• Current model: {MyMod.Settings.modelPreferences?.preferredFastModel ?? "auto"}";
-                }
-                else if (MyMod.Settings.modelSource == ModelSource.Player2)
-                {
-                    errorMsg += "• Make sure Player2 is running\n";
-                    errorMsg += "• Check http://127.0.0.1:4315/v1/health";
-                }
-                else if (MyMod.Settings.modelSource == ModelSource.OpenRouter)
-                {
-                    errorMsg += "• Verify your OpenRouter API key\n";
-                    errorMsg += $"• Check endpoint: {MyMod.Settings.openRouterEndpoint}";
-                }
-                else if (MyMod.Settings.modelSource == ModelSource.Local)
-                {
-                    errorMsg += $"• Check if local model is running at: {MyMod.Settings.localModelEndpoint}\n";
-                    errorMsg += $"• Model: {MyMod.Settings.localModelName}";
+                    case ModelSource.Gemini:
+                        errorMsg += "• Verify your Gemini API key is correct\n";
+                        errorMsg += "• Check your internet connection\n";
+                        errorMsg += $"• Current model: {MyMod.Settings.modelPreferences?.preferredFastModel ?? "auto"}";
+                        break;
+                    case ModelSource.Player2:
+                        errorMsg += "• Make sure Player2 is running\n";
+                        errorMsg += "• Check http://127.0.0.1:4315/v1/health";
+                        break;
+                    case ModelSource.OpenRouter:
+                        errorMsg += "• Verify your OpenRouter API key\n";
+                        errorMsg += $"• Check endpoint: {MyMod.Settings.openRouterEndpoint}";
+                        break;
+                    case ModelSource.Local:
+                        errorMsg += $"• Check if local model is running at: {MyMod.Settings.localModelEndpoint}\n";
+                        errorMsg += $"• Model: {MyMod.Settings.localModelName}";
+                        break;
+                    case ModelSource.Custom:
+                        errorMsg += $"• Check your custom endpoint: {MyMod.Settings.customEndpoint}\n";
+                        errorMsg += $"• Model: {(string.IsNullOrEmpty(MyMod.Settings.customModelName) ? "(server default)" : MyMod.Settings.customModelName)}";
+                        break;
                 }
 
                 ChatGameComponent.Instance.AddLine(pawn, errorMsg);
-                cachedChatLog      = null;
-                waitingForResponse = false;
-                forceScrollToBottom = true;
+                cachedChatLog = null; waitingForResponse = false; forceScrollToBottom = true;
                 return;
             }
 
@@ -642,9 +520,7 @@ namespace EchoColony
             {
                 Log.Error($"[EchoColony] API returned error: {response}");
                 ChatGameComponent.Instance.AddLine(pawn, $"<color=#FF6B6B>{response}</color>");
-                cachedChatLog      = null;
-                waitingForResponse = false;
-                forceScrollToBottom = true;
+                cachedChatLog = null; waitingForResponse = false; forceScrollToBottom = true;
                 return;
             }
 
@@ -655,34 +531,16 @@ namespace EchoColony
             {
                 try
                 {
-                    var actionExecutorType = typeof(ActionExecutor);
-                    if (actionExecutorType != null)
+                    var processed = ActionExecutor.ProcessResponse(pawn, response);
+                    if (processed != null)
                     {
-                        var processed = ActionExecutor.ProcessResponse(pawn, response);
-                        if (processed != null)
-                        {
-                            cleanResponse = processed.CleanResponse ?? response;
-                            actionResults = processed.ExecutionResults ?? new List<string>();
-
-                            Log.Message($"[EchoColony] Processed response for {pawn.LabelShort}: {actionResults.Count} action(s) executed");
-                        }
-                        else
-                        {
-                            Log.Warning("[EchoColony] ActionExecutor.ProcessResponse returned null, using raw response");
-                            cleanResponse = response;
-                        }
+                        cleanResponse = processed.CleanResponse ?? response;
+                        actionResults = processed.ExecutionResults ?? new List<string>();
+                        Log.Message($"[EchoColony] Processed response for {pawn.LabelShort}: {actionResults.Count} action(s) executed");
                     }
-                    else
-                    {
-                        Log.Warning("[EchoColony] ActionExecutor class not found, using raw response");
-                        cleanResponse = response;
-                    }
+                    else cleanResponse = response;
                 }
-                catch (TypeLoadException)
-                {
-                    Log.Warning("[EchoColony] ActionExecutor class not available (this is OK if Actions system isn't compiled), using raw response");
-                    cleanResponse = response;
-                }
+                catch (TypeLoadException) { cleanResponse = response; }
                 catch (Exception ex)
                 {
                     Log.Error($"[EchoColony] Error processing actions: {ex.Message}\nStack: {ex.StackTrace}");
@@ -692,33 +550,23 @@ namespace EchoColony
 
             ChatGameComponent.Instance.AddLine(pawn, pawn.LabelShort + ": " + cleanResponse);
 
-            if (actionResults != null && actionResults.Any())
-            {
+            if (actionResults?.Any() == true)
                 foreach (var result in actionResults)
                     ChatGameComponent.Instance.AddLine(pawn, $"<color=#FFD700>{result}</color>");
-            }
 
-            cachedChatLog      = null;
-            waitingForResponse = false;
-            input              = "";
-            forceScrollToBottom = true;
+            cachedChatLog = null; waitingForResponse = false; input = ""; forceScrollToBottom = true;
             messageHistory.Add(new GeminiMessage("model", response));
-
             conversationTurnCount++;
             Log.Message($"[EchoColony] Turn completed #{conversationTurnCount} for {pawn.LabelShort}");
 
             int turnsSinceLastSave = conversationTurnCount - lastSavedTurnCount;
-            Log.Message($"[EchoColony] Turns since last save: {turnsSinceLastSave}");
-
             if (turnsSinceLastSave >= 4 && turnsSinceLastSave % 4 == 0)
                 SaveMemoryAutomatically();
 
             if (MyMod.Settings.modelSource == ModelSource.Player2 && MyMod.Settings.enableTTS && MyMod.Settings.autoPlayVoice)
             {
                 string voiceId = ChatGameComponent.Instance.GetVoiceForPawn(pawn);
-                if (string.IsNullOrEmpty(voiceId))
-                    TryAssignVoiceToPawn(pawn);
-
+                if (string.IsNullOrEmpty(voiceId)) TryAssignVoiceToPawn(pawn);
                 TrySpeakLastLine(pawn);
             }
         }
@@ -726,44 +574,27 @@ namespace EchoColony
         private string CleanTextForTTS(string text)
         {
             if (string.IsNullOrWhiteSpace(text)) return "";
-
             string cleanText = text;
-
             string colonistPrefix = pawn.LabelShort + ": ";
-            if (cleanText.StartsWith(colonistPrefix))
-                cleanText = cleanText.Substring(colonistPrefix.Length);
-
+            if (cleanText.StartsWith(colonistPrefix)) cleanText = cleanText.Substring(colonistPrefix.Length);
             cleanText = System.Text.RegularExpressions.Regex.Replace(cleanText, @"<b><i>.*?</i></b>", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             cleanText = CleanText(cleanText);
             cleanText = CleanColors(cleanText);
             cleanText = System.Text.RegularExpressions.Regex.Replace(cleanText, @"\s+", " ").Trim();
-
             return cleanText;
         }
 
+        // ═══════════════════════════════════════════════════════════════
+        // SAVE MEMORY AUTOMATICALLY — change 3 of 5
+        // ═══════════════════════════════════════════════════════════════
+
         private void SaveMemoryAutomatically()
         {
-            Log.Message($"[EchoColony] Attempting to save automatic memory for {pawn.LabelShort} (turn {conversationTurnCount}, last saved: {lastSavedTurnCount})");
-
             int turnsSinceLastSave = conversationTurnCount - lastSavedTurnCount;
-            if (turnsSinceLastSave < 4)
-            {
-                Log.Message($"[EchoColony] Only {turnsSinceLastSave} turns since last save, skipping");
-                return;
-            }
-
-            if (messageHistory.Count < 4)
-            {
-                Log.Message($"[EchoColony] Memory not saved: Only {messageHistory.Count} messages (minimum 4)");
-                return;
-            }
+            if (turnsSinceLastSave < 4 || messageHistory.Count < 4) return;
 
             var manager = ColonistMemoryManager.GetOrCreate();
-            if (manager == null)
-            {
-                Log.Warning("[EchoColony] Could not get ColonistMemoryManager for auto-save");
-                return;
-            }
+            if (manager == null) return;
 
             Messages.Message("EchoColony.SavingMemories".Translate(), MessageTypeDefOf.SilentInput, false);
 
@@ -774,71 +605,44 @@ namespace EchoColony
                 .TakeLast(8)
                 .Select(m => (m.role == "user" ? "Jugador: " : pawn.LabelShort + ": ") + m.content);
 
-            if (!recentMessages.Any())
-            {
-                Log.Message("[EchoColony] No new messages to save");
-                return;
-            }
+            if (!recentMessages.Any()) return;
 
-            string combined    = string.Join("\n", recentMessages);
-            string promptResumen = "Summarize this part of the conversation as if it were a personal memory from the colonist's perspective. Keep it brief, intimate, and natural—avoid literal quotes.";
-            string fullPrompt  = promptResumen + "\n\n" + combined;
-
-            Log.Message($"[EchoColony] Generating summary for {recentMessages.Count()} new messages using {MyMod.Settings.modelSource}");
+            string combined      = string.Join("\n", recentMessages);
+            string fullPrompt    = "Summarize this part of the conversation as if it were a personal memory from the colonist's perspective. Keep it brief, intimate, and natural—avoid literal quotes.\n\n" + combined;
 
             System.Action<string> memoryCallback = (summary) =>
             {
-                Log.Message($"[EchoColony] AI response received for memory");
-
                 if (string.IsNullOrWhiteSpace(summary))
-                {
-                    Log.Warning("[EchoColony] Empty memory summary, using fallback");
                     summary = $"Conversation with the player during turn {conversationTurnCount}. {combined.Substring(0, Math.Min(100, combined.Length))}...";
-                }
 
                 var tracker = manager.GetTrackerFor(pawn);
                 if (tracker != null)
                 {
-                    int    today      = GenDate.DaysPassed;
-                    string autoMemory = summary.Trim();
-
                     try
                     {
-                        tracker.SaveMemoryForDay(today, autoMemory);
+                        tracker.SaveMemoryForDay(GenDate.DaysPassed, summary.Trim());
                         lastSavedTurnCount = conversationTurnCount;
-                        Log.Message($"[EchoColony] Automatic memory saved for {pawn.LabelShort} (turn {conversationTurnCount}, day {today})");
                         Messages.Message("EchoColony.MemoriesSaved".Translate(), MessageTypeDefOf.SilentInput, false);
                     }
-                    catch (Exception ex)
-                    {
-                        Log.Error($"[EchoColony] Error saving memory: {ex.Message}");
-                    }
-                }
-                else
-                {
-                    Log.Error("[EchoColony] Tracker became NULL during callback");
+                    catch (Exception ex) { Log.Error($"[EchoColony] Error saving memory: {ex.Message}"); }
                 }
             };
 
             try
             {
-                bool isKobold   = MyMod.Settings.modelSource == ModelSource.Local &&
-                                  MyMod.Settings.localModelProvider == LocalModelProvider.KoboldAI;
-                bool isLMStudio = MyMod.Settings.modelSource == ModelSource.Local &&
-                                  MyMod.Settings.localModelProvider == LocalModelProvider.LMStudio;
+                bool isKobold   = MyMod.Settings.modelSource == ModelSource.Local && MyMod.Settings.localModelProvider == LocalModelProvider.KoboldAI;
+                bool isLMStudio = MyMod.Settings.modelSource == ModelSource.Local && MyMod.Settings.localModelProvider == LocalModelProvider.LMStudio;
 
                 IEnumerator memoryCoroutine;
 
                 if (isKobold)
                 {
-                    string koboldPrompt = KoboldPromptBuilder.Build(pawn, fullPrompt);
-                    memoryCoroutine     = GeminiAPI.SendRequestToLocalModel(koboldPrompt, memoryCallback);
+                    memoryCoroutine = GeminiAPI.SendRequestToLocalModel(KoboldPromptBuilder.Build(pawn, fullPrompt), memoryCallback);
                     Log.Message("[EchoColony] Starting memory with KoboldAI");
                 }
                 else if (isLMStudio)
                 {
-                    string lmPrompt = LMStudioPromptBuilder.Build(pawn, fullPrompt);
-                    memoryCoroutine = GeminiAPI.SendRequestToLocalModel(lmPrompt, memoryCallback);
+                    memoryCoroutine = GeminiAPI.SendRequestToLocalModel(LMStudioPromptBuilder.Build(pawn, fullPrompt), memoryCallback);
                     Log.Message("[EchoColony] Starting memory with LMStudio");
                 }
                 else if (MyMod.Settings.modelSource == ModelSource.Local)
@@ -848,7 +652,6 @@ namespace EchoColony
                 }
                 else if (MyMod.Settings.modelSource == ModelSource.Player2)
                 {
-                    // Memory summarization is text-only — no vision needed
                     memoryCoroutine = GeminiAPI.SendRequestToPlayer2(pawn, fullPrompt, memoryCallback);
                     Log.Message("[EchoColony] Starting memory with Player2");
                 }
@@ -857,69 +660,49 @@ namespace EchoColony
                     memoryCoroutine = GeminiAPI.SendRequestToOpenRouter(fullPrompt, memoryCallback);
                     Log.Message("[EchoColony] Starting memory with OpenRouter");
                 }
+                else if (MyMod.Settings.modelSource == ModelSource.Custom)
+                {
+                    memoryCoroutine = GeminiAPI.SendRequestToCustomProvider(fullPrompt, memoryCallback);
+                    Log.Message("[EchoColony] Starting memory with Custom Provider");
+                }
                 else
                 {
-                    var tempHistory = new List<GeminiMessage>
-                    {
-                        new GeminiMessage("user", fullPrompt)
-                    };
-                    string jsonPrompt = BuildGeminiChatJson(tempHistory);
+                    string jsonPrompt = BuildGeminiChatJson(new List<GeminiMessage> { new GeminiMessage("user", fullPrompt) });
                     memoryCoroutine   = GeminiAPI.SendRequestToGemini(jsonPrompt, memoryCallback);
                     Log.Message("[EchoColony] Starting memory with Gemini");
                 }
 
                 if (memoryCoroutine != null && MyStoryModComponent.Instance != null)
                     MyStoryModComponent.Instance.StartCoroutine(memoryCoroutine);
-                else
-                    Log.Error("[EchoColony] Could not start coroutine for memory");
             }
-            catch (Exception ex)
-            {
-                Log.Error($"[EchoColony] Error starting memory generation: {ex.Message}");
-            }
+            catch (Exception ex) { Log.Error($"[EchoColony] Error starting memory generation: {ex.Message}"); }
         }
 
         private void TryAssignVoiceToPawn(Pawn pawn)
         {
             if (TTSVoiceCache.Voices == null || TTSVoiceCache.Voices.Count == 0) return;
-
-            string targetGender = pawn.gender == Gender.Male   ? "male"   :
-                                  pawn.gender == Gender.Female ? "female" :
-                                  Rand.Bool ? "male" : "female";
-
-            var matchingVoices = TTSVoiceCache.Voices
-                .Where(v => v.gender == targetGender && v.language.ToLowerInvariant().Contains("english"))
-                .ToList();
-
-            if (matchingVoices.Count == 0)
-                matchingVoices = TTSVoiceCache.Voices.Where(v => v.language.ToLowerInvariant().Contains("english")).ToList();
-
-            if (matchingVoices.Count == 0)
-                matchingVoices = TTSVoiceCache.Voices.ToList();
-
-            var    selectedVoice = matchingVoices.RandomElement();
-            string voiceId       = selectedVoice.id;
-
-            ChatGameComponent.Instance.SetVoiceForPawn(pawn, voiceId);
-            ColonistVoiceManager.SetVoice(pawn, voiceId);
-
+            string targetGender = pawn.gender == Gender.Male ? "male" : pawn.gender == Gender.Female ? "female" : Rand.Bool ? "male" : "female";
+            var matchingVoices  = TTSVoiceCache.Voices.Where(v => v.gender == targetGender && v.language.ToLowerInvariant().Contains("english")).ToList();
+            if (matchingVoices.Count == 0) matchingVoices = TTSVoiceCache.Voices.Where(v => v.language.ToLowerInvariant().Contains("english")).ToList();
+            if (matchingVoices.Count == 0) matchingVoices = TTSVoiceCache.Voices.ToList();
+            var selectedVoice = matchingVoices.RandomElement();
+            ChatGameComponent.Instance.SetVoiceForPawn(pawn, selectedVoice.id);
+            ColonistVoiceManager.SetVoice(pawn, selectedVoice.id);
             Log.Message($"[EchoColony] (Late) Assigned voice '{selectedVoice.name}' to {pawn.LabelShort}");
         }
+
+        // ═══════════════════════════════════════════════════════════════
+        // POST CLOSE — change 4 of 5
+        // ═══════════════════════════════════════════════════════════════
 
         public override void PostClose()
         {
             base.PostClose();
 
-            if (lastSavedTurnCount > conversationTurnCount)
-                lastSavedTurnCount = conversationTurnCount;
-
+            if (lastSavedTurnCount > conversationTurnCount) lastSavedTurnCount = conversationTurnCount;
             int unsavedTurns = conversationTurnCount - lastSavedTurnCount;
 
-            if (messageHistory == null || messageHistory.Count <= 1)
-            {
-                Log.Message($"[EchoColony] Closing chat with {pawn.LabelShort}. No conversation history found.");
-                return;
-            }
+            if (messageHistory == null || messageHistory.Count <= 1) return;
 
             int messagesToSkip = lastSavedTurnCount * 2;
             var remainingMessagesList = messageHistory
@@ -928,44 +711,27 @@ namespace EchoColony
                 .Select(m => (m.role == "user" ? "Jugador: " : pawn.LabelShort + ": ") + m.content)
                 .ToList();
 
-            if (!remainingMessagesList.Any() || unsavedTurns < 1)
-            {
-                Log.Message($"[EchoColony] Closing chat with {pawn.LabelShort}. No new meaningful content to save.");
-                return;
-            }
+            if (!remainingMessagesList.Any() || unsavedTurns < 1) return;
 
             string combined = string.Join("\n", remainingMessagesList);
-
-            if (combined.Length < 30)
-            {
-                Log.Message($"[EchoColony] Content too short ({combined.Length} chars), skipping memory generation.");
-                lastSavedTurnCount = conversationTurnCount;
-                return;
-            }
+            if (combined.Length < 30) { lastSavedTurnCount = conversationTurnCount; return; }
 
             var manager = ColonistMemoryManager.GetOrCreate();
             var tracker = manager?.GetTrackerFor(pawn);
             if (tracker == null) return;
 
             int today = GenDate.DaysPassed;
-
             var existingMemory = tracker.GetMemoryForDay(today);
             if (!string.IsNullOrEmpty(existingMemory))
             {
-                string newContentSample = combined.Length > 40 ? combined.Substring(0, 40) : combined;
-                if (existingMemory.Contains(newContentSample, System.StringComparison.OrdinalIgnoreCase))
-                {
-                    Log.Message("[EchoColony] New content already exists in today's memory. Skipping AI call.");
-                    lastSavedTurnCount = conversationTurnCount;
-                    return;
-                }
+                string sample = combined.Length > 40 ? combined.Substring(0, 40) : combined;
+                if (existingMemory.Contains(sample, System.StringComparison.OrdinalIgnoreCase))
+                { lastSavedTurnCount = conversationTurnCount; return; }
             }
 
-            Log.Message($"[EchoColony] Generating final memory for {pawn.LabelShort} ({combined.Length} chars of new content)");
             Messages.Message("EchoColony.SavingMemories".Translate(), MessageTypeDefOf.SilentInput, false);
 
-            string promptResumen = "Summarize this final part of the conversation as if it were a personal memory from the colonist's perspective. Keep it brief, intimate, and natural—avoid literal quotes.";
-            string fullPrompt    = promptResumen + "\n\n" + combined;
+            string fullPrompt = "Summarize this final part of the conversation as if it were a personal memory from the colonist's perspective. Keep it brief, intimate, and natural—avoid literal quotes.\n\n" + combined;
 
             System.Action<string> finalMemoryCallback = (summary) =>
             {
@@ -980,7 +746,7 @@ namespace EchoColony
             try
             {
                 IEnumerator finalCoroutine = null;
-                bool        isLocal        = MyMod.Settings.modelSource == ModelSource.Local;
+                bool isLocal = MyMod.Settings.modelSource == ModelSource.Local;
 
                 if (isLocal)
                 {
@@ -992,13 +758,11 @@ namespace EchoColony
                     finalCoroutine = GeminiAPI.SendRequestToLocalModel(localPrompt, finalMemoryCallback);
                 }
                 else if (MyMod.Settings.modelSource == ModelSource.Player2)
-                {
                     finalCoroutine = GeminiAPI.SendRequestToPlayer2(pawn, fullPrompt, finalMemoryCallback);
-                }
                 else if (MyMod.Settings.modelSource == ModelSource.OpenRouter)
-                {
                     finalCoroutine = GeminiAPI.SendRequestToOpenRouter(fullPrompt, finalMemoryCallback);
-                }
+                else if (MyMod.Settings.modelSource == ModelSource.Custom)
+                    finalCoroutine = GeminiAPI.SendRequestToCustomProvider(fullPrompt, finalMemoryCallback);
                 else
                 {
                     string jsonPrompt = BuildGeminiChatJson(new List<GeminiMessage> { new GeminiMessage("user", fullPrompt) });
@@ -1008,35 +772,30 @@ namespace EchoColony
                 if (finalCoroutine != null)
                     MyStoryModComponent.Instance.StartCoroutine(finalCoroutine);
             }
-            catch (Exception ex)
-            {
-                Log.Error($"[EchoColony] Error generating final memory: {ex.Message}");
-            }
+            catch (Exception ex) { Log.Error($"[EchoColony] Error generating final memory: {ex.Message}"); }
         }
 
         private string GetDisplayMessage(string msg)
         {
-            if (msg.StartsWith("[DATE_SEPARATOR]"))
-                return msg.Substring("[DATE_SEPARATOR]".Length).Trim();
-            else if (msg.StartsWith("[USER]"))
-                return msg.Substring(6);
-            else
-                return msg;
+            if (msg.StartsWith("[DATE_SEPARATOR]")) return msg.Substring("[DATE_SEPARATOR]".Length).Trim();
+            if (msg.StartsWith("[USER]"))           return msg.Substring(6);
+            return msg;
         }
 
         private void DrawDateSeparator(Rect rect, string msg)
         {
-            string dateText = msg.Substring("[DATE_SEPARATOR]".Length).Trim();
-
             Widgets.DrawBoxSolid(rect, new Color(0.3f, 0.4f, 0.5f, 0.3f));
-
             Text.Anchor = TextAnchor.MiddleCenter;
             Text.Font   = GameFont.Small;
             GUI.color   = new Color(0.8f, 0.9f, 1f, 0.9f);
-            Widgets.Label(rect, dateText);
+            Widgets.Label(rect, msg.Substring("[DATE_SEPARATOR]".Length).Trim());
             GUI.color   = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
         }
+
+        // ═══════════════════════════════════════════════════════════════
+        // DRAW REGULAR MESSAGE — change 5 of 5 (regeneration)
+        // ═══════════════════════════════════════════════════════════════
 
         private void DrawRegularMessage(Rect rect, string msg, int index, float viewWidth, List<string> currentChatLog)
         {
@@ -1056,31 +815,21 @@ namespace EchoColony
                     chatLog[index] = msg.StartsWith("[USER]")
                         ? "[USER] " + editedMessage.Replace("You: ", "")
                         : pawn.LabelShort + ": " + editedMessage.Replace(pawn.LabelShort + ": ", "").TrimStart();
-                    editingIndex  = -1;
-                    editedMessage = "";
-                    cachedChatLog = null;
+                    editingIndex = -1; editedMessage = ""; cachedChatLog = null;
                 }
-
                 if (Widgets.ButtonText(new Rect(viewWidth - 90f, rect.y + 5f, 80f, 25f), "EchoColony.CancelButton".Translate()))
-                {
-                    editingIndex  = -1;
-                    editedMessage = "";
-                }
+                { editingIndex = -1; editedMessage = ""; }
             }
             else
             {
-                if (msg.StartsWith("[USER]"))
-                    GUI.color = new Color(0.8f, 0.9f, 1f, 1f);
-                else
-                    GUI.color = new Color(1f, 0.95f, 0.8f, 1f);
-
+                GUI.color = msg.StartsWith("[USER]") ? new Color(0.8f, 0.9f, 1f, 1f) : new Color(1f, 0.95f, 0.8f, 1f);
                 Widgets.Label(labelRect, displayMsg);
                 GUI.color = Color.white;
 
-                bool isUserMsg       = msg.StartsWith("[USER]");
-                bool hasNext         = index + 1 < currentChatLog.Count;
-                bool nextIsColonist  = hasNext && currentChatLog[index + 1].StartsWith(pawn.LabelShort + ":");
-                bool isLastExchange  = isUserMsg && nextIsColonist;
+                bool isUserMsg      = msg.StartsWith("[USER]");
+                bool hasNext        = index + 1 < currentChatLog.Count;
+                bool nextIsColonist = hasNext && currentChatLog[index + 1].StartsWith(pawn.LabelShort + ":");
+                bool isLastExchange = isUserMsg && nextIsColonist;
 
                 if (isLastExchange)
                 {
@@ -1098,8 +847,7 @@ namespace EchoColony
                             messageHistory.RemoveAt(messageHistory.Count - 1);
                             messageHistory.RemoveAt(messageHistory.Count - 1);
                             conversationTurnCount = Math.Max(0, conversationTurnCount - 1);
-                            if (lastSavedTurnCount > conversationTurnCount)
-                                lastSavedTurnCount = conversationTurnCount;
+                            if (lastSavedTurnCount > conversationTurnCount) lastSavedTurnCount = conversationTurnCount;
                         }
 
                         if (MyMod.Settings.modelSource == ModelSource.Player2)
@@ -1124,26 +872,19 @@ namespace EchoColony
                             {
                                 string cleanText = CleanTextForTTS(displayMsg);
                                 if (!string.IsNullOrWhiteSpace(cleanText))
-                                {
-                                    MyStoryModComponent.Instance.StartCoroutine(
-                                        TTSManager.Speak(cleanText, voiceId, "female", "en_US", 1f)
-                                    );
-                                }
+                                    MyStoryModComponent.Instance.StartCoroutine(TTSManager.Speak(cleanText, voiceId, "female", "en_US", 1f));
                             }
                         }
                     }
 
                     if (Widgets.ButtonText(new Rect(viewWidth - 180f, rect.y, 80f, 25f), "EchoColony.EditButton".Translate()))
-                    {
-                        editingIndex  = index;
-                        editedMessage = displayMsg;
-                    }
+                    { editingIndex = index; editedMessage = displayMsg; }
 
                     bool isRegenerable = false;
                     if (index >= 1 && currentChatLog[index - 1].StartsWith("[USER]"))
                     {
                         isRegenerable = (index == currentChatLog.Count - 1) ||
-                            (index + 1 == currentChatLog.Count - 1 && currentChatLog[index + 1].StartsWith("[USER]") == false);
+                            (index + 1 == currentChatLog.Count - 1 && !currentChatLog[index + 1].StartsWith("[USER]"));
                     }
                     bool showRegen = msg.StartsWith(pawn.LabelShort + ":") && !msg.EndsWith("...") && isRegenerable;
 
@@ -1169,11 +910,10 @@ namespace EchoColony
                                 chatLog.RemoveAt(chatLog.Count - 1);
 
                             ChatGameComponent.Instance.AddLine(pawn, pawn.LabelShort + ": ...");
-                            cachedChatLog   = null;
-                            waitingForResponse = true;
-                            forceScrollToBottom = true;
+                            cachedChatLog = null; waitingForResponse = true; forceScrollToBottom = true;
 
                             IEnumerator coroutine;
+
                             if (MyMod.Settings.modelSource == ModelSource.Local)
                             {
                                 if (MyMod.Settings.localModelProvider == LocalModelProvider.KoboldAI)
@@ -1184,14 +924,12 @@ namespace EchoColony
                                     coroutine = GeminiAPI.SendRequestToLocalModel(userMsg, OnResponse);
                             }
                             else if (MyMod.Settings.modelSource == ModelSource.Player2)
-                            {
-                                // Regeneration also benefits from vision
                                 coroutine = GeminiAPI.SendRequestToPlayer2(pawn, userMsg, OnResponse, _visionBase64);
-                            }
                             else if (MyMod.Settings.modelSource == ModelSource.OpenRouter)
-                            {
                                 coroutine = GeminiAPI.SendRequestToOpenRouter(userMsg, OnResponse, _visionBase64);
-                            }
+                            else if (MyMod.Settings.modelSource == ModelSource.Custom)
+                                // Regeneration: rebuild plain text prompt
+                                coroutine = GeminiAPI.SendRequestToCustomProvider(ColonistPromptContextBuilder.Build(pawn, userMsg), OnResponse);
                             else
                             {
                                 string json = BuildGeminiChatJson(messageHistory, _visionBase64);

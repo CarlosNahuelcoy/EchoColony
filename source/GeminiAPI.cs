@@ -106,7 +106,6 @@ namespace EchoColony
             return result;
         }
 
-        /// Debug only — sends the screenshot with a description prompt and saves result to a txt file.
         public static IEnumerator DebugDescribeScreenshot(string imageBase64)
         {
             if (MyMod.Settings?.debugMode != true || string.IsNullOrEmpty(imageBase64))
@@ -312,6 +311,10 @@ namespace EchoColony
                     yield return SendRequestToGemini(prompt, onResponse, imageBase64);
                     yield break;
 
+                case ModelSource.Custom:
+                    yield return SendRequestToCustomProvider(prompt, onResponse);
+                    yield break;
+
                 default:
                     onResponse?.Invoke("⚠ ERROR: Unknown model source - Check mod settings");
                     yield break;
@@ -484,19 +487,17 @@ namespace EchoColony
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // PLAYER2 REQUESTS — always use Web API
+        // PLAYER2 REQUESTS
         // ═══════════════════════════════════════════════════════════════
 
         public static IEnumerator SendRequestToPlayer2(Pawn pawn, string userInput, Action<string> onResponse, string imageBase64 = null)
         {
-            // Validate authentication
             if (!Player2AuthManager.IsAuthenticated)
             {
                 onResponse?.Invoke("⚠ ERROR: Not connected to Player2\n\nGo to Mod Settings → AI Model Configuration and connect your account.");
                 yield break;
             }
 
-            // Health check
             string healthCheckUrl = Player2AuthManager.WebApiBase + "/health";
             var healthRequest     = UnityWebRequest.Get(healthCheckUrl);
             healthRequest.timeout = 4;
@@ -869,6 +870,116 @@ namespace EchoColony
             messages.Add(userMsg);
             payload["messages"]  = messages;
             return payload.ToString();
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // CUSTOM PROVIDER (any OpenAI-compatible endpoint)
+        //
+        // Works with: LMStudio (server mode), Ollama (OpenAI compat),
+        // Groq, Together AI, Mistral API, and any /v1/chat/completions.
+        // ═══════════════════════════════════════════════════════════════
+
+        public static IEnumerator SendRequestToCustomProvider(string prompt, Action<string> onResponse)
+        {
+            string endpoint = MyMod.Settings.customEndpoint;
+            string apiKey   = MyMod.Settings.customApiKey;
+            string model    = MyMod.Settings.customModelName;
+
+            if (string.IsNullOrWhiteSpace(endpoint))
+            {
+                onResponse?.Invoke("⚠ ERROR: Custom provider endpoint not configured.\n" +
+                                   "Go to Mod Settings → AI Model Configuration → Custom Provider.");
+                yield break;
+            }
+
+            var payload  = new JSONObject();
+            if (!string.IsNullOrWhiteSpace(model))
+                payload["model"] = model;
+            payload["stream"] = false;
+
+            var messages    = new JSONArray();
+            var userMsg     = new JSONObject();
+            userMsg["role"]    = "user";
+            userMsg["content"] = prompt;
+            messages.Add(userMsg);
+            payload["messages"] = messages;
+
+            string jsonBody = payload.ToString();
+
+            if (MyMod.Settings?.debugMode == true)
+                LogDebugResponse("CustomProvider_REQUEST",
+                    $"Endpoint: {endpoint}\nModel: {(string.IsNullOrWhiteSpace(model) ? "(server default)" : model)}\n" +
+                    $"Body (first 300 chars): {jsonBody.Substring(0, Math.Min(300, jsonBody.Length))}...");
+
+            int   maxRetries = 3;
+            float retryDelay = 1f;
+
+            for (int attempt = 0; attempt < maxRetries; attempt++)
+            {
+                var request = new UnityWebRequest(endpoint, "POST")
+                {
+                    uploadHandler   = new UploadHandlerRaw(Encoding.UTF8.GetBytes(jsonBody)),
+                    downloadHandler = new DownloadHandlerBuffer()
+                };
+                request.SetRequestHeader("Content-Type", "application/json");
+
+                if (!string.IsNullOrWhiteSpace(apiKey))
+                    request.SetRequestHeader("Authorization", $"Bearer {apiKey}");
+
+                yield return request.SendWebRequest();
+
+                string responseText = request.downloadHandler.text;
+
+#if UNITY_2020_2_OR_NEWER
+                bool hasError = request.result != UnityWebRequest.Result.Success;
+#else
+                bool hasError = request.isNetworkError || request.isHttpError;
+#endif
+
+                if (!hasError)
+                {
+                    if (MyMod.Settings?.debugMode == true)
+                        LogDebugResponse("CustomProvider_RESPONSE", responseText);
+
+                    string reply = ParseStandardLLMResponse(responseText);
+                    if (reply.StartsWith("⚠ ERROR:") || reply.StartsWith("ERROR:"))
+                    { onResponse?.Invoke(reply); yield break; }
+
+                    reply = TrimTextAfterHashtags(reply);
+                    reply = CleanResponse(reply);
+
+                    if (MyMod.Settings?.debugMode == true)
+                        LogDebugResponse("CustomProvider_FINAL", reply);
+
+                    onResponse?.Invoke(reply);
+                    yield break;
+                }
+
+                if (request.responseCode == 429 || request.responseCode == 500 || request.responseCode == 503)
+                {
+                    if (attempt < maxRetries - 1)
+                    {
+                        if (MyMod.Settings?.debugMode == true)
+                            LogDebugResponse("CustomProvider_RETRY",
+                                $"Attempt {attempt + 1}/{maxRetries} failed ({request.responseCode}). " +
+                                $"Retrying in {retryDelay}s...\n{responseText}");
+                        yield return new WaitForSeconds(retryDelay);
+                        retryDelay *= 2f;
+                        continue;
+                    }
+                }
+
+                if (MyMod.Settings?.debugMode == true)
+                    LogDebugResponse("CustomProvider_ERROR", $"Status: {request.responseCode}\n{responseText}");
+
+                onResponse?.Invoke(
+                    $"⚠ ERROR: Custom provider connection failed after {maxRetries} attempts\n\n" +
+                    $"Endpoint: {endpoint}\n" +
+                    $"Model: {(string.IsNullOrWhiteSpace(model) ? "(server default)" : model)}\n" +
+                    $"HTTP {request.responseCode}: {request.error}\n\n" +
+                    $"Check that your endpoint is running and the API key is correct.");
+                yield break;
+            }
         }
 
         // ═══════════════════════════════════════════════════════════════

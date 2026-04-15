@@ -70,6 +70,7 @@ namespace EchoColony
 
             // Reset monologue state on game load
             Conversations.PawnMonologueManager.OnGameLoaded();
+            TalesCache.Clear();
 
             // Initialize SpontaneousMessageTracker
             var spontaneousTracker = Current.Game.GetComponent<SpontaneousMessages.SpontaneousMessageTracker>();
@@ -229,6 +230,7 @@ namespace EchoColony
                     Actions.Mood.AddPlayerThoughtAction.CleanupOldCooldowns();
                     Animals.Actions.AnimalActionParser.CleanupOldCooldowns();
                     Mechs.Actions.MechActionParser.CleanupOldCooldowns();
+                    TalesCache.PruneStale();   // ← agregás esta línea
                     lastCleanupTick = currentTick;
                     Conversations.PawnMonologueManager.Tick();
                     Log.Message("[EchoColony] Cleaned up old action cooldowns");

@@ -63,7 +63,7 @@ namespace EchoColony.Animals
         public override void ExposeData()
         {
             base.ExposeData();
-            Scribe_Collections.Look(ref animalChats, "animalChats", LookMode.Value, LookMode.Deep);
+            Scribe_Collections.Look(ref animalChats, "animalChats", LookMode.Value, LookMode.Value);
 
             if (Scribe.mode == LoadSaveMode.LoadingVars && animalChats == null)
             {

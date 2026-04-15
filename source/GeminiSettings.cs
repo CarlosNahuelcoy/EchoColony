@@ -12,7 +12,8 @@ namespace EchoColony
         Player2,
         Gemini,
         Local,
-        OpenRouter
+        OpenRouter,
+        Custom
     }
 
     public enum LocalModelProvider
@@ -66,13 +67,25 @@ namespace EchoColony
         public GeminiModelPreferences modelPreferences = new GeminiModelPreferences();
         public bool useAdvancedModel = false;
 
-        public string            localModelEndpoint = "http://localhost:11434/api/generate";
-        public string            localModelName     = "llama3.2:latest";
+        public string             localModelEndpoint = "http://localhost:11434/api/generate";
+        public string             localModelName     = "llama3.2:latest";
         public LocalModelProvider localModelProvider = LocalModelProvider.LMStudio;
 
         public string openRouterEndpoint = "https://openrouter.ai/api/v1/chat/completions";
         public string openRouterApiKey   = "";
         public string openRouterModel    = "mistral-7b";
+
+        // ═══════════════════════════════════════════════════════════════
+        // CUSTOM PROVIDER (any OpenAI-compatible endpoint)
+        // ═══════════════════════════════════════════════════════════════
+        // Works with: LMStudio (server mode), Ollama (OpenAI compat),
+        // Groq, Together AI, Mistral API, and any /v1/chat/completions endpoint.
+
+        public string customEndpoint  = "http://localhost:1234/v1/chat/completions";
+        public string customApiKey    = "";
+        public string customModelName = "";
+
+        // ═══════════════════════════════════════════════════════════════
 
         public bool debugMode    = false;
         public bool enableTTS    = true;
@@ -91,8 +104,6 @@ namespace EchoColony
         // PLAYER2 WEB API AUTH
         // ═══════════════════════════════════════════════════════════════
 
-        /// API key obtained via Player2 auth flow.
-        /// Stored on device only — never sent anywhere except Player2 servers.
         public string player2ApiKey = "";
 
         // ═══════════════════════════════════════════════════════════════
@@ -196,6 +207,11 @@ namespace EchoColony
             Scribe_Values.Look(ref openRouterApiKey,   "OpenRouterApiKey",   "");
             Scribe_Values.Look(ref openRouterModel,    "OpenRouterModel",    "mistral-7b");
 
+            // Custom provider
+            Scribe_Values.Look(ref customEndpoint,  "customEndpoint",  "http://localhost:1234/v1/chat/completions");
+            Scribe_Values.Look(ref customApiKey,    "customApiKey",    "");
+            Scribe_Values.Look(ref customModelName, "customModelName", "");
+
             Scribe_Values.Look(ref enableTTS,     "EnableTTS",     true);
             Scribe_Values.Look(ref autoPlayVoice, "AutoPlayVoice", true);
             Scribe_Collections.Look(ref colonistVoices, "ColonistVoices", LookMode.Value, LookMode.Value);
@@ -207,11 +223,8 @@ namespace EchoColony
             Scribe_Values.Look(ref allowExtremeActions,           "allowExtremeActions",           false);
             Scribe_Values.Look(ref enableStorytellerButton,       "enableStorytellerButton",       true);
 
-            // Player2 Web API auth
             Scribe_Values.Look(ref player2ApiKey, "player2ApiKey", "");
-
-            // Vision system
-            Scribe_Values.Look(ref enableVision, "enableVision", false);
+            Scribe_Values.Look(ref enableVision,  "enableVision",  false);
 
             Scribe_Values.Look(ref spontaneousMessageMode,             "spontaneousMessageMode",             SpontaneousMessageMode.Disabled);
             Scribe_Values.Look(ref defaultMaxMessagesPerColonistPerDay,"defaultMaxMessagesPerColonistPerDay", 1);

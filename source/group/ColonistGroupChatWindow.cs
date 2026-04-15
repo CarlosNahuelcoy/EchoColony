@@ -817,42 +817,62 @@ namespace EchoColony
 
         // ── API call helper ──────────────────────────────────────────────────────
 
-        private IEnumerator ProcessTurn(Pawn speaker, string prompt, Action<string> onComplete)
+          private IEnumerator ProcessTurn(Pawn speaker, string prompt, Action<string> onComplete)
         {
             string result   = "";
             bool   complete = false;
             Action<string> cb = r => { result = r; complete = true; };
-
-            bool isKobold   = MyMod.Settings.modelSource == ModelSource.Local &&
-                               MyMod.Settings.localModelProvider == LocalModelProvider.KoboldAI;
-            bool isLMStudio = MyMod.Settings.modelSource == ModelSource.Local &&
-                               MyMod.Settings.localModelProvider == LocalModelProvider.LMStudio;
-
+ 
+            // NOTE: For group chat, `prompt` is already the full output of
+            // GroupPromptContextBuilder.Build() — it includes all pawn context,
+            // colony history, conversation history, and response instructions.
+            //
+            // We do NOT re-wrap it through KoboldPromptBuilder or LMStudioPromptBuilder.
+            // Those builders are for 1:1 direct chats only — they add pawn demographics
+            // and backstory that are already present in the group prompt.
+            //
+            // All providers receive the prompt as a single user message.
+            // The group chat format (plain text paragraph) works well for local models
+            // and is much simpler than the JSON array format used by pawn conversations.
+ 
             IEnumerator coroutine;
-
-            if (isKobold)
-                coroutine = GeminiAPI.SendRequestToLocalModel(
-                    KoboldPromptBuilder.Build(speaker, prompt), cb);
-            else if (isLMStudio)
-                coroutine = GeminiAPI.SendRequestToLocalModel(
-                    LMStudioPromptBuilder.Build(speaker, prompt), cb);
-            else if (MyMod.Settings.modelSource == ModelSource.Local)
-                coroutine = GeminiAPI.SendRequestToLocalModel(prompt, cb);
-            else if (MyMod.Settings.modelSource == ModelSource.Player2)
-                coroutine = GeminiAPI.SendRequestToPlayer2(speaker, prompt, cb);
-            else if (MyMod.Settings.modelSource == ModelSource.OpenRouter)
-                coroutine = GeminiAPI.SendRequestToOpenRouter(prompt, cb);
-            else
-                coroutine = GeminiAPI.SendRequestToGemini(prompt, cb);
-
+ 
+            switch (MyMod.Settings.modelSource)
+            {
+                case ModelSource.Local:
+                    // Send prompt directly — no re-wrapping through Kobold/LMStudio builders
+                    coroutine = GeminiAPI.SendRequestToLocalModel(prompt, cb);
+                    break;
+ 
+                case ModelSource.Player2:
+                    // Player2 uses its own message format; pass prompt as user content
+                    coroutine = GeminiAPI.SendRequestToPlayer2WithPrompt(prompt, cb);
+                    break;
+ 
+                case ModelSource.OpenRouter:
+                    coroutine = GeminiAPI.SendRequestToOpenRouter(prompt, cb);
+                    break;
+ 
+                case ModelSource.Custom:
+                    coroutine = GeminiAPI.SendRequestToCustomProvider(prompt, cb);
+                    break;
+ 
+                case ModelSource.Gemini:
+                default:
+                    coroutine = GeminiAPI.SendRequestToGemini(prompt, cb);
+                    break;
+            }
+ 
             yield return coroutine;
-
+ 
+            // Safety timeout — wait up to 300 frames (~5s at 60fps) after coroutine ends
             int waited = 0;
             while (!complete && waited < 300) { yield return null; waited++; }
-
+ 
             onComplete?.Invoke(result);
         }
-
+ 
+ 
         // ── Memory saving ────────────────────────────────────────────────────────
 
         private IEnumerator SaveMemories(List<Pawn> group)

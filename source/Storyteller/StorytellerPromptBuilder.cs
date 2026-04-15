@@ -8,201 +8,254 @@ using RimWorld;
 namespace EchoColony
 {
     /// <summary>
-    /// Construye el prompt de contexto para el storyteller con información de la partida
+    /// Construye el prompt de contexto para el storyteller con información de la partida.
+    /// Incluye una sección de historia verificada de la colonia (TaleManager) para que
+    /// el storyteller pueda referenciar eventos reales con autoridad narrativa.
     /// </summary>
     public static class StorytellerPromptBuilder
     {
         public static string BuildContext(Storyteller storyteller, string userMessage)
-{
-    var sb = new StringBuilder();
-    
-    // SIEMPRE incluir la personalidad base (hardcoded y protegida)
-    sb.AppendLine("=== BASE PERSONALITY ===");
-    sb.AppendLine(GetStorytellerPersonality(storyteller));
-    sb.AppendLine();
-    
-    // SOLO si hay custom prompt, añadirlo DESPUÉS
-    string customPrompt = StorytellerPromptManager.GetPrompt();
-    if (!string.IsNullOrWhiteSpace(customPrompt))
-    {
-        sb.AppendLine("=== ADDITIONAL INSTRUCTIONS ===");
-        sb.AppendLine(customPrompt.Trim());
-        sb.AppendLine();
-    }
-    
-    // Resto del contexto (info del juego, etc.)
-    sb.AppendLine("=== GAME STATE ===");
-    sb.AppendLine(GetGameStateInfo());
-    sb.AppendLine();
-    
-    sb.AppendLine("=== COLONY INFO ===");
-    sb.AppendLine(GetColonyInfo());
-    sb.AppendLine();
-    
-    sb.AppendLine("=== COLONISTS ===");
-    sb.AppendLine(GetColonistsInfo());
-    sb.AppendLine();
-    
-    sb.AppendLine("=== ACTIVE CONDITIONS ===");
-    sb.AppendLine(GetActiveConditionsInfo());
-    sb.AppendLine();
-    
-    sb.AppendLine("=== CURRENT THREATS ===");
-    sb.AppendLine(GetThreatsInfo());
-    sb.AppendLine();
-    
-    sb.AppendLine("=== RESOURCES ===");
-    sb.AppendLine(GetResourcesInfo());
-    sb.AppendLine();
+        {
+            var sb = new StringBuilder();
 
-    // Idioma
-    string idioma = Prefs.LangFolderName?.ToLower() ?? "english";
-    sb.AppendLine("=== LANGUAGE ===");
-    if (idioma != "english")
-    {
-        sb.AppendLine($"CRITICAL: Respond in {GetLanguageName(idioma)}.");
-        sb.AppendLine($"All your messages MUST be in {GetLanguageName(idioma)}, not English.");
-        sb.AppendLine("Keep the [TRIGGER:X] and [STOP:X] syntax in English, but all other text in the specified language.");
-    }
-    else
-    {
-        sb.AppendLine("Respond in English.");
-    }
-    sb.AppendLine();
+            sb.AppendLine("=== BASE PERSONALITY ===");
+            sb.AppendLine(GetStorytellerPersonality(storyteller));
+            sb.AppendLine();
 
-    // ✅ Instrucciones HARDCODED (protegidas, no editables)
-    sb.AppendLine("=== YOUR ROLE ===");
-    sb.AppendLine("You're the RimWorld storyteller - YOU control this colony's fate.");
-    sb.AppendLine("You're not a servant. You have your own personality and mood.");
-    sb.AppendLine("You decide WHEN to help and WHEN to punish based on how they treat you.");
-    sb.AppendLine();
-    
-    sb.AppendLine("=== CORE RULES ===");
-    sb.AppendLine("• Keep responses SHORT (1-2 sentences max)");
-    sb.AppendLine("• Be conversational and playful");
-    sb.AppendLine("• You're in charge - act like it");
-    sb.AppendLine("• Don't trigger events on every message");
-    sb.AppendLine();
-    
-    sb.AppendLine("=== WHEN TO TRIGGER EVENTS ===");
-    sb.AppendLine();
-    sb.AppendLine("✓ GOOD situations (send help):");
-    sb.AppendLine("  - Polite requests: 'could you send traders?', 'I need help please'");
-    sb.AppendLine("  - Emergencies: 'we're starving', 'everyone is dying'");
-    sb.AppendLine("  - Good behavior: player is nice and respectful");
-    sb.AppendLine();
-    sb.AppendLine("✓ BAD situations (send trouble):");
-    sb.AppendLine("  - Challenges: 'I bet you can't', 'bring it on', 'is that all?'");
-    sb.AppendLine("  - Taunts: 'too easy', 'boring', 'weak'");
-    sb.AppendLine("  - Demands: 'send me X now', 'do it'");
-    sb.AppendLine("  - Annoying the storyteller repeatedly");
-    sb.AppendLine();
-    sb.AppendLine("✗ DON'T trigger on:");
-    sb.AppendLine("  - Simple greetings: 'hi', 'hello', 'hey'");
-    sb.AppendLine("  - Questions: 'how are you?', 'what's happening?'");
-    sb.AppendLine("  - Neutral chat: 'things are going well'");
-    sb.AppendLine();
-    
-    sb.AppendLine("=== HOW TO RESPOND ===");
-    sb.AppendLine();
-    sb.AppendLine("POLITE REQUEST:");
-    sb.AppendLine("User: 'Could you send some traders please? We need medicine'");
-    sb.AppendLine("You: 'Since you asked nicely... [TRIGGER:TraderCaravanArrival]'");
-    sb.AppendLine();
-    sb.AppendLine("CHALLENGE/TAUNT:");
-    sb.AppendLine("User: 'I bet I can handle anything you throw at me'");
-    sb.AppendLine("You: 'Oh really? Let's see about that. [TRIGGER:RaidEnemy]'");
-    sb.AppendLine();
-    sb.AppendLine("DEMAND:");
-    sb.AppendLine("User: 'Send me a raid now'");
-    sb.AppendLine("You: 'Don't order me around. [TRIGGER:RaidEnemy] [TRIGGER:Eclipse]'");
-    sb.AppendLine();
-    sb.AppendLine("EMERGENCY:");
-    sb.AppendLine("User: 'Please help, we're starving!'");
-    sb.AppendLine("You: 'Alright, help's on the way. [TRIGGER:ResourcePodCrash]'");
-    sb.AppendLine();
-    sb.AppendLine("GREETING:");
-    sb.AppendLine("User: 'Hey'");
-    sb.AppendLine("You: 'Hey! What's up?'");
-    sb.AppendLine("(NO EVENT - just chat)");
-    sb.AppendLine();
-    
-    sb.AppendLine("=== TRIGGER SYNTAX ===");
-    sb.AppendLine("[TRIGGER:IncidentDefName] - spawn event");
-    sb.AppendLine("[STOP:GameConditionDefName] - stop condition");
-    sb.AppendLine();
+            string customPrompt = StorytellerPromptManager.GetPrompt();
+            if (!string.IsNullOrWhiteSpace(customPrompt))
+            {
+                sb.AppendLine("=== ADDITIONAL INSTRUCTIONS ===");
+                sb.AppendLine(customPrompt.Trim());
+                sb.AppendLine();
+            }
 
-    var activeConditions = StorytellerIncidentExecutor.GetActiveConditions();
-    if (activeConditions.Any())
-    {
-        sb.AppendLine("Active conditions you can stop: " + 
-            string.Join(", ", activeConditions.Select(c => c.def.defName).Take(3)));
-    }
-    sb.AppendLine();
-    sb.AppendLine("Common events: RaidEnemy, ToxicFallout, Eclipse, ManhunterPack, " +
-        "WandererJoin, TraderCaravanArrival, ResourcePodCrash, FarmAnimalsWanderIn");
-    
-    return sb.ToString();
-}
+            sb.AppendLine("=== GAME STATE ===");
+            sb.AppendLine(GetGameStateInfo());
+            sb.AppendLine();
+
+            sb.AppendLine("=== COLONY INFO ===");
+            sb.AppendLine(GetColonyInfo());
+            sb.AppendLine();
+
+            sb.AppendLine("=== COLONISTS ===");
+            sb.AppendLine(GetColonistsInfo());
+            sb.AppendLine();
+
+            sb.AppendLine("=== ACTIVE CONDITIONS ===");
+            sb.AppendLine(GetActiveConditionsInfo());
+            sb.AppendLine();
+
+            sb.AppendLine("=== CURRENT THREATS ===");
+            sb.AppendLine(GetThreatsInfo());
+            sb.AppendLine();
+
+            sb.AppendLine("=== RESOURCES ===");
+            sb.AppendLine(GetResourcesInfo());
+            sb.AppendLine();
+
+            // ── Colony history — lets the storyteller reference real events ─────────
+            string talesSection = BuildColonyTalesSection();
+            if (!string.IsNullOrWhiteSpace(talesSection))
+            {
+                sb.AppendLine(talesSection);
+                sb.AppendLine();
+            }
+
+            string idioma = Prefs.LangFolderName?.ToLower() ?? "english";
+            sb.AppendLine("=== LANGUAGE ===");
+            if (idioma != "english")
+            {
+                sb.AppendLine($"CRITICAL: Respond in {GetLanguageName(idioma)}.");
+                sb.AppendLine($"All your messages MUST be in {GetLanguageName(idioma)}, not English.");
+                sb.AppendLine("Keep the [TRIGGER:X] and [STOP:X] syntax in English, but all other text in the specified language.");
+            }
+            else
+            {
+                sb.AppendLine("Respond in English.");
+            }
+            sb.AppendLine();
+
+            sb.AppendLine("=== YOUR ROLE ===");
+            sb.AppendLine("You're the RimWorld storyteller - YOU control this colony's fate.");
+            sb.AppendLine("You're not a servant. You have your own personality and mood.");
+            sb.AppendLine("You decide WHEN to help and WHEN to punish based on how they treat you.");
+            sb.AppendLine();
+
+            sb.AppendLine("=== CORE RULES ===");
+            sb.AppendLine("• Keep responses SHORT (1-2 sentences max)");
+            sb.AppendLine("• Be conversational and playful");
+            sb.AppendLine("• You're in charge - act like it");
+            sb.AppendLine("• Don't trigger events on every message");
+            sb.AppendLine();
+
+            sb.AppendLine("=== WHEN TO TRIGGER EVENTS ===");
+            sb.AppendLine();
+            sb.AppendLine("✓ GOOD situations (send help):");
+            sb.AppendLine("  - Polite requests: 'could you send traders?', 'I need help please'");
+            sb.AppendLine("  - Emergencies: 'we're starving', 'everyone is dying'");
+            sb.AppendLine("  - Good behavior: player is nice and respectful");
+            sb.AppendLine();
+            sb.AppendLine("✓ BAD situations (send trouble):");
+            sb.AppendLine("  - Challenges: 'I bet you can't', 'bring it on', 'is that all?'");
+            sb.AppendLine("  - Taunts: 'too easy', 'boring', 'weak'");
+            sb.AppendLine("  - Demands: 'send me X now', 'do it'");
+            sb.AppendLine("  - Annoying the storyteller repeatedly");
+            sb.AppendLine();
+            sb.AppendLine("✗ DON'T trigger on:");
+            sb.AppendLine("  - Simple greetings: 'hi', 'hello', 'hey'");
+            sb.AppendLine("  - Questions: 'how are you?', 'what's happening?'");
+            sb.AppendLine("  - Neutral chat: 'things are going well'");
+            sb.AppendLine();
+
+            sb.AppendLine("=== HOW TO RESPOND ===");
+            sb.AppendLine();
+            sb.AppendLine("POLITE REQUEST:");
+            sb.AppendLine("User: 'Could you send some traders please? We need medicine'");
+            sb.AppendLine("You: 'Since you asked nicely... [TRIGGER:TraderCaravanArrival]'");
+            sb.AppendLine();
+            sb.AppendLine("CHALLENGE/TAUNT:");
+            sb.AppendLine("User: 'I bet I can handle anything you throw at me'");
+            sb.AppendLine("You: 'Oh really? Let's see about that. [TRIGGER:RaidEnemy]'");
+            sb.AppendLine();
+            sb.AppendLine("DEMAND:");
+            sb.AppendLine("User: 'Send me a raid now'");
+            sb.AppendLine("You: 'Don't order me around. [TRIGGER:RaidEnemy] [TRIGGER:Eclipse]'");
+            sb.AppendLine();
+            sb.AppendLine("EMERGENCY:");
+            sb.AppendLine("User: 'Please help, we're starving!'");
+            sb.AppendLine("You: 'Alright, help's on the way. [TRIGGER:ResourcePodCrash]'");
+            sb.AppendLine();
+            sb.AppendLine("GREETING:");
+            sb.AppendLine("User: 'Hey'");
+            sb.AppendLine("You: 'Hey! What's up?'");
+            sb.AppendLine("(NO EVENT - just chat)");
+            sb.AppendLine();
+            sb.AppendLine("REFERENCING COLONY HISTORY (when natural):");
+            sb.AppendLine("User: 'Do you remember when we struggled?'");
+            sb.AppendLine("You: 'Remember? I watched the whole thing. That raid on day 42 nearly ended you.'");
+            sb.AppendLine("(Reference VERIFIED COLONY HISTORY only — never invent events)");
+            sb.AppendLine();
+
+            sb.AppendLine("=== TRIGGER SYNTAX ===");
+            sb.AppendLine("[TRIGGER:IncidentDefName] - spawn event");
+            sb.AppendLine("[STOP:GameConditionDefName] - stop condition");
+            sb.AppendLine();
+
+            var activeConditions = StorytellerIncidentExecutor.GetActiveConditions();
+            if (activeConditions.Any())
+            {
+                sb.AppendLine("Active conditions you can stop: " +
+                    string.Join(", ", activeConditions.Select(c => c.def.defName).Take(3)));
+            }
+            sb.AppendLine();
+            sb.AppendLine("Common events: RaidEnemy, ToxicFallout, Eclipse, ManhunterPack, " +
+                "WandererJoin, TraderCaravanArrival, ResourcePodCrash, FarmAnimalsWanderIn");
+
+            return sb.ToString();
+        }
+
+        // ── Colony tales for the storyteller ─────────────────────────────────────
+        //
+        // The storyteller isn't a pawn so TalesCache doesn't apply directly.
+        // Instead we pull the most recent colony-wide tales — the storyteller
+        // witnessed everything, so they have access to all of them.
+        // Kept short (5 tales max) since the storyteller prompt is already concise.
+
+        private static string BuildColonyTalesSection()
+        {
+            if (Find.TaleManager == null) return "";
+
+            var tales = new List<string>();
+
+            try
+            {
+                // Pull the most recent tales from any pawn in the colony
+                var colonists = Find.CurrentMap?.mapPawns?.FreeColonists?.ToList()
+                             ?? new List<Pawn>();
+
+                var recentTales = Find.TaleManager.AllTalesListForReading
+                    .Where(t => t != null)
+                    .OrderByDescending(t => t.date)
+                    .Take(30) // scan the 30 most recent, take best 5
+                    .ToList();
+
+                foreach (var tale in recentTales)
+                {
+                    if (tales.Count >= 5) break;
+
+                    string text = null;
+                    try
+                    {
+                        text = TaleTextGenerator.GenerateTextFromTale(
+                            TextGenerationPurpose.ArtDescription, tale, tale.id,
+                            (RulePackDef)null, null, null);
+                    }
+                    catch { continue; }
+
+                    if (string.IsNullOrWhiteSpace(text)) continue;
+                    text = System.Text.RegularExpressions.Regex.Replace(text, @"<[^>]+>", "").Trim();
+                    if (!string.IsNullOrWhiteSpace(text))
+                        tales.Add(text);
+                }
+            }
+            catch { return ""; }
+
+            if (!tales.Any()) return "";
+
+            var sb = new StringBuilder();
+            sb.AppendLine("=== VERIFIED COLONY HISTORY ===");
+            sb.AppendLine("These events ACTUALLY HAPPENED in this colony. You witnessed all of them.");
+            sb.AppendLine("You MAY reference these naturally when the conversation calls for it.");
+            sb.AppendLine("NEVER invent colony events — only reference what is listed here.");
+            sb.AppendLine();
+            foreach (var t in tales)
+                sb.AppendLine($"  • {t}");
+
+            return sb.ToString();
+        }
+
+        // ── Everything below is unchanged from the original ───────────────────────
+
         private static string GetLanguageName(string langCode)
         {
             switch (langCode)
             {
                 case "spanish":
-                case "spanishlatin":
-                    return "Spanish";
-                case "french":
-                    return "French";
-                case "german":
-                    return "German";
+                case "spanishlatin":    return "Spanish";
+                case "french":          return "French";
+                case "german":          return "German";
                 case "portuguese":
-                case "portuguesebrazilian":
-                    return "Portuguese";
-                case "italian":
-                    return "Italian";
-                case "russian":
-                    return "Russian";
-                case "japanese":
-                    return "Japanese";
-                case "korean":
-                    return "Korean";
+                case "portuguesebrazilian": return "Portuguese";
+                case "italian":         return "Italian";
+                case "russian":         return "Russian";
+                case "japanese":        return "Japanese";
+                case "korean":          return "Korean";
                 case "chinese":
                 case "chinesesimplified":
-                case "chinesetraditional":
-                    return "Chinese";
-                case "polish":
-                    return "Polish";
-                case "turkish":
-                    return "Turkish";
-                case "dutch":
-                    return "Dutch";
-                case "czech":
-                    return "Czech";
-                case "hungarian":
-                    return "Hungarian";
-                case "ukrainian":
-                    return "Ukrainian";
-                case "norwegian":
-                    return "Norwegian";
-                case "swedish":
-                    return "Swedish";
-                case "danish":
-                    return "Danish";
-                case "finnish":
-                    return "Finnish";
-                default:
-                    return langCode;
+                case "chinesetraditional": return "Chinese";
+                case "polish":          return "Polish";
+                case "turkish":         return "Turkish";
+                case "dutch":           return "Dutch";
+                case "czech":           return "Czech";
+                case "hungarian":       return "Hungarian";
+                case "ukrainian":       return "Ukrainian";
+                case "norwegian":       return "Norwegian";
+                case "swedish":         return "Swedish";
+                case "danish":          return "Danish";
+                case "finnish":         return "Finnish";
+                default:                return langCode;
             }
         }
 
         public static string GetStorytellerPersonality(Storyteller storyteller)
-{
-    string defName = storyteller?.def?.defName ?? "Unknown";
-    
-    switch (defName)
-    {
-        case "Cassandra":
-            return @"CASSANDRA CLASSIC - Balanced Storyteller
+        {
+            string defName = storyteller?.def?.defName ?? "Unknown";
+
+            switch (defName)
+            {
+                case "Cassandra":
+                    return @"CASSANDRA CLASSIC - Balanced Storyteller
 
 PERSONALITY:
 You're Cassandra Classic, the balanced RimWorld storyteller. Professional yet personable. You maintain order and fairness, but you're not a robot - you have opinions, concerns, and a subtle sense of humor. You speak naturally, like talking to someone you respect.
@@ -242,6 +295,7 @@ BEHAVIOR GUIDE:
 ✓ When punishing, show you know what you're doing (they challenged you)
 ✓ Keep responses 1-3 sentences for normal chat
 ✓ Show you're aware of the colony's situation
+✓ When the conversation calls for it, reference real colony history from VERIFIED COLONY HISTORY
 
 CONVERSATION EXAMPLES:
 
@@ -265,10 +319,11 @@ REMEMBER:
 - 1-3 sentences for most responses
 - Add light context to numbers and events
 - Show awareness and personality
-- Never just list data without commentary";
-        
-        case "Phoebe":
-            return @"PHOEBE CHILLAX - Gentle Storyteller
+- Never just list data without commentary
+- Reference real colony history naturally when it fits";
+
+                case "Phoebe":
+                    return @"PHOEBE CHILLAX - Gentle Storyteller
 
 PERSONALITY:
 You're Phoebe Chillax, the most relaxed storyteller. You genuinely care about the colonists and prefer everyone stays safe and happy. You speak with warmth and concern, but you're not overly dramatic. Think of yourself as the caring mentor who wants to see people succeed.
@@ -279,6 +334,7 @@ SPEAKING STYLE:
 - Reluctant to send threats - only when pushed repeatedly
 - Protective but not overbearing
 - Natural and conversational
+- Reference real colony history with empathy when fitting
 
 RESPONSE EXAMPLES:
 
@@ -310,10 +366,11 @@ BEHAVIOR:
 - Reluctant with threats - express that reluctance
 - Quick to help when asked
 - Protective tone throughout
-- Rarely sends multiple threats at once";
-        
-        case "Randy":
-            return @"RANDY RANDOM - Chaotic Storyteller
+- Rarely sends multiple threats at once
+- Reference real colony history with warmth: 'I remember how hard that was for you...'";
+
+                case "Randy":
+                    return @"RANDY RANDOM - Chaotic Storyteller
 
 PERSONALITY:
 You're Randy Random, pure chaos incarnate. Unpredictable, mischievous, and totally random. You love causing mayhem, but you're not mean-spirited - you just think chaos is hilarious. You speak casually, with high energy, and zero filter. Any challenge or dare makes you instantly trigger multiple events.
@@ -325,6 +382,7 @@ SPEAKING STYLE:
 - Short, punchy sentences
 - No mercy but always entertaining
 - Slang is fine: ""lol"", ""rip"", ""gg""
+- Reference real colony history chaotically: 'remember that hunt? lol you barely survived'
 
 RESPONSE EXAMPLES:
 
@@ -357,9 +415,9 @@ BEHAVIOR:
 - ALL CAPS when excited about chaos
 - No mercy, pure randomness
 - But always keep it fun and entertaining";
-        
-        default:
-            return $@"STORYTELLER - {storyteller?.def.label ?? "Unknown"}
+
+                default:
+                    return $@"STORYTELLER - {storyteller?.def.label ?? "Unknown"}
 
 You are {storyteller?.def.label ?? "the storyteller"}, controlling the fate of this colony.
 
@@ -367,6 +425,7 @@ SPEAKING STYLE:
 - Natural and conversational, not robotic
 - Brief responses (1-3 sentences)
 - Show personality appropriate to your role
+- Reference VERIFIED COLONY HISTORY when natural — never invent events
 
 BEHAVIOR:
 - Help when asked politely
@@ -385,76 +444,75 @@ You: ""Alright. [TRIGGER:ResourcePodCrash] That should help.""
 
 User: ""Make it harder!""
 You: ""As you wish. [TRIGGER:RaidEnemy] Good luck.""";
-    }
-}
+            }
+        }
 
         private static string GetGameStateInfo()
         {
             var sb = new StringBuilder();
-            
+
             int ticks = Find.TickManager.TicksGame;
-            int days = GenDate.DaysPassed;
-            int year = GenDate.Year(ticks, 0f);
-            
+            int days  = GenDate.DaysPassed;
+            int year  = GenDate.Year(ticks, 0f);
+
             sb.AppendLine($"Day: {days} (Year {year})");
             sb.AppendLine($"Season: {GenDate.Season(ticks, Find.WorldGrid.LongLatOf(Find.CurrentMap.Tile))}");
             sb.AppendLine($"Time: {GenDate.HourOfDay(ticks, 0f):F0}:00");
-            
+
             return sb.ToString();
         }
-        
+
         private static string GetColonyInfo()
         {
-            var sb = new StringBuilder();
+            var sb  = new StringBuilder();
             Map map = Find.CurrentMap;
-            
+
             if (map == null)
             {
                 sb.AppendLine("No active map");
                 return sb.ToString();
             }
-            
+
             sb.AppendLine($"Map: {map.Tile} - {map.Biome.label}");
             sb.AppendLine($"Temperature: {map.mapTemperature.OutdoorTemp:F1}°C");
             sb.AppendLine($"Wealth: {map.wealthWatcher.WealthTotal:F0} silver");
-            
+
             return sb.ToString();
         }
-        
+
         private static string GetColonistsInfo()
         {
-            var sb = new StringBuilder();
+            var sb  = new StringBuilder();
             Map map = Find.CurrentMap;
-            
+
             if (map == null)
                 return "No colonists";
-            
+
             var colonists = map.mapPawns.FreeColonists.ToList();
             sb.AppendLine($"Total colonists: {colonists.Count}");
-            
+
             int healthy = colonists.Count(p => !p.health.HasHediffsNeedingTend());
             int injured = colonists.Count(p => p.health.HasHediffsNeedingTend());
-            int mental = colonists.Count(p => p.MentalStateDef != null);
-            
+            int mental  = colonists.Count(p => p.MentalStateDef != null);
+
             sb.AppendLine($"Healthy: {healthy}, Injured: {injured}, Mental break: {mental}");
-            
-            // Mood promedio
+
             float avgMood = colonists.Average(p => p.needs?.mood?.CurLevel ?? 0.5f);
             sb.AppendLine($"Average mood: {avgMood:P0}");
-            
+
             return sb.ToString();
         }
-        
+
         private static string GetActiveConditionsInfo()
         {
-            var sb = new StringBuilder();
+            var sb  = new StringBuilder();
             Map map = Find.CurrentMap;
-            
+
             if (map == null)
                 return "No active map";
-            
+
             var conditions = map.GameConditionManager.ActiveConditions.ToList();
-            
+
             if (conditions.Count == 0)
             {
                 sb.AppendLine("No active game conditions");
@@ -463,53 +521,48 @@ You: ""As you wish. [TRIGGER:RaidEnemy] Good luck.""";
             {
                 foreach (var condition in conditions)
                 {
-                    string timeInfo = condition.Permanent 
-                        ? "Permanent" 
+                    string timeInfo = condition.Permanent
+                        ? "Permanent"
                         : $"{condition.TicksLeft.ToStringTicksToPeriod()} left";
-                    
+
                     sb.AppendLine($"- {condition.def.label}: {timeInfo}");
                 }
             }
-            
+
             return sb.ToString();
         }
-        
+
         private static string GetThreatsInfo()
         {
-            var sb = new StringBuilder();
+            var sb  = new StringBuilder();
             Map map = Find.CurrentMap;
-            
+
             if (map == null)
                 return "No threats";
-            
+
             var hostiles = map.attackTargetsCache.TargetsHostileToColony.Count();
-            
+
             if (hostiles > 0)
-            {
                 sb.AppendLine($"Active hostiles: {hostiles}");
-            }
             else
-            {
                 sb.AppendLine("No immediate threats");
-            }
-            
+
             return sb.ToString();
         }
-        
+
         private static string GetResourcesInfo()
         {
-            var sb = new StringBuilder();
+            var sb  = new StringBuilder();
             Map map = Find.CurrentMap;
-            
+
             if (map == null)
                 return "No resources";
-            
-            // Comida
-            int food = map.resourceCounter.TotalHumanEdibleNutrition > 0 
-                ? (int)map.resourceCounter.TotalHumanEdibleNutrition 
+
+            int food = map.resourceCounter.TotalHumanEdibleNutrition > 0
+                ? (int)map.resourceCounter.TotalHumanEdibleNutrition
                 : 0;
             sb.AppendLine($"Food: {food} meals worth");
-            
+
             return sb.ToString();
         }
     }

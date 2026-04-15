@@ -91,7 +91,7 @@ namespace EchoColony.Mechs
         public override void ExposeData()
         {
             base.ExposeData();
-            Scribe_Collections.Look(ref mechChats, "mechChats", LookMode.Value, LookMode.Deep);
+            Scribe_Collections.Look(ref mechChats, "mechChats", LookMode.Value, LookMode.Value);
 
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {

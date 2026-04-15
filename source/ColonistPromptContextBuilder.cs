@@ -17,14 +17,14 @@ namespace EchoColony
 
             var sb = new StringBuilder();
 
-            string systemPrompt = BuildSystemPrompt(pawn);
-            string context      = BuildContext(pawn);
-            string memoryRecap  = BuildMemoryRecap(pawn);
-            string chatHistory  = BuildChatHistory(pawn);
-            string playerPrompt = BuildPlayerPrompt(userMessage);
-            string globalPrompt = MyMod.Settings?.globalPrompt ?? "";
-            string customPrompt = ColonistPromptManager.GetPrompt(pawn);
-            string actionPrompt = BuildActionSystemPrompt(pawn);
+            string systemPrompt  = BuildSystemPrompt(pawn);
+            string context       = BuildContext(pawn);
+            string memoryRecap   = BuildMemoryRecap(pawn);
+            string chatHistory   = BuildChatHistory(pawn);
+            string playerPrompt  = BuildPlayerPrompt(userMessage);
+            string globalPrompt  = MyMod.Settings?.globalPrompt ?? "";
+            string customPrompt  = ColonistPromptManager.GetPrompt(pawn);
+            string actionPrompt  = BuildActionSystemPrompt(pawn);
             string visionContext = BuildVisionContext(pawn);
 
             sb.AppendLine(systemPrompt);
@@ -43,13 +43,43 @@ namespace EchoColony
             if (!string.IsNullOrWhiteSpace(actionPrompt))
                 sb.AppendLine(actionPrompt);
 
-            // Vision context sits after character/world context, before memory
             if (!string.IsNullOrWhiteSpace(visionContext))
                 sb.AppendLine(visionContext);
+
+            // ── NEW: Verified colony history ──────────────────────────────────────
+            string talesSection = BuildVerifiedTalesSection(pawn);
+            if (!string.IsNullOrWhiteSpace(talesSection))
+                sb.AppendLine(talesSection);
 
             sb.AppendLine(memoryRecap);
             sb.AppendLine(chatHistory);
             sb.AppendLine(playerPrompt);
+
+            return sb.ToString();
+        }
+
+        // ── NEW: Verified real colony events from TaleManager ─────────────────────
+        //
+        // Same system as PawnConversationPromptBuilder — pulls from the exact same
+        // source RimWorld uses for art descriptions. These are hard facts the
+        // colonist knows about their own history. The prompt explicitly forbids
+        // inventing anything not present here or in the current game state.
+
+        private static string BuildVerifiedTalesSection(Pawn pawn)
+        {
+            var tales = TalesCache.GetTalesFor(pawn, TalesCache.MAX_PERSONAL_TALES);
+            if (!tales.Any()) return "";
+
+            var sb = new StringBuilder();
+            sb.AppendLine("# Your Verified Personal History (REAL EVENTS — USE ONLY THESE)");
+            sb.AppendLine("The following events ACTUALLY HAPPENED to you or in this colony.");
+            sb.AppendLine("You may reference these freely and naturally in conversation.");
+            sb.AppendLine("NEVER invent or reference past events, technology, buildings, people,");
+            sb.AppendLine("or items that do not appear here or in the current game state above.");
+            sb.AppendLine("If you have no relevant history for a topic — say so, or stay in the present.");
+            sb.AppendLine();
+            foreach (var t in tales)
+                sb.AppendLine($"  • {t}");
 
             return sb.ToString();
         }
@@ -142,7 +172,20 @@ namespace EchoColony
                 statusContext = " You are a free member of this colony with full rights and responsibilities.";
             }
 
-            return $"You are {name}, a {status} in RimWorld. You identify as {gender} ({xenotype}). You belong to the faction '{faction}' and live in the settlement '{settlement}'.{statusContext} Speak from your perspective and stay in character.";
+            return
+                $"You are {name}, a {status} in RimWorld. You identify as {gender} ({xenotype}). " +
+                $"You belong to the faction '{faction}' and live in the settlement '{settlement}'.{statusContext} " +
+                $"Speak from your perspective and stay in character.\n\n" +
+                // ── ANTI-HALLUCINATION BLOCK ──────────────────────────────────────
+                "STRICT GROUNDING RULES:\n" +
+                "1. You will be given a section called 'Your Verified Personal History'. " +
+                "   That is the ONLY source of past events you may reference.\n" +
+                "2. If a technology, building, item, animal, or event is NOT in that section " +
+                "   or in the current game state, it does NOT exist in this colony. Do not invent it.\n" +
+                "3. If you have no relevant verified history for a topic, stay in the present " +
+                "   or say you don't recall — never fabricate a memory.\n" +
+                "4. These rules override creativity. An invented fact that breaks immersion " +
+                "   is always worse than a short, honest answer.";
         }
 
         public static string BuildContext(Pawn pawn)
@@ -181,40 +224,40 @@ namespace EchoColony
         // ─────────────────────────────────────────
 
         private static string BuildVisionContext(Pawn pawn)
-{
-    if (MyMod.Settings?.IsVisionActive() != true)
-        return "";
+        {
+            if (MyMod.Settings?.IsVisionActive() != true)
+                return "";
 
-    string locationNarrative;
+            string locationNarrative;
 
-    bool isOnCaravan = pawn.IsCaravanMember();
-    bool isOnMap     = pawn.Spawned && pawn.Map != null;
-    bool isHome      = isOnMap &&
-                       pawn.Map == Find.CurrentMap &&
-                       pawn.Map.IsPlayerHome;
+            bool isOnCaravan = pawn.IsCaravanMember();
+            bool isOnMap     = pawn.Spawned && pawn.Map != null;
+            bool isHome      = isOnMap &&
+                               pawn.Map == Find.CurrentMap &&
+                               pawn.Map.IsPlayerHome;
 
-    if (isOnCaravan)
-        locationNarrative = "You are currently traveling — away from your home settlement.";
-    else if (isOnMap && !isHome)
-    {
-        string mapLabel = pawn.Map.info?.parent?.LabelCap ?? "an unknown location";
-        locationNarrative = $"You are currently at {mapLabel}, away from your home settlement.";
-    }
-    else
-        locationNarrative = "You are currently at your settlement.";
+            if (isOnCaravan)
+                locationNarrative = "You are currently traveling — away from your home settlement.";
+            else if (isOnMap && !isHome)
+            {
+                string mapLabel = pawn.Map.info?.parent?.LabelCap ?? "an unknown location";
+                locationNarrative = $"You are currently at {mapLabel}, away from your home settlement.";
+            }
+            else
+                locationNarrative = "You are currently at your settlement.";
 
-    return
-        "# What you're seeing right now\n" +
-        $"{locationNarrative}\n" +
-        "A snapshot of your immediate surroundings has been shared with you. " +
-        "Describe EXACTLY what you see — bodies, blood, ruins, animals, " +
-        "people, structures, weather, anything. RimWorld is a brutal world " +
-        "and you have seen it all. Do not sanitize, soften, or reinterpret " +
-        "what is in front of you. Any previous instruction about 'peaceful tone' " +
-        "does NOT apply to what you physically see right now. " +
-        "Speak from your own eyes, as yourself, without filters. " +
-        "Don't mention screenshots or images.";
-}
+            return
+                "# What you're seeing right now\n" +
+                $"{locationNarrative}\n" +
+                "A snapshot of your immediate surroundings has been shared with you. " +
+                "Describe EXACTLY what you see — bodies, blood, ruins, animals, " +
+                "people, structures, weather, anything. RimWorld is a brutal world " +
+                "and you have seen it all. Do not sanitize, soften, or reinterpret " +
+                "what is in front of you. Any previous instruction about 'peaceful tone' " +
+                "does NOT apply to what you physically see right now. " +
+                "Speak from your own eyes, as yourself, without filters. " +
+                "Don't mention screenshots or images.";
+        }
 
         // ─────────────────────────────────────────
         // GENETICS (requiere Biotech)
@@ -422,7 +465,7 @@ namespace EchoColony
 
         private static string GetCompactAgeGuidance(int age)
         {
-            if (age <= 1)   return "Baby sounds only - crying, cooing, 'goo', 'maa'";
+            if (age <= 1)       return "Baby sounds only - crying, cooing, 'goo', 'maa'";
             else if (age <= 3)  return "Very simple words, excited expressions";
             else if (age <= 6)  return "Simple sentences, lots of questions";
             else if (age <= 10) return "Enthusiastic but still childlike speech";
@@ -749,8 +792,6 @@ namespace EchoColony
 
                         try
                         {
-                            // Only call ToGameStringFromPOV for interaction entries
-                            // if the pawn is actually the initiator or recipient
                             if (entry is PlayLogEntry_Interaction interaction)
                             {
                                 try
@@ -1040,9 +1081,13 @@ namespace EchoColony
             if (!string.IsNullOrWhiteSpace(actionPrompt))
                 sb.AppendLine(actionPrompt);
 
-            // Vision context sits after character/world context, before memory
             if (!string.IsNullOrWhiteSpace(visionContext))
                 sb.AppendLine(visionContext);
+
+            // ── NEW: Verified colony history ──────────────────────────────────────
+            string talesSection = BuildVerifiedTalesSection(pawn);
+            if (!string.IsNullOrWhiteSpace(talesSection))
+                sb.AppendLine(talesSection);
 
             sb.AppendLine(memoryRecap);
 
@@ -1301,11 +1346,6 @@ namespace EchoColony
                 (pawn.relations.OpinionOf(colonist) != 0 ||
                  colonist.relations.OpinionOf(pawn) != 0 ||
                  pawn.relations.DirectRelations.Any(rel => rel.otherPawn == colonist)));
-        }
-
-        private static string CleanText(string input)
-        {
-            return System.Text.RegularExpressions.Regex.Replace(input, "<.*?>", string.Empty);
         }
 
         private static string BuildChatHistory(Pawn pawn)
