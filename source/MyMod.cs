@@ -50,7 +50,7 @@ namespace EchoColony
 
         public override void DoSettingsWindowContents(Rect inRect)
         {
-            float totalHeight = 3500f;
+            float totalHeight = 3800f;
 
             Rect viewRect = new Rect(0f, 0f, inRect.width - 20f, totalHeight);
             Widgets.BeginScrollView(inRect, ref settingsScrollPosition, viewRect);
@@ -58,9 +58,6 @@ namespace EchoColony
             Listing_Standard list = new Listing_Standard();
             list.Begin(viewRect);
 
-            // ═══════════════════════════════════════════════════════════════
-            // BASIC SETTINGS
-            // ═══════════════════════════════════════════════════════════════
             DrawSectionHeader(list, "Basic Settings", new Color(0.7f, 0.9f, 1f));
 
             list.CheckboxLabeled("EchoColony.EnableSocialAffectsPersonality".Translate(), ref Settings.enableSocialAffectsPersonality);
@@ -69,9 +66,6 @@ namespace EchoColony
 
             list.GapLine();
 
-            // ═══════════════════════════════════════════════════════════════
-            // MEMORY SYSTEM
-            // ═══════════════════════════════════════════════════════════════
             DrawSectionHeader(list, "Memory System", new Color(0.7f, 0.9f, 1f));
 
             bool oldMemoryState = Settings.enableMemorySystem;
@@ -83,9 +77,6 @@ namespace EchoColony
 
             list.GapLine();
 
-            // ═══════════════════════════════════════════════════════════════
-            // UI SETTINGS
-            // ═══════════════════════════════════════════════════════════════
             DrawSectionHeader(list, "UI Settings", new Color(0.7f, 0.9f, 1f));
 
             list.CheckboxLabeled("Show Storyteller Chat Button", ref Settings.enableStorytellerButton,
@@ -93,9 +84,6 @@ namespace EchoColony
 
             list.GapLine();
 
-            // ═══════════════════════════════════════════════════════════════
-            // ANIMAL SETTINGS
-            // ═══════════════════════════════════════════════════════════════
             DrawSectionHeader(list, "Animal Chat Settings", new Color(0.8f, 1f, 0.6f));
 
             list.Label("Default Narrative Style for Animals:");
@@ -117,21 +105,12 @@ namespace EchoColony
 
             list.GapLine();
 
-            // ═══════════════════════════════════════════════════════════════
-            // PAWN CONVERSATIONS
-            // ═══════════════════════════════════════════════════════════════
             DrawConversationsSection(list);
             list.GapLine();
 
-            // ═══════════════════════════════════════════════════════════════
-            // MONOLOGUES
-            // ═══════════════════════════════════════════════════════════════
             DrawMonologuesSection(list);
             list.GapLine();
 
-            // ═══════════════════════════════════════════════════════════════
-            // SPONTANEOUS MESSAGES SYSTEM
-            // ═══════════════════════════════════════════════════════════════
             DrawSectionHeader(list, "Spontaneous Messages System", new Color(0.8f, 1f, 0.8f));
 
             list.Label("EchoColony.SpontaneousMessagesMode".Translate());
@@ -172,9 +151,6 @@ namespace EchoColony
 
             list.GapLine();
 
-            // ═══════════════════════════════════════════════════════════════
-            // STORYTELLER SPONTANEOUS MESSAGES
-            // ═══════════════════════════════════════════════════════════════
             DrawSectionHeader(list, "Storyteller Spontaneous Messages", new Color(1f, 0.9f, 0.6f));
 
             list.Label("Storyteller Message Mode:");
@@ -228,9 +204,6 @@ namespace EchoColony
 
             list.GapLine();
 
-            // ═══════════════════════════════════════════════════════════════
-            // DIVINE ACTIONS SYSTEM
-            // ═══════════════════════════════════════════════════════════════
             DrawSectionHeader(list, "Divine Actions System", new Color(1f, 0.8f, 0.4f));
 
             list.CheckboxLabeled("Enable Divine Actions (AI can affect colonists)", ref Settings.enableDivineActions,
@@ -245,15 +218,9 @@ namespace EchoColony
 
             list.GapLine();
 
-            // ═══════════════════════════════════════════════════════════════
-            // VISION SYSTEM
-            // ═══════════════════════════════════════════════════════════════
             DrawVisionSection(list);
             list.GapLine();
 
-            // ═══════════════════════════════════════════════════════════════
-            // GLOBAL PROMPT
-            // ═══════════════════════════════════════════════════════════════
             DrawSectionHeader(list, "Global Prompt", new Color(0.7f, 0.9f, 1f));
 
             list.Label("EchoColony.GlobalPrompt".Translate());
@@ -266,9 +233,6 @@ namespace EchoColony
 
             list.GapLine();
 
-            // ═══════════════════════════════════════════════════════════════
-            // AI MODEL CONFIGURATION
-            // ═══════════════════════════════════════════════════════════════
             DrawSectionHeader(list, "AI Model Configuration", new Color(0.6f, 1f, 0.6f));
 
             bool isPlayer2     = Settings.modelSource == ModelSource.Player2;
@@ -279,7 +243,7 @@ namespace EchoColony
             {
                 if (checkboxState)
                 {
-                    previousModelSource = Settings.modelSource;
+                    previousModelSource  = Settings.modelSource;
                     Settings.modelSource = ModelSource.Player2;
                 }
                 else
@@ -295,9 +259,6 @@ namespace EchoColony
 
             list.GapLine();
 
-            // ═══════════════════════════════════════════════════════════════
-            // GENERAL SETTINGS
-            // ═══════════════════════════════════════════════════════════════
             DrawSectionHeader(list, "General Settings", new Color(0.7f, 0.9f, 1f));
 
             if (Settings.modelSource != ModelSource.Player2)
@@ -313,8 +274,9 @@ namespace EchoColony
                 list.GapLine();
                 DrawSectionHeader(list, "Debug Tools", Color.cyan);
                 DrawMemoryDebugTools(list);
-                if (Settings.enableDivineActions)        DrawActionsDebugTools(list);
-                if (Settings.IsSpontaneousMessagesActive()) DrawSpontaneousMessagesDebugTools(list);
+                if (Settings.enableDivineActions)           DrawActionsDebugTools(list);
+                if (Settings.IsSpontaneousMessagesActive())  DrawSpontaneousMessagesDebugTools(list);
+                DrawTalesDebugTools(list);
             }
 
             list.End();
@@ -322,14 +284,13 @@ namespace EchoColony
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // PLAYER2 SETTINGS — with auth UI
+        // PLAYER2 SETTINGS
         // ═══════════════════════════════════════════════════════════════
 
         private void DrawPlayer2Settings(Listing_Standard list)
         {
             list.Gap();
 
-            // ── Connection status ─────────────────────────────────────
             bool authenticated = Player2AuthManager.IsAuthenticated;
 
             if (authenticated)
@@ -370,23 +331,18 @@ namespace EchoColony
                     Rect row  = list.GetRect(32f);
                     float half = (row.width - 8f) / 2f;
 
-                    // Button 1: via local app (silent auto)
-                    if (Widgets.ButtonText(new Rect(row.x, row.y, half, row.height),
-                        "Connect via Player2 App"))
+                    if (Widgets.ButtonText(new Rect(row.x, row.y, half, row.height), "Connect via Player2 App"))
                     {
                         MyStoryModComponent.Instance.StartCoroutine(
                             Player2AuthManager.AuthenticateViaLocalApp(success =>
                             {
                                 if (!success)
-                                    Messages.Message(
-                                        "Player2 App not found. Make sure it's open and logged in.",
+                                    Messages.Message("Player2 App not found. Make sure it's open and logged in.",
                                         MessageTypeDefOf.RejectInput, false);
                             }));
                     }
 
-                    // Button 2: via browser Device Code
-                    if (Widgets.ButtonText(new Rect(row.x + half + 8f, row.y, half, row.height),
-                        "Connect via Browser"))
+                    if (Widgets.ButtonText(new Rect(row.x + half + 8f, row.y, half, row.height), "Connect via Browser"))
                     {
                         MyStoryModComponent.Instance.StartCoroutine(
                             Player2AuthManager.AuthenticateViaBrowser());
@@ -401,7 +357,6 @@ namespace EchoColony
 
             list.GapLine();
 
-            // ── TTS ───────────────────────────────────────────────────
             list.CheckboxLabeled("EchoColony.EnableTTS".Translate(), ref Settings.enableTTS);
             if (Settings.enableTTS)
                 list.CheckboxLabeled("EchoColony.AutoPlayVoice".Translate(), ref Settings.autoPlayVoice);
@@ -421,10 +376,10 @@ namespace EchoColony
 
             list.Gap(4f);
 
-            if (Settings.modelSource == ModelSource.Local)
+            if (Settings.modelSource == ModelSource.Local || Settings.modelSource == ModelSource.Custom)
             {
                 GUI.color = new Color(1f, 0.75f, 0.3f);
-                list.Label("⚠ Vision is not available for local models.");
+                list.Label("⚠ Vision is not available for local or custom models.");
                 GUI.color = Color.white;
                 list.Gap(2f);
             }
@@ -434,7 +389,7 @@ namespace EchoColony
                 ref Settings.enableVision,
                 "Captures a 800x450 JPEG screenshot when opening a colonist chat. " +
                 "Supported by: Gemini Flash/Pro, OpenRouter (vision models), Player2. " +
-                "Not available for local models.");
+                "Not available for local or custom models.");
 
             if (Settings.enableVision)
             {
@@ -452,254 +407,11 @@ namespace EchoColony
                     list.Label("Screenshot: 800x450 px · JPEG 75% · captured on chat open · game is paused");
                     GUI.color = Color.white;
                 }
-
-                if (Settings.modelSource == ModelSource.OpenRouter &&
-                    !string.IsNullOrEmpty(Settings.openRouterModel) &&
-                    !Settings.openRouterModel.ToLower().Contains("vision") &&
-                    !Settings.openRouterModel.ToLower().Contains("gpt-4") &&
-                    !Settings.openRouterModel.ToLower().Contains("claude") &&
-                    !Settings.openRouterModel.ToLower().Contains("gemini") &&
-                    !Settings.openRouterModel.ToLower().Contains("llava"))
-                {
-                    list.Gap(2f);
-                    GUI.color = new Color(1f, 0.75f, 0.3f);
-                    list.Label($"⚠ '{Settings.openRouterModel}' may not support vision. Use a model like gemini-2.0-flash, gpt-4o, or llava.");
-                    GUI.color = Color.white;
-                }
             }
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // PAWN CONVERSATIONS SECTION
-        // ═══════════════════════════════════════════════════════════════
-
-        private void DrawConversationsSection(Listing_Standard list)
-        {
-            DrawSectionHeader(list, "EchoColony.ConvSectionHeader".Translate(), new Color(0.9f, 0.75f, 1f));
-            list.Label("EchoColony.ConvSectionDesc".Translate(), tooltip: "EchoColony.ConvSectionDescTooltip".Translate());
-            list.Gap(2f);
-            list.CheckboxLabeled("EchoColony.ConvEnableLabel".Translate(), ref Settings.enablePawnConversations, "EchoColony.ConvEnableTooltip".Translate());
-
-            if (!Settings.enablePawnConversations)
-            {
-                GUI.color = Color.gray;
-                list.Label("EchoColony.ConvDisabledHint".Translate());
-                GUI.color = Color.white;
-                return;
-            }
-
-            list.Gap(6f);
-
-            list.Label("EchoColony.ConvLinesLabel".Translate(Settings.conversationLinesPerPawn, Settings.conversationLinesPerPawn * 2), tooltip: "EchoColony.ConvLinesTooltip".Translate());
-            Settings.conversationLinesPerPawn = Mathf.RoundToInt(list.Slider(Settings.conversationLinesPerPawn, 1f, 3f));
-            list.Gap(2f);
-
-            list.Label("EchoColony.ConvDelayLabel".Translate(Settings.conversationBubbleDelay.ToString("F1")), tooltip: "EchoColony.ConvDelayTooltip".Translate());
-            Settings.conversationBubbleDelay = Mathf.Round(list.Slider(Settings.conversationBubbleDelay, 0.5f, 4f) * 10f) / 10f;
-            list.Gap(2f);
-
-            list.Label(
-                Settings.conversationCooldownHours == 0
-                    ? "EchoColony.ConvCooldownNoneLabel".Translate()
-                    : "EchoColony.ConvCooldownLabel".Translate(Settings.conversationCooldownHours),
-                tooltip: "EchoColony.ConvCooldownTooltip".Translate());
-            Settings.conversationCooldownHours = Mathf.RoundToInt(list.Slider(Settings.conversationCooldownHours, 0f, 24f));
-            list.Gap(8f);
-
-            list.Label("EchoColony.ConvAnimalModeLabel".Translate(), tooltip: "EchoColony.ConvAnimalModeTooltip".Translate());
-            Rect animalRect = list.GetRect(28f);
-            DrawThreeWayToggle(
-                animalRect,
-                Settings.conversationAnimalMode,
-                v => Settings.conversationAnimalMode = v,
-                ConversationAnimalMode.Disabled,        "EchoColony.ConvAnimalModeDisabled".Translate(),
-                ConversationAnimalMode.IntelligentOnly, "EchoColony.ConvAnimalModeIntelligentOnly".Translate(),
-                ConversationAnimalMode.All,             "EchoColony.ConvAnimalModeAll".Translate());
-
-            list.Gap(2f);
-            GUI.color = Color.gray;
-            string animalModeHint;
-            switch (Settings.conversationAnimalMode)
-            {
-                case ConversationAnimalMode.Disabled:        animalModeHint = "EchoColony.ConvAnimalModeHintDisabled".Translate(); break;
-                case ConversationAnimalMode.IntelligentOnly: animalModeHint = "EchoColony.ConvAnimalModeHintIntelligentOnly".Translate(); break;
-                case ConversationAnimalMode.All:             animalModeHint = "EchoColony.ConvAnimalModeHintAll".Translate(); break;
-                default:                                     animalModeHint = ""; break;
-            }
-            list.Label(animalModeHint);
-            GUI.color = Color.white;
-            list.Gap(8f);
-
-            list.Label("EchoColony.ConvFiltersLabel".Translate());
-            list.CheckboxLabeled("EchoColony.ConvIncludePrisoners".Translate(), ref Settings.conversationIncludePrisoners, "EchoColony.ConvIncludePrisonersTooltip".Translate());
-            list.CheckboxLabeled("EchoColony.ConvIncludeSlaves".Translate(), ref Settings.conversationIncludeSlaves, "EchoColony.ConvIncludeSlavesTooltip".Translate());
-            list.CheckboxLabeled("EchoColony.ConvIncludeGuests".Translate(), ref Settings.conversationIncludeGuests, "EchoColony.ConvIncludeGuestsTooltip".Translate());
-            list.Gap(4f);
-
-            list.Label(
-                Settings.conversationMinOpinion <= -100
-                    ? "EchoColony.ConvMinOpinionNoFilter".Translate()
-                    : "EchoColony.ConvMinOpinionLabel".Translate(Settings.conversationMinOpinion),
-                tooltip: "EchoColony.ConvMinOpinionTooltip".Translate());
-            Settings.conversationMinOpinion = Mathf.RoundToInt(list.Slider(Settings.conversationMinOpinion, -100f, 100f));
-            list.Gap(4f);
-
-            list.Label(
-                Settings.conversationMaxColonySize == 0
-                    ? "EchoColony.ConvMaxColonySizeNever".Translate()
-                    : "EchoColony.ConvMaxColonySizeLabel".Translate(Settings.conversationMaxColonySize),
-                tooltip: "EchoColony.ConvMaxColonySizeTooltip".Translate());
-            int rawSize = Mathf.RoundToInt(list.Slider(Settings.conversationMaxColonySize, 0f, 200f));
-            Settings.conversationMaxColonySize = rawSize < 5 ? 0 : rawSize;
-            list.Gap(8f);
-
-            string speedLabel = Settings.conversationDisableAtSpeed == 0
-                ? "EchoColony.ConvDisableAtSpeedNever".Translate()
-                : "EchoColony.ConvDisableAtSpeedLabel".Translate(Settings.conversationDisableAtSpeed);
-            list.Label(speedLabel, tooltip: "EchoColony.ConvDisableAtSpeedTooltip".Translate());
-            Settings.conversationDisableAtSpeed = Mathf.RoundToInt(list.Slider(Settings.conversationDisableAtSpeed, 0f, 4f));
-            list.Gap(4f);
-
-            list.CheckboxLabeled("EchoColony.ConvAllowSimultaneous".Translate(), ref Settings.conversationAllowSimultaneous, "EchoColony.ConvAllowSimultaneousTooltip".Translate());
-            list.Gap(8f);
-
-            list.Label("EchoColony.ConvGlobalPromptLabel".Translate(), tooltip: "EchoColony.ConvGlobalPromptTooltip".Translate());
-            const float promptHeight = 72f;
-            Rect promptOuter = list.GetRect(promptHeight + 4f);
-            Rect promptView  = new Rect(0f, 0f, promptOuter.width - 16f,
-                Mathf.Max(promptHeight, Text.CalcHeight(Settings.conversationGlobalPrompt, promptOuter.width - 20f)));
-            Widgets.BeginScrollView(promptOuter, ref convPromptScroll, promptView);
-            Settings.conversationGlobalPrompt = Widgets.TextArea(new Rect(0f, 0f, promptView.width, promptView.height), Settings.conversationGlobalPrompt);
-            Widgets.EndScrollView();
-            list.Gap(8f);
-
-            bool prevLargeFont = Settings.chatLogLargeFont;
-            list.CheckboxLabeled((string)"EchoColony.ChatLogLargeFont".Translate(), ref Settings.chatLogLargeFont);
-            if (Settings.chatLogLargeFont != prevLargeFont)
-                Conversations.ConversationChatLogRenderer.InvalidateCache();
-
-            list.Gap(4f);
-            bool logVisible = Conversations.ConversationChatLogRenderer.IsVisible;
-            if (list.ButtonText(logVisible ? (string)"EchoColony.ChatLogHide".Translate() : (string)"EchoColony.ChatLogShow".Translate()))
-                Conversations.ConversationChatLogRenderer.IsVisible = !logVisible;
-
-            list.Gap(4f);
-            string hotkeyDisplay = Settings.chatLogHotkey == KeyCode.None
-                ? (string)"EchoColony.ChatLogHotkeyNone".Translate()
-                : Settings.chatLogHotkey.ToString();
-
-            Rect hotkeyRow = list.GetRect(28f);
-            float labelW   = hotkeyRow.width * 0.52f;
-            float btnW     = hotkeyRow.width - labelW - 4f;
-
-            var prevAnchor = Text.Anchor;
-            Text.Anchor = TextAnchor.MiddleLeft;
-            Widgets.Label(new Rect(hotkeyRow.x, hotkeyRow.y, labelW, hotkeyRow.height), "EchoColony.ChatLogHotkeyLabel".Translate());
-            Text.Anchor = prevAnchor;
-
-            if (Settings.isWaitingForChatLogKey) GUI.color = Color.yellow;
-            string keyBtnText = Settings.isWaitingForChatLogKey ? (string)"EchoColony.ChatLogHotkeyPress".Translate() : hotkeyDisplay;
-            if (Widgets.ButtonText(new Rect(hotkeyRow.x + labelW + 4f, hotkeyRow.y, btnW, hotkeyRow.height), keyBtnText))
-                Settings.isWaitingForChatLogKey = !Settings.isWaitingForChatLogKey;
-            GUI.color = Color.white;
-
-            if (Settings.isWaitingForChatLogKey) ProcessChatLogKeyCapture();
-
-            list.Gap(2f);
-            GUI.color = Color.gray;
-            list.Label("EchoColony.ChatLogHint".Translate());
-            GUI.color = Color.white;
-        }
-
-        private void ProcessChatLogKeyCapture()
-        {
-            var ev = Event.current;
-            if (ev == null) return;
-            if (ev.type == EventType.KeyDown && ev.keyCode == KeyCode.Escape)
-            { Settings.isWaitingForChatLogKey = false; ev.Use(); return; }
-            if (ev.type == EventType.KeyDown && (ev.keyCode == KeyCode.Delete || ev.keyCode == KeyCode.Backspace))
-            { Settings.chatLogHotkey = KeyCode.None; Settings.isWaitingForChatLogKey = false; ev.Use(); return; }
-            if (ev.type == EventType.KeyDown && ev.keyCode != KeyCode.None)
-            { Settings.chatLogHotkey = ev.keyCode; Settings.isWaitingForChatLogKey = false; ev.Use(); }
-        }
-
-        private Vector2 _monoScroll = Vector2.zero;
-
-        private void DrawMonologuesSection(Listing_Standard list)
-        {
-            DrawSectionHeader(list, "EchoColony.MonoSectionHeader".Translate(), new Color(1f, 0.85f, 0.5f));
-            list.Label("EchoColony.MonoSectionDesc".Translate());
-            list.CheckboxLabeled("EchoColony.MonoEnableLabel".Translate(), ref Settings.enableMonologues, "EchoColony.MonoEnableTooltip".Translate());
-            if (!Settings.enableMonologues) return;
-
-            list.Gap(4f);
-            list.Label("EchoColony.MonoCooldownLabel".Translate(Settings.monologueCooldownHours), tooltip: "EchoColony.MonoCooldownTooltip".Translate());
-            Settings.monologueCooldownHours = Mathf.RoundToInt(list.Slider(Settings.monologueCooldownHours, 1f, 24f));
-            list.Gap(4f);
-
-            float chanceDisplay = Mathf.Round(Settings.monologueChancePerHour * 100f);
-            list.Label(
-                chanceDisplay < 1f
-                    ? "EchoColony.MonoChanceOffLabel".Translate()
-                    : "EchoColony.MonoChanceLabel".Translate(chanceDisplay.ToString("F0")),
-                tooltip: "EchoColony.MonoChanceTooltip".Translate());
-            Settings.monologueChancePerHour = Mathf.Round(list.Slider(Settings.monologueChancePerHour, 0f, 1f) * 100f) / 100f;
-            list.Gap(4f);
-
-            list.Label("EchoColony.MonoThoughtImpactLabel".Translate(Settings.monologueMinMoodImpact.ToString("F0")), tooltip: "EchoColony.MonoThoughtImpactTooltip".Translate());
-            Settings.monologueMinMoodImpact = Mathf.Round(list.Slider(Settings.monologueMinMoodImpact, 1f, 20f));
-        }
-
-        private static void DrawThreeWayToggle<T>(Rect rect, T current, Action<T> setter,
-            T valA, string labelA, T valB, string labelB, T valC, string labelC)
-        {
-            float w = rect.width / 3f;
-            T cA = valA; T cB = valB; T cC = valC;
-            DrawToggleButton(new Rect(rect.x,          rect.y, w - 2f, rect.height), labelA, current.Equals(valA), () => setter(cA));
-            DrawToggleButton(new Rect(rect.x + w,      rect.y, w - 2f, rect.height), labelB, current.Equals(valB), () => setter(cB));
-            DrawToggleButton(new Rect(rect.x + w * 2f, rect.y, w - 2f, rect.height), labelC, current.Equals(valC), () => setter(cC));
-        }
-
-        private static void DrawToggleButton(Rect rect, string label, bool active, Action onClick)
-        {
-            Widgets.DrawBoxSolid(rect, active ? new Color(0.25f, 0.50f, 0.35f, 0.9f) : new Color(0.18f, 0.18f, 0.18f, 0.7f));
-            if (active) Widgets.DrawBox(rect, 1);
-            Text.Anchor = TextAnchor.MiddleCenter;
-            GUI.color   = active ? Color.white : new Color(0.72f, 0.72f, 0.72f);
-            Widgets.Label(rect, label);
-            GUI.color   = Color.white;
-            Text.Anchor = TextAnchor.UpperLeft;
-            if (Widgets.ButtonInvisible(rect)) onClick?.Invoke();
-        }
-
-        // ═══════════════════════════════════════════════════════════════
-        // SHARED HELPERS
-        // ═══════════════════════════════════════════════════════════════
-
-        private void DrawSectionHeader(Listing_Standard list, string title, Color color)
-        {
-            GUI.color = color;
-            list.Label($"═══ {title} ═══");
-            GUI.color = Color.white;
-        }
-
-        private void DrawStatusIndicator(Listing_Standard list, bool enabled, string systemName)
-        {
-            GUI.color = enabled ? Color.green : Color.gray;
-            list.Label(enabled ? $"  ✓ {systemName}: Enabled" : $"  {systemName}: Disabled");
-            GUI.color = Color.white;
-        }
-
-        private void DrawBorderRect(Rect rect, Color color, int thickness)
-        {
-            Widgets.DrawBoxSolid(new Rect(rect.x,                rect.y,              rect.width, thickness), color);
-            Widgets.DrawBoxSolid(new Rect(rect.x,                rect.yMax-thickness, rect.width, thickness), color);
-            Widgets.DrawBoxSolid(new Rect(rect.x,                rect.y,              thickness,  rect.height), color);
-            Widgets.DrawBoxSolid(new Rect(rect.xMax - thickness, rect.y,              thickness,  rect.height), color);
-        }
-
-        // ═══════════════════════════════════════════════════════════════
-        // MODEL CONFIG DRAWING
+        // MODEL SOURCE SELECTION
         // ═══════════════════════════════════════════════════════════════
 
         private void DrawModelSourceSelection(Listing_Standard list)
@@ -713,14 +425,17 @@ namespace EchoColony
                 Settings.modelSource = ModelSource.Local;
             if (Widgets.RadioButtonLabeled(list.GetRect(25f), "EchoColony.UseOpenRouter".Translate(), Settings.modelSource == ModelSource.OpenRouter))
                 Settings.modelSource = ModelSource.OpenRouter;
+            if (Widgets.RadioButtonLabeled(list.GetRect(25f), "Custom Provider (OpenAI-compatible)",  Settings.modelSource == ModelSource.Custom))
+                Settings.modelSource = ModelSource.Custom;
 
             list.Gap();
 
             switch (Settings.modelSource)
             {
-                case ModelSource.Local:      DrawLocalModelSettings(list);  break;
-                case ModelSource.OpenRouter: DrawOpenRouterSettings(list);  break;
-                case ModelSource.Gemini:     DrawGeminiSettings(list);      break;
+                case ModelSource.Local:      DrawLocalModelSettings(list);    break;
+                case ModelSource.OpenRouter: DrawOpenRouterSettings(list);    break;
+                case ModelSource.Gemini:     DrawGeminiSettings(list);        break;
+                case ModelSource.Custom:     DrawCustomProviderSettings(list); break;
             }
         }
 
@@ -759,6 +474,82 @@ namespace EchoColony
             Settings.openRouterModel = list.TextEntry(Settings.openRouterModel);
         }
 
+        // ═══════════════════════════════════════════════════════════════
+        // CUSTOM PROVIDER SETTINGS
+        // ═══════════════════════════════════════════════════════════════
+
+        private void DrawCustomProviderSettings(Listing_Standard list)
+        {
+            GUI.color = new Color(1f, 1f, 0.7f);
+            list.Label("Custom Provider Settings (OpenAI-compatible):");
+            GUI.color = Color.white;
+
+            list.Gap(2f);
+            GUI.color = Color.gray;
+            list.Label("Works with: LMStudio (server mode), Ollama (OpenAI compat), Groq, Together AI, Mistral, and any /v1/chat/completions endpoint.");
+            GUI.color = Color.white;
+
+            list.Gap(4f);
+
+            list.Label("Endpoint URL:");
+            Settings.customEndpoint = list.TextEntry(Settings.customEndpoint);
+
+            list.Gap(2f);
+            list.Label("API Key (leave empty if not required — e.g. local servers):");
+            Settings.customApiKey = list.TextEntry(Settings.customApiKey);
+
+            list.Gap(2f);
+            list.Label("Model name (leave empty to use server default):");
+            Settings.customModelName = list.TextEntry(Settings.customModelName);
+
+            list.Gap(6f);
+
+            if (list.ButtonText("🧪 Test Connection"))
+            {
+                if (MyStoryModComponent.Instance != null)
+                    MyStoryModComponent.Instance.StartCoroutine(TestCustomProviderConnection());
+                else
+                    Messages.Message("Load a game first to test the connection.", MessageTypeDefOf.RejectInput);
+            }
+
+            list.Gap(4f);
+            GUI.color = Color.gray;
+            list.Label("Examples:");
+            list.Label("  LMStudio:   http://localhost:1234/v1/chat/completions");
+            list.Label("  Ollama:     http://localhost:11434/v1/chat/completions");
+            list.Label("  Groq:       https://api.groq.com/openai/v1/chat/completions");
+            list.Label("  Together:   https://api.together.xyz/v1/chat/completions");
+            GUI.color = Color.white;
+        }
+
+        private System.Collections.IEnumerator TestCustomProviderConnection()
+        {
+            Messages.Message("Testing custom provider connection...", MessageTypeDefOf.SilentInput);
+
+            bool   done   = false;
+            string result = "";
+
+            yield return GeminiAPI.SendRequestToCustomProvider(
+                "Reply with exactly: 'EchoColony connection test OK'",
+                r => { result = r; done = true; });
+
+            int waited = 0;
+            while (!done && waited < 300) { yield return null; waited++; }
+
+            if (!string.IsNullOrWhiteSpace(result) && !result.StartsWith("⚠"))
+                Messages.Message(
+                    $"✅ Custom provider connected!\nResponse: {result.Substring(0, Math.Min(80, result.Length))}",
+                    MessageTypeDefOf.PositiveEvent);
+            else
+                Messages.Message(
+                    $"❌ Custom provider failed.\n{result}",
+                    MessageTypeDefOf.RejectInput);
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // GEMINI SETTINGS
+        // ═══════════════════════════════════════════════════════════════
+
         private void DrawGeminiSettings(Listing_Standard list)
         {
             GUI.color = new Color(1f, 1f, 0.7f);
@@ -778,8 +569,8 @@ namespace EchoColony
 
             list.Gap();
 
-            string savedModel    = GetSavedModelName();
-            Rect savedModelRect  = list.GetRect(36f);
+            string savedModel   = GetSavedModelName();
+            Rect savedModelRect = list.GetRect(36f);
             Widgets.DrawBoxSolid(savedModelRect, new Color(0.1f, 0.3f, 0.1f, 0.8f));
             DrawBorderRect(savedModelRect, new Color(0.3f, 0.8f, 0.3f), 1);
             GUI.color = Color.green;
@@ -911,6 +702,235 @@ namespace EchoColony
         }
 
         // ═══════════════════════════════════════════════════════════════
+        // PAWN CONVERSATIONS SECTION
+        // ═══════════════════════════════════════════════════════════════
+
+        private void DrawConversationsSection(Listing_Standard list)
+        {
+            DrawSectionHeader(list, "EchoColony.ConvSectionHeader".Translate(), new Color(0.9f, 0.75f, 1f));
+            list.Label("EchoColony.ConvSectionDesc".Translate(), tooltip: "EchoColony.ConvSectionDescTooltip".Translate());
+            list.Gap(2f);
+            list.CheckboxLabeled("EchoColony.ConvEnableLabel".Translate(), ref Settings.enablePawnConversations, "EchoColony.ConvEnableTooltip".Translate());
+
+            if (!Settings.enablePawnConversations)
+            {
+                GUI.color = Color.gray;
+                list.Label("EchoColony.ConvDisabledHint".Translate());
+                GUI.color = Color.white;
+                return;
+            }
+
+            list.Gap(6f);
+
+            list.Label("EchoColony.ConvLinesLabel".Translate(Settings.conversationLinesPerPawn, Settings.conversationLinesPerPawn * 2), tooltip: "EchoColony.ConvLinesTooltip".Translate());
+            Settings.conversationLinesPerPawn = Mathf.RoundToInt(list.Slider(Settings.conversationLinesPerPawn, 1f, 3f));
+            list.Gap(2f);
+
+            list.Label("EchoColony.ConvDelayLabel".Translate(Settings.conversationBubbleDelay.ToString("F1")), tooltip: "EchoColony.ConvDelayTooltip".Translate());
+            Settings.conversationBubbleDelay = Mathf.Round(list.Slider(Settings.conversationBubbleDelay, 0.5f, 4f) * 10f) / 10f;
+            list.Gap(2f);
+
+            list.Label(
+                Settings.conversationCooldownHours == 0
+                    ? "EchoColony.ConvCooldownNoneLabel".Translate()
+                    : "EchoColony.ConvCooldownLabel".Translate(Settings.conversationCooldownHours),
+                tooltip: "EchoColony.ConvCooldownTooltip".Translate());
+            Settings.conversationCooldownHours = Mathf.RoundToInt(list.Slider(Settings.conversationCooldownHours, 0f, 24f));
+            list.Gap(8f);
+
+            list.Label("EchoColony.ConvAnimalModeLabel".Translate(), tooltip: "EchoColony.ConvAnimalModeTooltip".Translate());
+            Rect animalRect = list.GetRect(28f);
+            DrawThreeWayToggle(
+                animalRect,
+                Settings.conversationAnimalMode,
+                v => Settings.conversationAnimalMode = v,
+                ConversationAnimalMode.Disabled,        "EchoColony.ConvAnimalModeDisabled".Translate(),
+                ConversationAnimalMode.IntelligentOnly, "EchoColony.ConvAnimalModeIntelligentOnly".Translate(),
+                ConversationAnimalMode.All,             "EchoColony.ConvAnimalModeAll".Translate());
+
+            list.Gap(2f);
+            GUI.color = Color.gray;
+            string animalModeHint;
+            switch (Settings.conversationAnimalMode)
+            {
+                case ConversationAnimalMode.Disabled:        animalModeHint = "EchoColony.ConvAnimalModeHintDisabled".Translate(); break;
+                case ConversationAnimalMode.IntelligentOnly: animalModeHint = "EchoColony.ConvAnimalModeHintIntelligentOnly".Translate(); break;
+                case ConversationAnimalMode.All:             animalModeHint = "EchoColony.ConvAnimalModeHintAll".Translate(); break;
+                default:                                     animalModeHint = ""; break;
+            }
+            list.Label(animalModeHint);
+            GUI.color = Color.white;
+            list.Gap(8f);
+
+            list.Label("EchoColony.ConvFiltersLabel".Translate());
+            list.CheckboxLabeled("EchoColony.ConvIncludePrisoners".Translate(), ref Settings.conversationIncludePrisoners, "EchoColony.ConvIncludePrisonersTooltip".Translate());
+            list.CheckboxLabeled("EchoColony.ConvIncludeSlaves".Translate(),    ref Settings.conversationIncludeSlaves,    "EchoColony.ConvIncludeSlavesTooltip".Translate());
+            list.CheckboxLabeled("EchoColony.ConvIncludeGuests".Translate(),    ref Settings.conversationIncludeGuests,    "EchoColony.ConvIncludeGuestsTooltip".Translate());
+            list.Gap(4f);
+
+            list.Label(
+                Settings.conversationMinOpinion <= -100
+                    ? "EchoColony.ConvMinOpinionNoFilter".Translate()
+                    : "EchoColony.ConvMinOpinionLabel".Translate(Settings.conversationMinOpinion),
+                tooltip: "EchoColony.ConvMinOpinionTooltip".Translate());
+            Settings.conversationMinOpinion = Mathf.RoundToInt(list.Slider(Settings.conversationMinOpinion, -100f, 100f));
+            list.Gap(4f);
+
+            list.Label(
+                Settings.conversationMaxColonySize == 0
+                    ? "EchoColony.ConvMaxColonySizeNever".Translate()
+                    : "EchoColony.ConvMaxColonySizeLabel".Translate(Settings.conversationMaxColonySize),
+                tooltip: "EchoColony.ConvMaxColonySizeTooltip".Translate());
+            int rawSize = Mathf.RoundToInt(list.Slider(Settings.conversationMaxColonySize, 0f, 200f));
+            Settings.conversationMaxColonySize = rawSize < 5 ? 0 : rawSize;
+            list.Gap(8f);
+
+            string speedLabel = Settings.conversationDisableAtSpeed == 0
+                ? "EchoColony.ConvDisableAtSpeedNever".Translate()
+                : "EchoColony.ConvDisableAtSpeedLabel".Translate(Settings.conversationDisableAtSpeed);
+            list.Label(speedLabel, tooltip: "EchoColony.ConvDisableAtSpeedTooltip".Translate());
+            Settings.conversationDisableAtSpeed = Mathf.RoundToInt(list.Slider(Settings.conversationDisableAtSpeed, 0f, 4f));
+            list.Gap(4f);
+
+            list.CheckboxLabeled("EchoColony.ConvAllowSimultaneous".Translate(), ref Settings.conversationAllowSimultaneous, "EchoColony.ConvAllowSimultaneousTooltip".Translate());
+            list.Gap(8f);
+
+            list.Label("EchoColony.ConvGlobalPromptLabel".Translate(), tooltip: "EchoColony.ConvGlobalPromptTooltip".Translate());
+            const float promptHeight = 72f;
+            Rect promptOuter = list.GetRect(promptHeight + 4f);
+            Rect promptView  = new Rect(0f, 0f, promptOuter.width - 16f,
+                Mathf.Max(promptHeight, Text.CalcHeight(Settings.conversationGlobalPrompt, promptOuter.width - 20f)));
+            Widgets.BeginScrollView(promptOuter, ref convPromptScroll, promptView);
+            Settings.conversationGlobalPrompt = Widgets.TextArea(new Rect(0f, 0f, promptView.width, promptView.height), Settings.conversationGlobalPrompt);
+            Widgets.EndScrollView();
+            list.Gap(8f);
+
+            bool prevLargeFont = Settings.chatLogLargeFont;
+            list.CheckboxLabeled((string)"EchoColony.ChatLogLargeFont".Translate(), ref Settings.chatLogLargeFont);
+            if (Settings.chatLogLargeFont != prevLargeFont)
+                Conversations.ConversationChatLogRenderer.InvalidateCache();
+
+            list.Gap(4f);
+            bool logVisible = Conversations.ConversationChatLogRenderer.IsVisible;
+            if (list.ButtonText(logVisible ? (string)"EchoColony.ChatLogHide".Translate() : (string)"EchoColony.ChatLogShow".Translate()))
+                Conversations.ConversationChatLogRenderer.IsVisible = !logVisible;
+
+            list.Gap(4f);
+            string hotkeyDisplay = Settings.chatLogHotkey == KeyCode.None
+                ? (string)"EchoColony.ChatLogHotkeyNone".Translate()
+                : Settings.chatLogHotkey.ToString();
+
+            Rect hotkeyRow = list.GetRect(28f);
+            float labelW   = hotkeyRow.width * 0.52f;
+            float btnW     = hotkeyRow.width - labelW - 4f;
+
+            var prevAnchor = Text.Anchor;
+            Text.Anchor = TextAnchor.MiddleLeft;
+            Widgets.Label(new Rect(hotkeyRow.x, hotkeyRow.y, labelW, hotkeyRow.height), "EchoColony.ChatLogHotkeyLabel".Translate());
+            Text.Anchor = prevAnchor;
+
+            if (Settings.isWaitingForChatLogKey) GUI.color = Color.yellow;
+            string keyBtnText = Settings.isWaitingForChatLogKey ? (string)"EchoColony.ChatLogHotkeyPress".Translate() : hotkeyDisplay;
+            if (Widgets.ButtonText(new Rect(hotkeyRow.x + labelW + 4f, hotkeyRow.y, btnW, hotkeyRow.height), keyBtnText))
+                Settings.isWaitingForChatLogKey = !Settings.isWaitingForChatLogKey;
+            GUI.color = Color.white;
+
+            if (Settings.isWaitingForChatLogKey) ProcessChatLogKeyCapture();
+
+            list.Gap(2f);
+            GUI.color = Color.gray;
+            list.Label("EchoColony.ChatLogHint".Translate());
+            GUI.color = Color.white;
+        }
+
+        private void ProcessChatLogKeyCapture()
+        {
+            var ev = Event.current;
+            if (ev == null) return;
+            if (ev.type == EventType.KeyDown && ev.keyCode == KeyCode.Escape)
+            { Settings.isWaitingForChatLogKey = false; ev.Use(); return; }
+            if (ev.type == EventType.KeyDown && (ev.keyCode == KeyCode.Delete || ev.keyCode == KeyCode.Backspace))
+            { Settings.chatLogHotkey = KeyCode.None; Settings.isWaitingForChatLogKey = false; ev.Use(); return; }
+            if (ev.type == EventType.KeyDown && ev.keyCode != KeyCode.None)
+            { Settings.chatLogHotkey = ev.keyCode; Settings.isWaitingForChatLogKey = false; ev.Use(); }
+        }
+
+        private Vector2 _monoScroll = Vector2.zero;
+
+        private void DrawMonologuesSection(Listing_Standard list)
+        {
+            DrawSectionHeader(list, "EchoColony.MonoSectionHeader".Translate(), new Color(1f, 0.85f, 0.5f));
+            list.Label("EchoColony.MonoSectionDesc".Translate());
+            list.CheckboxLabeled("EchoColony.MonoEnableLabel".Translate(), ref Settings.enableMonologues, "EchoColony.MonoEnableTooltip".Translate());
+            if (!Settings.enableMonologues) return;
+
+            list.Gap(4f);
+            list.Label("EchoColony.MonoCooldownLabel".Translate(Settings.monologueCooldownHours), tooltip: "EchoColony.MonoCooldownTooltip".Translate());
+            Settings.monologueCooldownHours = Mathf.RoundToInt(list.Slider(Settings.monologueCooldownHours, 1f, 24f));
+            list.Gap(4f);
+
+            float chanceDisplay = Mathf.Round(Settings.monologueChancePerHour * 100f);
+            list.Label(
+                chanceDisplay < 1f
+                    ? "EchoColony.MonoChanceOffLabel".Translate()
+                    : "EchoColony.MonoChanceLabel".Translate(chanceDisplay.ToString("F0")),
+                tooltip: "EchoColony.MonoChanceTooltip".Translate());
+            Settings.monologueChancePerHour = Mathf.Round(list.Slider(Settings.monologueChancePerHour, 0f, 1f) * 100f) / 100f;
+            list.Gap(4f);
+
+            list.Label("EchoColony.MonoThoughtImpactLabel".Translate(Settings.monologueMinMoodImpact.ToString("F0")), tooltip: "EchoColony.MonoThoughtImpactTooltip".Translate());
+            Settings.monologueMinMoodImpact = Mathf.Round(list.Slider(Settings.monologueMinMoodImpact, 1f, 20f));
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SHARED HELPERS
+        // ═══════════════════════════════════════════════════════════════
+
+        private static void DrawThreeWayToggle<T>(Rect rect, T current, Action<T> setter,
+            T valA, string labelA, T valB, string labelB, T valC, string labelC)
+        {
+            float w = rect.width / 3f;
+            T cA = valA; T cB = valB; T cC = valC;
+            DrawToggleButton(new Rect(rect.x,          rect.y, w - 2f, rect.height), labelA, current.Equals(valA), () => setter(cA));
+            DrawToggleButton(new Rect(rect.x + w,      rect.y, w - 2f, rect.height), labelB, current.Equals(valB), () => setter(cB));
+            DrawToggleButton(new Rect(rect.x + w * 2f, rect.y, w - 2f, rect.height), labelC, current.Equals(valC), () => setter(cC));
+        }
+
+        private static void DrawToggleButton(Rect rect, string label, bool active, Action onClick)
+        {
+            Widgets.DrawBoxSolid(rect, active ? new Color(0.25f, 0.50f, 0.35f, 0.9f) : new Color(0.18f, 0.18f, 0.18f, 0.7f));
+            if (active) Widgets.DrawBox(rect, 1);
+            Text.Anchor = TextAnchor.MiddleCenter;
+            GUI.color   = active ? Color.white : new Color(0.72f, 0.72f, 0.72f);
+            Widgets.Label(rect, label);
+            GUI.color   = Color.white;
+            Text.Anchor = TextAnchor.UpperLeft;
+            if (Widgets.ButtonInvisible(rect)) onClick?.Invoke();
+        }
+
+        private void DrawSectionHeader(Listing_Standard list, string title, Color color)
+        {
+            GUI.color = color;
+            list.Label($"═══ {title} ═══");
+            GUI.color = Color.white;
+        }
+
+        private void DrawStatusIndicator(Listing_Standard list, bool enabled, string systemName)
+        {
+            GUI.color = enabled ? Color.green : Color.gray;
+            list.Label(enabled ? $"  ✓ {systemName}: Enabled" : $"  {systemName}: Disabled");
+            GUI.color = Color.white;
+        }
+
+        private void DrawBorderRect(Rect rect, Color color, int thickness)
+        {
+            Widgets.DrawBoxSolid(new Rect(rect.x,                rect.y,              rect.width, thickness), color);
+            Widgets.DrawBoxSolid(new Rect(rect.x,                rect.yMax-thickness, rect.width, thickness), color);
+            Widgets.DrawBoxSolid(new Rect(rect.x,                rect.y,              thickness,  rect.height), color);
+            Widgets.DrawBoxSolid(new Rect(rect.xMax - thickness, rect.y,              thickness,  rect.height), color);
+        }
+
+        // ═══════════════════════════════════════════════════════════════
         // DEBUG TOOLS
         // ═══════════════════════════════════════════════════════════════
 
@@ -962,6 +982,95 @@ namespace EchoColony
             GUI.color = Color.gray;
             list.Label("Use these tools to diagnose issues");
             GUI.color = Color.white;
+        }
+
+        private void DrawTalesDebugTools(Listing_Standard list)
+        {
+            list.Gap();
+            GUI.color = new Color(0.8f, 1f, 0.8f);
+            list.Label("Tales Cache:");
+            GUI.color = Color.white;
+
+            if (list.ButtonText("🧪 Export Tales to TXT"))
+            {
+                if (Current.Game == null)
+                {
+                    Messages.Message("Load a game first", MessageTypeDefOf.RejectInput);
+                    return;
+                }
+
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine("=== ECHOCOLONY TALES DEBUG ===");
+                sb.AppendLine($"Generated: {System.DateTime.Now}");
+                sb.AppendLine();
+
+                sb.AppendLine("─── RAW TALEMANAGER (all tales in game) ───");
+                var allTales = Find.TaleManager?.AllTalesListForReading ?? new System.Collections.Generic.List<RimWorld.Tale>();
+                sb.AppendLine($"Total tales in TaleManager: {allTales.Count}");
+                sb.AppendLine();
+
+                int rawIdx = 0;
+                foreach (var tale in allTales.OrderByDescending(t => t.date).Take(30))
+                {
+                    rawIdx++;
+                    sb.AppendLine($"[{rawIdx}] def={tale.def?.defName ?? "null"} date={tale.date} id={tale.id}");
+                    try
+                    {
+                        string summary = TalesCache.CleanTaleText(tale.ShortSummary ?? "");
+                        sb.AppendLine($"     ShortSummary: {(string.IsNullOrWhiteSpace(summary) ? "(vacío)" : summary)}");
+                    }
+                    catch (System.Exception ex)
+                    {
+                        sb.AppendLine($"     ERROR: {ex.Message}");
+                    }
+                    sb.AppendLine();
+                }
+
+                if (allTales.Count == 0)
+                    sb.AppendLine("  (empty — no tales recorded yet in this colony)");
+
+                sb.AppendLine();
+                sb.AppendLine("─── TALESCACHE PER COLONIST ───");
+                TalesCache.Clear();
+
+                var colonists = Find.CurrentMap?.mapPawns?.FreeColonists?.ToList()
+                             ?? new System.Collections.Generic.List<Pawn>();
+
+                sb.AppendLine($"Colonists on map: {colonists.Count}");
+                sb.AppendLine();
+
+                foreach (var pawn in colonists)
+                {
+                    sb.AppendLine($"── {pawn.LabelShort} (id={pawn.thingIDNumber}) ──");
+                    int concernCount = allTales.Count(t => t.Concerns(pawn));
+                    sb.AppendLine($"  Tales that Concerns(pawn): {concernCount}");
+
+                    var cached = TalesCache.GetTalesFor(pawn, 8);
+                    sb.AppendLine($"  TalesCache returned: {cached.Count} tales");
+                    if (cached.Any())
+                        foreach (var t in cached) sb.AppendLine($"    • {t}");
+                    else
+                        sb.AppendLine("    (none)");
+
+                    sb.AppendLine();
+                }
+
+                string path = System.IO.Path.Combine(
+                    System.IO.Path.GetDirectoryName(GenFilePaths.SaveDataFolderPath),
+                    "EchoColony_TalesDebug.txt");
+
+                try
+                {
+                    System.IO.File.WriteAllText(path, sb.ToString());
+                    Messages.Message($"EchoColony: Tales exported to {path}", MessageTypeDefOf.PositiveEvent);
+                    Log.Message($"[EchoColony] Tales debug written to: {path}");
+                }
+                catch (System.Exception ex)
+                {
+                    Messages.Message($"EchoColony: Error writing file — {ex.Message}", MessageTypeDefOf.RejectInput);
+                    Log.Error($"[EchoColony] Tales debug write error: {ex.Message}");
+                }
+            }
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -1104,7 +1213,7 @@ namespace EchoColony
         }
 
         // ═══════════════════════════════════════════════════════════════
-        // PLAYER2 HELPERS (legacy - kept for compatibility)
+        // PLAYER2 HELPERS
         // ═══════════════════════════════════════════════════════════════
 
         public static void CheckPlayer2AvailableAndWarn()

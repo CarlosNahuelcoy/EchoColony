@@ -12,7 +12,8 @@ namespace EchoColony.Conversations
     /// Pulls from:
     ///   • ColonistMemoryManager  — memories from direct player<->pawn chats
     ///   • DailyGroupMemoryTracker — recent colony-wide events
-    ///   • RimWorld game state     — relationship, mood, health, interaction type
+    ///   • RimWorld TaleManager   — verified real colony events (hunts, deaths, marriages, etc.)
+    ///   • RimWorld game state    — relationship, mood, health, interaction type
     ///
     /// Returns a single prompt that asks the AI to produce a JSON array of
     /// dialogue lines, which PawnConversationManager then parses.
@@ -32,11 +33,8 @@ namespace EchoColony.Conversations
             int totalLines = linesPerPawn * 2;
             var sb = new StringBuilder();
 
-            // Extract the full log sentence for this interaction (e.g. "charlaron sobre amar")
-            // This is the REAL topic — much richer than the bare defName label
             string logText = GetRecentInteractionLogText(initiator, recipient, interactionDef);
 
-            // Interaction type first — it's the PRIMARY topic anchor
             sb.AppendLine(BuildSystemInstruction(totalLines, initiator.LabelShort, recipient.LabelShort, interactionDef, logText));
             sb.AppendLine(BuildInteractionTypeSection(interactionDef, logText));
             sb.AppendLine(BuildEnvironmentSection(initiator));
@@ -45,25 +43,68 @@ namespace EchoColony.Conversations
             sb.AppendLine(BuildRelationshipSection(initiator, recipient));
             sb.AppendLine(BuildSharedMemorySection(initiator, recipient));
             sb.AppendLine(BuildColonyEventsSection(initiator, recipient));
+            // ── NEW: Real verified events from TaleManager ────────────────────────
+            sb.AppendLine(BuildVerifiedTalesSection(initiator, recipient));
             sb.AppendLine(BuildOutputInstruction(totalLines, initiator.LabelShort, recipient.LabelShort, interactionDef, logText));
+
+            return sb.ToString();
+        }
+
+        // ── NEW: Verified real colony events from TaleManager ─────────────────────
+        //
+        // These are the exact same events RimWorld uses to generate art descriptions
+        // ("In honor of when Morg hunted a thrumbo. Year 5.").
+        // They are FACTS — not summaries, not AI-generated — and serve as the only
+        // permitted source of historical references in the dialogue.
+
+        private static string BuildVerifiedTalesSection(Pawn initiator, Pawn recipient)
+        {
+            var (shared, personalI) = TalesCache.GetTalesForPair(initiator, recipient,
+                TalesCache.MAX_SHARED_TALES, TalesCache.MAX_PERSONAL_TALES);
+            var (_, personalR) = TalesCache.GetTalesForPair(recipient, initiator,
+                0, TalesCache.MAX_PERSONAL_TALES);
+
+            if (!shared.Any() && !personalI.Any() && !personalR.Any()) return "";
+
+            var sb = new StringBuilder();
+            sb.AppendLine("=== VERIFIED COLONY HISTORY (REAL EVENTS — USE THESE, INVENT NOTHING ELSE) ===");
+            sb.AppendLine("The following events ACTUALLY HAPPENED in this colony.");
+            sb.AppendLine("Colonists may reference these freely. They must NEVER reference events, technology,");
+            sb.AppendLine("structures, or items that do not appear here or in the game state above.");
+            sb.AppendLine();
+
+            if (shared.Any())
+            {
+                sb.AppendLine($"Events involving BOTH {initiator.LabelShort} and {recipient.LabelShort}:");
+                foreach (var t in shared) sb.AppendLine($"  • {t}");
+                sb.AppendLine();
+            }
+
+            if (personalI.Any())
+            {
+                sb.AppendLine($"Events involving {initiator.LabelShort}:");
+                foreach (var t in personalI) sb.AppendLine($"  • {t}");
+                sb.AppendLine();
+            }
+
+            if (personalR.Any())
+            {
+                sb.AppendLine($"Events involving {recipient.LabelShort}:");
+                foreach (var t in personalR) sb.AppendLine($"  • {t}");
+            }
 
             return sb.ToString();
         }
 
         // ── Extract real interaction text from play log ───────────────────────────
 
-        /// <summary>
-        /// Finds the most recent PlayLogEntry_Interaction for this pair and returns
-        /// its human-readable string (e.g. "Morg and Say chatted about love").
-        /// This gives the AI the actual TOPIC, not just the bare def label.
-        /// </summary>
         private static string GetRecentInteractionLogText(Pawn a, Pawn b, InteractionDef def)
         {
             if (Find.PlayLog == null) return null;
             try
             {
                 int now = Find.TickManager.TicksGame;
-                int window = 600; // look back 10 seconds of game time
+                int window = 600;
 
                 foreach (var entry in Find.PlayLog.AllEntries
                     .Where(e => e.Tick >= now - window)
@@ -71,8 +112,6 @@ namespace EchoColony.Conversations
                 {
                     if (!(entry is PlayLogEntry_Interaction)) continue;
 
-                    // Compare InteractionDef via reflection (field is private "intDef")
-                    // This is the same approach used by RimTalk's GetInteractionDef utility
                     if (def != null)
                     {
                         var intDefField = HarmonyLib.AccessTools.Field(entry.GetType(), "intDef");
@@ -80,17 +119,13 @@ namespace EchoColony.Conversations
                         if (entryDef != def) continue;
                     }
 
-                    // Get the human-readable string — it contains pawn names AND the full topic
-                    // e.g. "Morg y Say charlaron sobre amar"
                     string text = entry.ToGameStringFromPOV(a);
                     if (string.IsNullOrWhiteSpace(text)) continue;
 
-                    // Strip color tags
                     text = System.Text.RegularExpressions.Regex.Replace(text, @"<color=#[0-9A-Fa-f]{6,8}>", "");
                     text = text.Replace("</color>", "").Trim();
                     if (string.IsNullOrWhiteSpace(text)) continue;
 
-                    // Verify both pawn names appear in the rendered text
                     string textLower = text.ToLowerInvariant();
                     if (!textLower.Contains(a.LabelShort.ToLowerInvariant())) continue;
                     if (!textLower.Contains(b.LabelShort.ToLowerInvariant())) continue;
@@ -103,6 +138,9 @@ namespace EchoColony.Conversations
         }
 
         // ── System instruction ────────────────────────────────────────────────────
+        //
+        // ANTI-HALLUCINATION RULES are baked in here at the top level so the AI
+        // receives them before any context — the most reliable position for hard rules.
 
         private static string BuildSystemInstruction(int totalLines, string nameA, string nameB,
             InteractionDef interactionDef = null, string logText = null)
@@ -110,7 +148,6 @@ namespace EchoColony.Conversations
             string topicLine = "";
             if (!string.IsNullOrWhiteSpace(logText))
             {
-                // Use the full log sentence — it contains the real topic ("sobre amar", "sobre lanzadores", etc.)
                 topicLine = $"PRIMARY TOPIC: Just now, {logText} — this is what they are talking about.\n" +
                             $"Write dialogue that naturally flows from this specific topic.\n" +
                             $"Character context (health, mood, traits) is background color only — " +
@@ -130,11 +167,27 @@ namespace EchoColony.Conversations
                 $"Write {totalLines} short lines alternating between {nameA} (starts first) and {nameB}.\n" +
                 topicLine +
                 $"Each line: 1–2 sentences max. Conversational and human — tone should fit their relationship, power dynamic, and traits (see context below).\n" +
-                $"NO robotic phrasing. NO meta-commentary like \'That conversation was good\'. " +
+                $"NO robotic phrasing. NO meta-commentary like 'That conversation was good'. " +
                 $"Talk ABOUT the topic, not ABOUT having talked.\n" +
                 $"IMPORTANT: If a participant is an animal, their lines must reflect their species " +
                 $"and intelligence level as described in their section — sounds/body language for " +
-                $"normal animals, words for intelligent ones.\n";
+                $"normal animals, words for intelligent ones.\n" +
+                $"\n" +
+                // ── ANTI-HALLUCINATION BLOCK ──────────────────────────────────────
+                $"STRICT GROUNDING RULES — READ CAREFULLY:\n" +
+                $"1. You will be given a section called VERIFIED COLONY HISTORY. " +
+                $"   That is the ONLY source of past events you may reference.\n" +
+                $"2. If a technology, building, item, animal, or event is NOT mentioned " +
+                $"   in the VERIFIED COLONY HISTORY or the current game state, " +
+                $"   it does NOT exist in this colony. Do NOT invent it.\n" +
+                $"3. Examples of forbidden inventions: solar panels in a medieval colony, " +
+                $"   a hospital if none is mentioned, research the colony never did, " +
+                $"   people or animals not listed, events that never happened.\n" +
+                $"4. If you have no verified history to reference, the colonists talk ONLY " +
+                $"   about what is happening RIGHT NOW (the current topic, their job, the weather, " +
+                $"   their mood). They do NOT recall the past at all.\n" +
+                $"5. These rules override creativity. An immersion-breaking invented fact is " +
+                $"   always worse than a short, grounded exchange.\n";
         }
 
         // ── Environment ───────────────────────────────────────────────────────────
@@ -169,17 +222,13 @@ namespace EchoColony.Conversations
             sb.AppendLine("=== INTERACTION TRIGGER ===");
 
             if (!string.IsNullOrWhiteSpace(logText))
-            {
-                // The full log text is the richest source — use it directly
                 sb.AppendLine($"What just happened: {logText}");
-            }
 
             if (def != null)
             {
                 string nature = GetInteractionNature(def);
                 sb.AppendLine($"Interaction type: {def.label} ({nature})");
 
-                // For mod interactions add description if present
                 if (!IsKnownVanillaInteraction(def))
                 {
                     string desc = def.description?.Trim();
@@ -196,7 +245,6 @@ namespace EchoColony.Conversations
             return sb.ToString();
         }
 
-        // Returns true for interactions we have explicit vanilla knowledge of
         private static bool IsKnownVanillaInteraction(InteractionDef def)
         {
             string n = def.defName?.ToLower() ?? "";
@@ -216,36 +264,29 @@ namespace EchoColony.Conversations
             var sb = new StringBuilder();
             sb.AppendLine($"=== {role}: {pawn.LabelShort} ===");
 
-            // ── Age + behavior guidance ───────────────────────────────────────────
             int age = pawn.ageTracker?.AgeBiologicalYears ?? 0;
             sb.AppendLine($"Age: {age}, {pawn.gender}");
             string ageBehavior = GetAgeBehavior(age);
             if (!string.IsNullOrEmpty(ageBehavior))
                 sb.AppendLine($"[AGE NOTE: {ageBehavior}]");
 
-            // ── Status with detail ────────────────────────────────────────────────
             sb.AppendLine(GetDetailedStatus(pawn));
 
-            // ── Xenotype (Biotech) ────────────────────────────────────────────────
             string xenoInfo = GetXenotypeInfo(pawn);
             if (!string.IsNullOrEmpty(xenoInfo))
                 sb.AppendLine(xenoInfo);
 
-            // ── Backstory ─────────────────────────────────────────────────────────
             string backstory = GetBackstorySummary(pawn);
             if (!string.IsNullOrEmpty(backstory))
                 sb.AppendLine($"Background: {backstory}");
 
-            // ── Traits ───────────────────────────────────────────────────────────
             if (pawn.story?.traits?.allTraits != null && pawn.story.traits.allTraits.Any())
                 sb.AppendLine($"Personality: {string.Join(", ", pawn.story.traits.allTraits.Select(t => t.LabelCap))}");
 
-            // ── Trait-driven speech style ─────────────────────────────────────────
             string traitSpeech = GetTraitSpeechStyle(pawn);
             if (!string.IsNullOrEmpty(traitSpeech))
                 sb.AppendLine(traitSpeech);
 
-            // ── Animal identity (if this pawn IS an animal) ───────────────────────
             if (pawn.RaceProps?.Animal == true)
             {
                 bool intelligent = Animals.AnimalPromptManager.GetIsIntelligent(pawn);
@@ -258,12 +299,10 @@ namespace EchoColony.Conversations
                                   $"Cannot speak human words. Express as *actions* and animal sounds.]");
             }
 
-            // ── Mental state ──────────────────────────────────────────────────────
             if (pawn.InMentalState && pawn.MentalState?.def != null)
                 sb.AppendLine($"[MENTAL STATE ACTIVE: {pawn.MentalState.def.label.ToUpper()} — " +
                               $"behavior is erratic and driven by this compulsion]");
 
-            // ── Mood + feelings ───────────────────────────────────────────────────
             float mood = pawn.needs?.mood?.CurLevel ?? 0.5f;
             sb.AppendLine($"Mood: {GetMoodDesc(mood)} ({mood:P0})");
 
@@ -274,11 +313,9 @@ namespace EchoColony.Conversations
             if (topThoughts != null && topThoughts.Any())
                 sb.AppendLine($"Feelings: {string.Join(", ", topThoughts.Select(t => t.LabelCap))}");
 
-            // ── Grief ─────────────────────────────────────────────────────────────
             if (IsGrieving(pawn))
                 sb.AppendLine("Grieving: recently lost someone from the colony");
 
-            // ── Food / rest needs ─────────────────────────────────────────────────
             float food = pawn.needs?.food?.CurLevel ?? 1f;
             if (food < 0.15f)      sb.AppendLine("Hunger: starving — barely able to focus");
             else if (food < 0.3f)  sb.AppendLine("Hunger: very hungry — distracting");
@@ -288,45 +325,37 @@ namespace EchoColony.Conversations
             if (rest < 0.15f)      sb.AppendLine("Rest: exhausted — speech may be slow or irritable");
             else if (rest < 0.3f)  sb.AppendLine("Rest: very tired");
 
-            // ── Drug & chemical states ────────────────────────────────────────────
             string drugState = GetDrugState(pawn);
             if (!string.IsNullOrEmpty(drugState))
                 sb.AppendLine(drugState);
 
-            // ── Pain & consciousness ──────────────────────────────────────────────
             float pain = pawn.health?.hediffSet?.PainTotal ?? 0f;
-            if (pain > 0.35f)   // Only report pain that's truly distracting (moderate+)
+            if (pain > 0.35f)
                 sb.AppendLine($"Pain: {GetPainDesc(pain)} ({pain:P0}) — background discomfort");
 
             float consciousness = pawn.health?.capacities?.GetLevel(PawnCapacityDefOf.Consciousness) ?? 1f;
             if (consciousness < 0.85f)
                 sb.AppendLine($"Consciousness: {consciousness:P0} — groggy, slow, impaired thinking");
 
-            // ── Movement — explicit reason (NOT just "can barely walk") ───────────
             string mobilityNote = GetMobilityNote(pawn, age);
             if (!string.IsNullOrEmpty(mobilityNote))
                 sb.AppendLine(mobilityNote);
 
-            // ── Manipulation (hands/arms) ─────────────────────────────────────────
             float manip = pawn.health?.capacities?.GetLevel(PawnCapacityDefOf.Manipulation) ?? 1f;
             if (manip < 0.5f)      sb.AppendLine("Manipulation: severely limited — can barely use hands");
             else if (manip < 0.8f) sb.AppendLine("Manipulation: reduced — limited use of hands/arms");
 
-            // ── Speech impediments ────────────────────────────────────────────────
             string speechNote = GetSpeechImpediment(pawn);
             if (!string.IsNullOrEmpty(speechNote))
                 sb.AppendLine(speechNote);
 
-            // ── Significant health conditions ─────────────────────────────────────
             var injuries = GetSignificantHealthConditions(pawn);
             if (injuries.Any())
                 sb.AppendLine($"Health conditions: {string.Join(", ", injuries)}");
 
-            // ── Current activity ──────────────────────────────────────────────────
             if (pawn.CurJob?.def != null)
                 sb.AppendLine($"Currently: {pawn.CurJob.def.reportString ?? pawn.CurJob.def.label}");
 
-            // ── Ideology (name only — keeps prompt concise) ───────────────────────
             if (ModsConfig.IdeologyActive && pawn.Ideo != null)
                 sb.AppendLine($"Ideology: {pawn.Ideo.name}");
 
@@ -337,16 +366,16 @@ namespace EchoColony.Conversations
 
         private static string GetAgeBehavior(int age)
         {
-            if (age <= 1)   return "INFANT — only cries, coos, and babbles. Cannot form words or sentences.";
-            if (age <= 3)   return "TODDLER — very simple words only, excited and curious, short attention span.";
-            if (age <= 6)   return "YOUNG CHILD — simple sentences, asks lots of questions, innocent perspective.";
-            if (age <= 10)  return "CHILD — enthusiastic but childlike, does not fully grasp adult situations.";
-            if (age <= 13)  return "PRETEEN — starting to sound more mature but still young and naive.";
-            if (age <= 17)  return "TEENAGER — direct, sometimes emotional, wants to be taken seriously.";
-            return null; // Adults: no special note needed
+            if (age <= 1)  return "INFANT — only cries, coos, and babbles. Cannot form words or sentences.";
+            if (age <= 3)  return "TODDLER — very simple words only, excited and curious, short attention span.";
+            if (age <= 6)  return "YOUNG CHILD — simple sentences, asks lots of questions, innocent perspective.";
+            if (age <= 10) return "CHILD — enthusiastic but childlike, does not fully grasp adult situations.";
+            if (age <= 13) return "PRETEEN — starting to sound more mature but still young and naive.";
+            if (age <= 17) return "TEENAGER — direct, sometimes emotional, wants to be taken seriously.";
+            return null;
         }
 
-        // ── Detailed status (slave will / prisoner resistance) ────────────────────
+        // ── Detailed status ───────────────────────────────────────────────────────
 
         private static string GetDetailedStatus(Pawn pawn)
         {
@@ -392,12 +421,11 @@ namespace EchoColony.Conversations
 
             string xenoName = pawn.genes.xenotypeName ?? pawn.genes.Xenotype?.label ?? "baseline";
             if (pawn.genes.Xenotype == XenotypeDefOf.Baseliner && string.IsNullOrEmpty(pawn.genes.xenotypeName))
-                return null; // Plain human — no need to mention
+                return null;
 
             var parts = new List<string>();
             parts.Add($"Xenotype: {xenoName}");
 
-            // Short xenotype description (strip XML, truncate)
             if (pawn.genes.Xenotype != null && pawn.genes.Xenotype != XenotypeDefOf.Baseliner)
             {
                 string desc = pawn.genes.Xenotype.description ?? "";
@@ -407,7 +435,6 @@ namespace EchoColony.Conversations
                     parts.Add($"({desc})");
             }
 
-            // Special needs — hemogen
             if (ModsConfig.BiotechActive)
             {
                 var hemogenDef = DefDatabase<NeedDef>.GetNamedSilentFail("Hemogen");
@@ -425,7 +452,6 @@ namespace EchoColony.Conversations
                 }
             }
 
-            // Notable appearance genes (cosmetic)
             var appearGenes = pawn.genes?.GenesListForReading?
                 .Where(g => g.Active && g.def.displayCategory != null &&
                     (g.def.displayCategory.defName == "Cosmetic" ||
@@ -491,35 +517,29 @@ namespace EchoColony.Conversations
             catch { return false; }
         }
 
-        // ── Mobility — explain the REASON, not just the result ───────────────────
+        // ── Mobility ──────────────────────────────────────────────────────────────
 
         private static string GetMobilityNote(Pawn pawn, int age)
         {
-            // Infants and toddlers can't walk — it's developmental, not injury
-            if (age <= 1) return null; // Already covered by age note
+            if (age <= 1) return null;
             if (age <= 3) return "[MOBILITY: Toddler — walks unsteadily, cannot keep up with adults]";
 
             float moving = pawn.health?.capacities?.GetLevel(PawnCapacityDefOf.Moving) ?? 1f;
-            if (moving >= 0.5f) return null; // Fine — no note needed
+            if (moving >= 0.5f) return null;
 
-            // Now determine WHY they can't move — this is what the AI needs
             var hediffSet = pawn.health?.hediffSet;
             if (hediffSet == null) return $"[MOBILITY: {moving:P0} — severely impaired movement]";
 
-            // 1. Paralytic abasia (neurological — NOT pain-related)
-            var abasia = hediffSet.hediffs.FirstOrDefault(h =>
-                h.def?.defName == "ParalyticAbasia");
+            var abasia = hediffSet.hediffs.FirstOrDefault(h => h.def?.defName == "ParalyticAbasia");
             if (abasia != null)
                 return "[MOBILITY: PARALYTIC ABASIA — neurological condition, legs work but walking is impossible. This is NOT pain. They may need to be carried or use support.]";
 
-            // 2. Spinal / back injury
             var spinalInjury = hediffSet.hediffs.FirstOrDefault(h =>
                 h.Visible && h.def.isBad &&
                 (h.Part?.def?.defName == "Spine" || h.Part?.def?.label?.ToLower().Contains("spine") == true));
             if (spinalInjury != null)
                 return $"[MOBILITY: SPINAL INJURY ({spinalInjury.def.label}) — movement severely impaired due to structural damage to the spine, not pain alone]";
 
-            // 3. Both legs missing
             var missingLegs = hediffSet.hediffs.OfType<Hediff_MissingPart>()
                 .Where(h => h.Part?.def?.defName == "Leg" || h.Part?.def?.defName == "Foot")
                 .ToList();
@@ -528,7 +548,6 @@ namespace EchoColony.Conversations
             if (missingLegs.Count == 1)
                 return "[MOBILITY: One leg missing — severely impaired, hobbles with great difficulty]";
 
-            // 4. Prosthetic legs (movement reduced by quality)
             var legProsthetics = hediffSet.hediffs
                 .Where(h => h.def?.addedPartProps != null &&
                            (h.Part?.def?.defName == "Leg" || h.Part?.def?.defName == "Foot"))
@@ -536,12 +555,10 @@ namespace EchoColony.Conversations
             if (legProsthetics.Any() && moving < 0.7f)
                 return $"[MOBILITY: {moving:P0} — basic prosthetic legs limit movement significantly]";
 
-            // 5. Extreme pain causing immobility (pain > 0.6 AND moving reduced)
             float pain = hediffSet.PainTotal;
             if (pain > 0.6f && moving < 0.5f)
                 return $"[MOBILITY: {moving:P0} — severely impaired DUE TO EXTREME PAIN ({pain:P0}). This is pain-induced, NOT structural damage]";
 
-            // 6. Generic fallback with capacity value
             return $"[MOBILITY: {moving:P0} — movement severely impaired]";
         }
 
@@ -561,7 +578,6 @@ namespace EchoColony.Conversations
 
                 switch (dn)
                 {
-                    // ── Stimulants / euphoric ────────────────────────────────────
                     case "GoJuiceHigh":
                         states.Add("HIGH on go-juice: hyper-alert, aggressive confidence, almost reckless energy");
                         break;
@@ -578,7 +594,6 @@ namespace EchoColony.Conversations
                     case "PsychiteTeaHigh":
                         states.Add("on psychite tea: mildly stimulated, calm alertness");
                         break;
-                    // ── Depressants / sedating ───────────────────────────────────
                     case "BeerHigh":
                     {
                         float sev = h.Severity;
@@ -605,7 +620,6 @@ namespace EchoColony.Conversations
                     case "PainKillerHigh":
                         states.Add("on painkillers: drowsy, detached, words come slow");
                         break;
-                    // ── Addiction / withdrawal ───────────────────────────────────
                     case "GoJuiceWithdrawal":
                         states.Add("in go-juice WITHDRAWAL: exhausted, irritable, desperate");
                         break;
@@ -624,7 +638,6 @@ namespace EchoColony.Conversations
                     case "LuciferiumWithdrawal":
                         states.Add("in LUCIFERIUM WITHDRAWAL: terrified, paranoid, deteriorating — will go berserk without a dose");
                         break;
-                    // ── Other ────────────────────────────────────────────────────
                     case "NeuroquineHigh":
                         states.Add("on neuroquine: slightly sedated, muted emotions");
                         break;
@@ -653,7 +666,6 @@ namespace EchoColony.Conversations
                 string dn = h.def.defName;
                 string label = h.def.label?.ToLower() ?? "";
 
-                // Missing or destroyed tongue
                 if (dn == "MissingBodyPart" && h.Part?.def?.defName == "Tongue")
                 {
                     notes.Add("TONGUE REMOVED — speech is severely impaired, words are garbled and difficult to understand, " +
@@ -661,7 +673,6 @@ namespace EchoColony.Conversations
                     break;
                 }
 
-                // Jaw damage
                 if (h.Part?.def?.defName == "Jaw")
                 {
                     if (dn == "MissingBodyPart")
@@ -670,13 +681,11 @@ namespace EchoColony.Conversations
                         notes.Add("jaw injured — speaking is painful, short clipped sentences");
                 }
 
-                // Scarring/burns on face affecting speech
                 if ((label.Contains("burn") || label.Contains("scar")) &&
                     (h.Part?.def?.defName == "Jaw" || h.Part?.def?.defName == "Head"))
                     notes.Add("facial scarring — may speak with difficulty or self-consciously");
             }
 
-            // Low talking capacity
             float talking = pawn.health?.capacities?.GetLevel(PawnCapacityDefOf.Talking) ?? 1f;
             if (talking < 0.5f && !notes.Any())
                 notes.Add($"talking capacity severely reduced ({talking:P0}) — speech is labored and minimal");
@@ -694,22 +703,17 @@ namespace EchoColony.Conversations
             var hediffSet = pawn.health?.hediffSet;
             if (hediffSet == null) return result;
 
-            // Missing limbs/organs that affect confidence or mobility
             foreach (var h in hediffSet.hediffs)
             {
                 if (h?.def == null) continue;
-                string dn = h.def.defName;
-
-                if (dn == "MissingBodyPart")
+                if (h.def.defName == "MissingBodyPart")
                 {
                     string partName = h.Part?.def?.label ?? "body part";
-                    // Skip tongue/jaw already handled above
                     if (h.Part?.def?.defName == "Tongue" || h.Part?.def?.defName == "Jaw") continue;
                     result.Add($"missing {partName}");
                 }
             }
 
-            // Significant bad hediffs (pain > threshold, severity > 0.3)
             var badHediffs = hediffSet.hediffs
                 .Where(h => h.Visible && h.def.isBad &&
                             h.def.defName != "MissingBodyPart" &&
@@ -743,14 +747,12 @@ namespace EchoColony.Conversations
             bool aIsAnimal = a.RaceProps?.Animal == true;
             bool bIsAnimal = b.RaceProps?.Animal == true;
 
-            // ── Animal-colonist dynamic ───────────────────────────────────────────
             if (aIsAnimal || bIsAnimal)
             {
                 Pawn colonist = aIsAnimal ? b : a;
                 Pawn animal   = aIsAnimal ? a : b;
                 bool animalIntelligent = Animals.AnimalPromptManager.GetIsIntelligent(animal);
 
-                // Bond / master relationship
                 Pawn bondedTo = animal.relations?.GetFirstDirectRelationPawn(PawnRelationDefOf.Bond);
                 Pawn master   = animal.playerSettings?.Master;
                 bool isBonded = bondedTo == colonist;
@@ -763,11 +765,9 @@ namespace EchoColony.Conversations
                 else
                     sb.AppendLine($"Familiarity: {colonist.LabelShort} and {animal.LabelShort} know each other as colony members.");
 
-                // How the colonist treats the animal — driven by their traits
                 string attitude = GetColonistAnimalAttitude(colonist, animal, animalIntelligent, isBonded);
                 sb.AppendLine(attitude);
 
-                // What the animal knows about this colonist
                 int animalOpinion = animal.relations?.OpinionOf(colonist) ?? 0;
                 string animalFeel = animalOpinion >= 50 ? "trusts and loves"
                                   : animalOpinion >= 10 ? "is comfortable with"
@@ -778,13 +778,11 @@ namespace EchoColony.Conversations
                 return sb.ToString();
             }
 
-            // ── Standard pawn-to-pawn ─────────────────────────────────────────────
             int opinionAB = a.relations?.OpinionOf(b) ?? 0;
             int opinionBA = b.relations?.OpinionOf(a) ?? 0;
             sb.AppendLine($"{a.LabelShort}→{b.LabelShort}: {opinionAB} ({GetOpinionDesc(opinionAB)})");
             sb.AppendLine($"{b.LabelShort}→{a.LabelShort}: {opinionBA} ({GetOpinionDesc(opinionBA)})");
 
-            // Collect all direct relations between the two
             var relationsAB = a.relations?.DirectRelations?
                 .Where(r => r.otherPawn == b && r.def != null)
                 .Select(r => r.def)
@@ -802,7 +800,6 @@ namespace EchoColony.Conversations
             else
                 sb.AppendLine("Relation: acquaintances");
 
-            // Tone instruction based on family/romantic relationship
             string familyTone = GetFamilyTone(a, b, allRelDefs, opinionAB, opinionBA);
             if (!string.IsNullOrEmpty(familyTone))
                 sb.AppendLine(familyTone);
@@ -814,7 +811,7 @@ namespace EchoColony.Conversations
             return sb.ToString();
         }
 
-        // ── Family / romantic tone instructions ───────────────────────────────────
+        // ── Family / romantic tone ────────────────────────────────────────────────
 
         private static string GetFamilyTone(
             Pawn a, Pawn b,
@@ -823,11 +820,9 @@ namespace EchoColony.Conversations
         {
             if (!relDefs.Any()) return null;
 
-            // Helper — does either direction have this relation?
             bool Has(string defName) =>
                 relDefs.Any(r => r.defName == defName);
 
-            // ── Spouses / lovers ─────────────────────────────────────────────────
             bool isSpouse  = Has("Spouse")  || Has("Wife")    || Has("Husband");
             bool isLover   = Has("Lover")   || Has("Fiance")  || Has("Fianee");
             bool isExSpouse= Has("ExSpouse")|| Has("ExWife")  || Has("ExHusband");
@@ -861,7 +856,6 @@ namespace EchoColony.Conversations
                       "Polite at best, bitter at worst.]";
             }
 
-            // ── Parent / child ───────────────────────────────────────────────────
             bool aIsParent = a.relations?.DirectRelations?
                 .Any(r => r.otherPawn == b &&
                     (r.def.defName == "Parent" || r.def.defName == "Father" || r.def.defName == "Mother")) == true;
@@ -877,7 +871,6 @@ namespace EchoColony.Conversations
             {
                 Pawn parent = aIsParent ? a : (bIsParent ? b : null);
                 Pawn child  = parent == a ? b : a;
-
                 int childAge = child?.ageTracker?.AgeBiologicalYears ?? 20;
 
                 if (childAge <= 6)
@@ -897,7 +890,6 @@ namespace EchoColony.Conversations
                        "Respectful, warm, but not childlike. May reference shared memories or past hardship.]";
             }
 
-            // ── Siblings ─────────────────────────────────────────────────────────
             if (Has("Sibling") || Has("Brother") || Has("Sister") ||
                 Has("HalfSibling") || Has("HalfBrother") || Has("HalfSister"))
             {
@@ -909,16 +901,12 @@ namespace EchoColony.Conversations
                       "Still family so won't fully break ties, but friction is constant.]";
             }
 
-            // ── In-laws / extended family ─────────────────────────────────────────
             if (Has("ParentInLaw") || Has("ChildInLaw") || Has("Grandparent") ||
                 Has("Grandchild")  || Has("Aunt")       || Has("Uncle") ||
                 Has("Niece")       || Has("Nephew")     || Has("Cousin"))
-            {
                 return "[TONE: Extended family — familiar but not as intimate as immediate family. " +
                        "Respectful warmth, shared loyalty to the larger family unit.]";
-            }
 
-            // ── Close friends / rivals ────────────────────────────────────────────
             if (Has("Friend") || Has("BestFriend"))
                 return "[TONE: Close friends — easy, comfortable banter. No need to impress each other. " +
                        "Honest, relaxed, may tease affectionately.]";
@@ -938,37 +926,29 @@ namespace EchoColony.Conversations
             bool isBloodlust = traits?.Any(t => t.def.defName == "Bloodlust") == true;
             bool isSadist    = traits?.Any(t => t.def.defName == "Sadist") == true;
             bool isKind      = traits?.Any(t => t.def.defName == "Kind") == true;
-            bool isNeurotic  = traits?.Any(t => t.def.defName == "Neurotic") == true;
             bool isCareless  = traits?.Any(t => t.def.defName == "Careless") == true;
 
-            // Dark traits override even bonds
             if (isPsycho && !isBonded)
                 return $"[{colonist.LabelShort} ATTITUDE: Psychopath — views {animal.LabelShort} as a tool or resource, " +
                        $"not a companion. No emotional investment. Speaks without warmth or care.]";
-
             if (isPsycho && isBonded)
                 return $"[{colonist.LabelShort} ATTITUDE: Psychopath but bonded — tolerates {animal.LabelShort} " +
                        $"out of practical utility, may show faint possessiveness but no genuine warmth.]";
-
             if (isSadist)
                 return $"[{colonist.LabelShort} ATTITUDE: Sadist — may speak to {animal.LabelShort} in a " +
                        $"controlling or subtly threatening way, enjoys having power over living things.]";
-
             if (isBloodlust && !isBonded)
                 return $"[{colonist.LabelShort} ATTITUDE: Bloodlust — indifferent to {animal.LabelShort}'s " +
                        $"feelings, may be rough or dismissive unless it's a fighter they respect.]";
 
-            // Positive / neutral
             if (animalIntelligent)
             {
                 if (isKind)
                     return $"[{colonist.LabelShort} ATTITUDE: Kind — treats {animal.LabelShort} as a fully " +
                            $"sentient being deserving dignity and respect. Speaks to them as an equal.]";
-
                 if (isBonded)
                     return $"[{colonist.LabelShort} ATTITUDE: Deeply bonded — speaks to {animal.LabelShort} " +
                            $"with warmth and respect, fully aware they can understand every word.]";
-
                 return $"[{colonist.LabelShort} ATTITUDE: Aware {animal.LabelShort} is sentient and can speak. " +
                        $"Treats them with basic respect, like a person, not just an animal.]";
             }
@@ -977,26 +957,20 @@ namespace EchoColony.Conversations
                 if (isKind || isBonded)
                     return $"[{colonist.LabelShort} ATTITUDE: Cares for {animal.LabelShort} — gentle tone, " +
                            $"speaks softly and encouragingly even knowing it's just an animal.]";
-
                 if (isCareless)
                     return $"[{colonist.LabelShort} ATTITUDE: Careless — doesn't pay much attention to " +
                            $"{animal.LabelShort}, may barely acknowledge them.]";
-
                 return $"[{colonist.LabelShort} ATTITUDE: Respectful but practical — treats {animal.LabelShort} " +
                        $"as a colony animal deserving basic care, not cruelty.]";
             }
         }
 
-        // ── Shared memory (the key integration with EchoColony) ───────────────────
+        // ── Shared memory ─────────────────────────────────────────────────────────
 
         private static string BuildSharedMemorySection(Pawn initiator, Pawn recipient)
         {
             var sb = new StringBuilder();
             bool hasContent = false;
-
-            // ── Pull memories from direct player<->pawn chats ─────────────────────
-            // These come from ColonistMemoryManager — the same memories that build
-            // the context when the player chats with a colonist directly.
 
             string initiatorMemory = GetPawnMemory(initiator);
             string recipientMemory = GetPawnMemory(recipient);
@@ -1021,8 +995,6 @@ namespace EchoColony.Conversations
                 hasContent = true;
             }
 
-            // ── Pull recent group/colony events ───────────────────────────────────
-            // DailyGroupMemoryTracker stores colony-wide event summaries.
             string groupMemory = GetGroupMemory();
             if (!string.IsNullOrWhiteSpace(groupMemory))
             {
@@ -1034,7 +1006,7 @@ namespace EchoColony.Conversations
             return hasContent ? sb.ToString() : "";
         }
 
-        // ── Colony-wide events ────────────────────────────────────────────────────
+        // ── Colony events (PlayLog) ───────────────────────────────────────────────
 
         private static string BuildColonyEventsSection(Pawn initiator = null, Pawn recipient = null)
         {
@@ -1042,12 +1014,12 @@ namespace EchoColony.Conversations
 
             int now = Find.TickManager.TicksGame;
             int oneDayAgo = now - 60000;
-            int justNow = now - 600; // 10 seconds — skip the triggering interaction itself
+            int justNow = now - 600;
 
             var lines = new List<string>();
 
             foreach (var entry in Find.PlayLog.AllEntries
-                .Where(e => e.Tick >= oneDayAgo && e.Tick < justNow)  // exclude very recent (= the trigger)
+                .Where(e => e.Tick >= oneDayAgo && e.Tick < justNow)
                 .OrderByDescending(e => e.Tick)
                 .Take(10))
             {
@@ -1056,7 +1028,6 @@ namespace EchoColony.Conversations
                     string text = entry.ToGameStringFromPOV(null);
                     if (string.IsNullOrWhiteSpace(text)) continue;
 
-                    // Strip RimWorld color tags
                     text = System.Text.RegularExpressions.Regex.Replace(text, @"<color=#[0-9A-Fa-f]{6,8}>", "");
                     text = text.Replace("</color>", "").Trim();
 
@@ -1084,17 +1055,21 @@ namespace EchoColony.Conversations
             string lang = Prefs.LangFolderName?.ToLower() ?? "english";
             string langLine = lang != "english" ? $"Respond in {lang}.\n" : "";
 
-            // Final reminder anchors the topic one more time
             string reminder;
             if (!string.IsNullOrWhiteSpace(logText))
                 reminder = $"FINAL RULE: The dialogue must be about \"{logText}\". " +
                            $"Do not mention 'that conversation' or 'that chat'. Speak about the actual subject.\n" +
-                           $"Only mention health/pain if the pawn\'s pain is SEVERE (>50%). Otherwise ignore it.\n";
+                           $"Only mention health/pain if the pawn's pain is SEVERE (>50%). Otherwise ignore it.\n" +
+                           $"NEVER reference technology, buildings, animals, or events not present in " +
+                           $"VERIFIED COLONY HISTORY or the current game state. If unsure — omit it.\n";
             else if (interactionDef != null && !string.IsNullOrWhiteSpace(interactionDef.label))
                 reminder = $"FINAL RULE: Stay on topic \"{interactionDef.label}\". " +
-                           $"Only reference health/pain if SEVERE and truly unavoidable.\n";
+                           $"Only reference health/pain if SEVERE and truly unavoidable.\n" +
+                           $"NEVER reference technology, buildings, animals, or events not present in " +
+                           $"VERIFIED COLONY HISTORY or the current game state. If unsure — omit it.\n";
             else
-                reminder = "";
+                reminder = $"FINAL RULE: NEVER reference technology, buildings, animals, or events not present in " +
+                           $"VERIFIED COLONY HISTORY or the current game state. If unsure — omit it.\n";
 
             return
                 $"{langLine}" +
@@ -1121,7 +1096,6 @@ namespace EchoColony.Conversations
                 var tracker = manager.GetTrackerFor(pawn);
                 if (tracker == null) return null;
 
-                // GetLastMemories returns List<string> ordered most-recent first
                 var recent = tracker.GetLastMemories(5);
                 if (recent == null || recent.Count == 0) return null;
 
@@ -1144,11 +1118,9 @@ namespace EchoColony.Conversations
                 var groupTracker = manager.GetGroupMemoryTracker();
                 if (groupTracker == null) return null;
 
-                // GetAllRecentMemories returns List<string> directly — simplest path
                 var recent = groupTracker.GetAllRecentMemories(3);
                 if (recent == null || recent.Count == 0) return null;
 
-                // Take the last 3 entries to keep the prompt short
                 var trimmed = recent.Count > 3 ? recent.GetRange(recent.Count - 3, 3) : recent;
                 return string.Join("\n", trimmed.Where(s => !string.IsNullOrWhiteSpace(s))).Trim();
             }
@@ -1185,7 +1157,6 @@ namespace EchoColony.Conversations
             string n = def.defName?.ToLower() ?? "";
             string l = def.label?.ToLower()   ?? "";
 
-            // ── Vanilla RimWorld ─────────────────────────────────────────────────
             if (n.Contains("chitchat"))     return "Casual small talk";
             if (n.Contains("deeptalk"))     return "Deep, meaningful conversation";
             if (n.Contains("romance"))      return "Romantic or flirtatious";
@@ -1201,51 +1172,40 @@ namespace EchoColony.Conversations
             if (n.Contains("prisonbreak"))  return "Coordinating escape";
             if (n.Contains("kind"))         return "Kind and supportive gesture";
 
-            // ── Common mod keyword patterns ───────────────────────────────────────
-            // Teaching / skill sharing
             if (n.Contains("teach") || l.Contains("teach") ||
                 n.Contains("train") || l.Contains("train") ||
                 n.Contains("instruct") || l.Contains("lesson") ||
                 l.Contains("technique") || l.Contains("skill"))
                 return $"Teaching or sharing knowledge — one colonist instructing the other on \"{def.label}\"";
 
-            // Collaboration / work talk
             if (n.Contains("collab") || l.Contains("collab") ||
                 l.Contains("work together") || l.Contains("help with") ||
                 n.Contains("assist") || l.Contains("assist"))
                 return $"Collaborative work discussion about \"{def.label}\"";
 
-            // Debate / argument
             if (n.Contains("debate") || l.Contains("debate") ||
                 n.Contains("argue") || l.Contains("argue") ||
                 n.Contains("disagree") || l.Contains("disagree"))
                 return $"Heated debate or disagreement: \"{def.label}\"";
 
-            // Gossip / share news
             if (n.Contains("gossip") || l.Contains("gossip") ||
                 n.Contains("news") || l.Contains("news") ||
                 n.Contains("rumor") || l.Contains("rumor"))
                 return $"Sharing gossip or colony news: \"{def.label}\"";
 
-            // Request / ask favor
             if (n.Contains("request") || l.Contains("request") ||
                 n.Contains("favor") || l.Contains("favor") ||
                 n.Contains("ask") || l.Contains("ask"))
                 return $"One colonist requesting something from the other: \"{def.label}\"";
 
-            // Warn / threat
             if (n.Contains("warn") || l.Contains("warn") ||
                 n.Contains("threat") || l.Contains("threat"))
                 return $"Warning or threatening: \"{def.label}\"";
 
-            // Greet / farewell
             if (n.Contains("greet") || l.Contains("greet") ||
                 n.Contains("farewell") || l.Contains("goodbye"))
                 return $"Greeting or farewell: \"{def.label}\"";
 
-            // ── Fallback — use the label verbatim as context ──────────────────────
-            // This is intentional: mod labels like "Taught cooking technique" or
-            // "Shared survival tips" carry enough meaning for the AI directly.
             return !string.IsNullOrWhiteSpace(def.label)
                 ? $"Modded interaction: \"{def.label}\" — use this as the conversation topic"
                 : "General interaction";
@@ -1272,56 +1232,42 @@ namespace EchoColony.Conversations
 
         private static string GetPowerDynamic(Pawn a, Pawn b)
         {
-            // ── Colonist → Prisoner ───────────────────────────────────────────────
             if (a.IsFreeColonist && b.IsPrisoner)
-            {
                 return $"POWER DYNAMIC: {a.LabelShort} holds authority over {b.LabelShort}, who is a prisoner.\n" +
                        $"{a.LabelShort} does NOT need to be kind or polite — they may be curt, dismissive, " +
                        $"threatening, or transactional depending on their traits and mood.\n" +
                        $"{b.LabelShort} is in a position of weakness — they may be defiant, fearful, resigned, " +
                        $"or calculating, but they cannot freely challenge or disrespect {a.LabelShort}.\n" +
                        $"Avoid mutual warmth unless traits strongly support it.";
-            }
 
-            // ── Prisoner → Colonist ───────────────────────────────────────────────
             if (a.IsPrisoner && b.IsFreeColonist)
-            {
                 return $"POWER DYNAMIC: {a.LabelShort} is a prisoner of the colony — {b.LabelShort} controls their fate.\n" +
                        $"{a.LabelShort} speaks from a position of captivity: wary, guarded, or resentful.\n" +
                        $"{b.LabelShort} holds authority and does not need to be courteous.\n" +
                        $"Avoid mutual warmth unless traits strongly support it.";
-            }
 
-            // ── Colonist → Slave ──────────────────────────────────────────────────
             if (a.IsFreeColonist && b.IsSlaveOfColony)
-            {
                 return $"POWER DYNAMIC: {a.LabelShort} is a free colonist; {b.LabelShort} is their slave.\n" +
                        $"{a.LabelShort} may speak with condescension, indifference, or casual authority — " +
                        $"they are not obligated to treat {b.LabelShort} as an equal.\n" +
                        $"{b.LabelShort} must respond with deference or suppressed frustration — " +
                        $"open defiance is rare and risky for them.\n" +
                        $"Avoid mutual warmth or equal-footing dialogue unless traits strongly support it.";
-            }
 
-            // ── Slave → Colonist ──────────────────────────────────────────────────
             if (a.IsSlaveOfColony && b.IsFreeColonist)
-            {
                 return $"POWER DYNAMIC: {a.LabelShort} is enslaved by the colony — {b.LabelShort} is their master.\n" +
                        $"{a.LabelShort} speaks carefully, with deference or hidden resentment.\n" +
                        $"{b.LabelShort} may speak with indifference, authority, or casual condescension.\n" +
                        $"Avoid mutual warmth or equal-footing dialogue unless traits strongly support it.";
-            }
 
-            // ── Slave ↔ Slave ─────────────────────────────────────────────────────
             if (a.IsSlaveOfColony && b.IsSlaveOfColony)
-            {
                 return $"POWER DYNAMIC: Both {a.LabelShort} and {b.LabelShort} are enslaved by the same colony.\n" +
                        $"They may speak with solidarity, dark humor, mutual exhaustion, or bitter resignation.\n" +
                        $"Neither holds authority over the other.";
-            }
 
             return null;
         }
+
         // ── Trait-based speech style ──────────────────────────────────────────────
 
         private static string GetTraitSpeechStyle(Pawn pawn)
@@ -1336,7 +1282,6 @@ namespace EchoColony.Conversations
                 if (trait?.def == null) continue;
                 switch (trait.def.defName)
                 {
-                    // ── Dark / antisocial ────────────────────────────────────────
                     case "Psychopath":
                         notes.Add("speaks without empathy — calm, detached, transactional. " +
                                   "Never pretends to care about others' feelings.");
@@ -1361,8 +1306,6 @@ namespace EchoColony.Conversations
                         notes.Add("enjoys pushing others around — condescending, may mock or " +
                                   "belittle weaker colonists.");
                         break;
-
-                    // ── Positive / social ────────────────────────────────────────
                     case "Kind":
                         notes.Add("warm and considerate — chooses words carefully to not hurt others, " +
                                   "genuinely interested in how people feel.");
@@ -1375,8 +1318,6 @@ namespace EchoColony.Conversations
                     case "Beautiful":
                         notes.Add("naturally charismatic — easy confidence in speech, people enjoy listening.");
                         break;
-
-                    // ── Neurotic / anxious ───────────────────────────────────────
                     case "Neurotic":
                         notes.Add("worries out loud, overthinks — tangents about potential problems, " +
                                   "double-checks things.");
@@ -1385,14 +1326,10 @@ namespace EchoColony.Conversations
                         notes.Add("intellectually arrogant — subtly condescending, assumes others " +
                                   "won't understand complex ideas.");
                         break;
-
-                    // ── Nihilistic / dark worldview ──────────────────────────────
                     case "Nihilistic":
                         notes.Add("sees little point in most things — dry, fatalistic remarks, " +
                                   "not hostile but deeply cynical.");
                         break;
-
-                    // ── Social disabilities ──────────────────────────────────────
                     case "Loner":
                         notes.Add("uncomfortable socializing — short answers, clearly wants " +
                                   "the conversation to end.");
@@ -1403,8 +1340,6 @@ namespace EchoColony.Conversations
                     case "Misogynist":
                         notes.Add("dismissive or condescending toward female colonists specifically.");
                         break;
-
-                    // ── Passionate / ideology-driven ─────────────────────────────
                     case "Ascetic":
                         notes.Add("values simplicity — dismissive of luxury, materialism, or excess.");
                         break;
