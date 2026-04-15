@@ -16,6 +16,7 @@ namespace EchoColony
     /// - Context is kept tight — enough for immersion, not so much it confuses the model.
     /// - System messages (join/leave/separator lines) are stripped from dialogue history
     ///   but surfaced as a contextual note when relevant.
+    /// - Verified colony history from TaleManager prevents hallucinated past events.
     /// </summary>
     public static class GroupPromptContextBuilder
     {
@@ -23,12 +24,12 @@ namespace EchoColony
         /// <param name="isLateJoiner">True when this pawn is speaking for the first time
         ///   but the conversation was already in progress.</param>
         public static string Build(
-            Pawn        speaker,
-            List<Pawn>  group,
+            Pawn         speaker,
+            List<Pawn>   group,
             List<string> recentHistory,
-            string      userMessage,
-            bool        isFirstTurn,
-            bool        isLateJoiner = false)
+            string       userMessage,
+            bool         isFirstTurn,
+            bool         isLateJoiner = false)
         {
             var sb = new StringBuilder();
 
@@ -47,10 +48,13 @@ namespace EchoColony
             // 5. Recent memories from individual and group chats
             AppendMemories(sb, speaker);
 
-            // 6. The actual conversation happening right now
+            // 6. NEW: Verified colony history — only source of past events
+            AppendVerifiedTales(sb, speaker, group);
+
+            // 7. The actual conversation happening right now
             AppendConversationHistory(sb, recentHistory, userMessage, isFirstTurn, speaker);
 
-            // 7. Final instruction — explicit, no room for misinterpretation
+            // 8. Final instruction — explicit, no room for misinterpretation
             AppendResponseInstruction(sb, speaker, group, isFirstTurn, isLateJoiner);
 
             return sb.ToString().Trim();
@@ -67,6 +71,19 @@ namespace EchoColony
             sb.AppendLine($"You are {speaker.LabelShort}. You are ONLY {speaker.LabelShort}.");
             sb.AppendLine($"You are having a group conversation with: {others}.");
             sb.AppendLine("Everyone can hear each other.");
+            sb.AppendLine();
+
+            // ── Anti-hallucination rules — placed right after identity so they
+            // are the first constraint the model receives before any context.
+            sb.AppendLine("STRICT GROUNDING RULES:");
+            sb.AppendLine("1. A section called 'VERIFIED COLONY HISTORY' will be provided below.");
+            sb.AppendLine("   That is the ONLY source of past events you may reference.");
+            sb.AppendLine("2. If a technology, building, item, animal, or event is NOT in that section");
+            sb.AppendLine("   or in the current game state, it does NOT exist in this colony. Do not invent it.");
+            sb.AppendLine("3. If you have no relevant history for a topic, stay in the present or say");
+            sb.AppendLine("   you don't recall — never fabricate a memory.");
+            sb.AppendLine("4. These rules override creativity. An invented fact that breaks immersion");
+            sb.AppendLine("   is always worse than a short, honest answer.");
             sb.AppendLine();
         }
 
@@ -166,7 +183,47 @@ namespace EchoColony
             sb.AppendLine();
         }
 
-        // ── 6. Conversation history ──────────────────────────────────────────────
+        // ── 6. NEW: Verified colony history ──────────────────────────────────────
+        //
+        // Pulls real events from TaleManager for the speaker AND the other group
+        // members. Shared events (involving multiple participants) are listed first
+        // since they're the most natural conversation material.
+
+        private static void AppendVerifiedTales(StringBuilder sb, Pawn speaker, List<Pawn> group)
+        {
+            // For groups we use the first non-speaker as the "other" pawn to check
+            // shared tales — a reasonable approximation that avoids iterating the
+            // full tale list once per group member.
+            Pawn firstOther = group.FirstOrDefault(p => p != speaker);
+
+            var (shared, personal) = TalesCache.GetTalesForPair(
+                speaker, firstOther,
+                TalesCache.MAX_SHARED_TALES,
+                TalesCache.MAX_PERSONAL_TALES);
+
+            if (!shared.Any() && !personal.Any()) return;
+
+            sb.AppendLine("# VERIFIED COLONY HISTORY (REAL EVENTS — USE ONLY THESE)");
+            sb.AppendLine("These events ACTUALLY HAPPENED. Reference them freely.");
+            sb.AppendLine("NEVER invent events, technology, or items not listed here.");
+            sb.AppendLine();
+
+            if (shared.Any())
+            {
+                sb.AppendLine("Shared events (you and others in this group were involved):");
+                foreach (var t in shared) sb.AppendLine($"  • {t}");
+                sb.AppendLine();
+            }
+
+            if (personal.Any())
+            {
+                sb.AppendLine("Your personal events:");
+                foreach (var t in personal) sb.AppendLine($"  • {t}");
+                sb.AppendLine();
+            }
+        }
+
+        // ── 7. Conversation history ──────────────────────────────────────────────
 
         private static void AppendConversationHistory(
             StringBuilder sb,
@@ -177,7 +234,6 @@ namespace EchoColony
         {
             sb.AppendLine("# Group conversation so far:");
 
-            // Strip system/separator lines from dialogue — they would confuse the model
             var dialogueLines = (recentHistory ?? new List<string>())
                 .Where(l => !GroupChatSession.IsSystemMessage(l))
                 .Select(GroupChatSession.GetDisplayText)
@@ -195,9 +251,6 @@ namespace EchoColony
                 sb.AppendLine("  (no messages yet)");
             }
 
-            // Surface the most recent join/leave event as a natural context note.
-            // This lets colonists acknowledge it organically ("Oh, Morg left?") or
-            // simply keep talking — just like in a real conversation.
             var lastSystemEvent = (recentHistory ?? new List<string>())
                 .LastOrDefault(l => l.StartsWith(GroupChatSession.SystemPrefix));
 
@@ -212,7 +265,6 @@ namespace EchoColony
                 }
             }
 
-            // The player's latest message
             if (!string.IsNullOrWhiteSpace(userMessage))
             {
                 string label = isFirstTurn
@@ -224,7 +276,7 @@ namespace EchoColony
             sb.AppendLine();
         }
 
-        // ── 7. Response instruction ──────────────────────────────────────────────
+        // ── 8. Response instruction ──────────────────────────────────────────────
 
         private static void AppendResponseInstruction(
             StringBuilder sb,
@@ -242,9 +294,8 @@ namespace EchoColony
             sb.AppendLine("Stay in character. Use casual, natural language.");
             sb.AppendLine("Keep your response SHORT — 1 to 3 sentences maximum, like a real casual conversation.");
             sb.AppendLine("Do NOT write long paragraphs. If you have more to say, save it for your next turn.");
+            sb.AppendLine("NEVER reference technology, buildings, animals, or events not in VERIFIED COLONY HISTORY.");
 
-            // Late joiner guidance — they should feel like they walked into a conversation,
-            // not like the chat just started
             if (isLateJoiner)
             {
                 sb.AppendLine();
