@@ -19,7 +19,8 @@ namespace EchoColony
         private string      userMessage           = "";
         private bool        sendRequestedViaEnter = false;
         private bool        showParticipantManagement = false;
-
+        private List<float> cachedHeights = new List<float>();   //*furel* array for store text hights
+		
         private HashSet<Pawn> KickedOut => session.KickedOutColonists;
         private Pawn          initiator;
 
@@ -301,44 +302,16 @@ namespace EchoColony
             Rect  scrollRect = new Rect(10f, y, inRect.width - 20f, chatHeight);
             float viewW      = scrollRect.width - 16f;
 
-            var heights = new List<float>();
-            foreach (var msg in session.History)
+            //*furel-GUI optimization* The change made consists of calculating the height only once when opening group chat windows; the original solution calculates the height of all the text on each update of the GUI, which is every tick.
+            while (cachedHeights.Count < session.History.Count) //*furel-GUI optimization* Whole number of heights stores are less than number of text entries it will enter the calculation process												
             {
-                if (GroupChatSession.IsSystemMessage(msg))
-                {
-                    heights.Add(24f);
-                    continue;
-                }
-
-                string displayText = GroupChatSession.GetDisplayText(msg);
-                bool isPlayer = msg.StartsWith("You:") || msg.StartsWith("You::");
-
-                if (isPlayer)
-                {
-                    heights.Add(Text.CalcHeight(displayText, viewW) + 4f);
-                    continue;
-                }
-
-                // For colonist messages, height must account for the name prefix
-                // taking horizontal space — body text renders in a narrower column
-                int colonIdx = displayText.IndexOf(": ");
-                if (colonIdx > 0)
-                {
-                    string nameWithColon = displayText.Substring(0, colonIdx) + ": ";
-                    float  nameW         = Text.CalcSize(nameWithColon).x;
-                    string body          = displayText.Substring(colonIdx + 2);
-                    float  bodyH         = Text.CalcHeight(body, viewW - nameW) + 4f;
-                    // Use the larger of full-line height vs body-only height
-                    float  fullH         = Text.CalcHeight(displayText, viewW) + 4f;
-                    heights.Add(Mathf.Max(fullH, bodyH));
-                }
-                else
-                {
-                    heights.Add(Text.CalcHeight(displayText, viewW) + 4f);
-                }
+                int index = cachedHeights.Count;                //*furel-GUI optimization* Store the current position
+                string msg = session.History[index];            //*furel-GUI optimization* Get the message inside the current position
+                cachedHeights.Add(CalculateMessageHeight(msg, viewW)); //*furel-GUI optimization* Enter the calculation process							 
             }
+            //*furel* end changes
 
-            float viewH    = heights.Sum() + heights.Count * 6f;
+            float viewH    = cachedHeights.Sum() + cachedHeights.Count * 6f; //*furel-GUI optimization* I changed the original "higths" variable to "cachedHeights"
             Rect  viewRect = new Rect(0, 0, viewW, viewH);
 
             Widgets.BeginScrollView(scrollRect, ref scrollPos, viewRect);
@@ -347,7 +320,7 @@ namespace EchoColony
             for (int i = 0; i < session.History.Count; i++)
             {
                 string msg     = session.History[i];
-                float  lineH   = heights[i];
+                float  lineH   = cachedHeights[i]; //*furel-GUI optimization* I changed the original "higths" variable to "cachedHeights"
                 Rect   lineRect = new Rect(0, lineY, viewW, lineH);
 
                 if (msg.StartsWith("[DATE_SEPARATOR]"))
@@ -461,6 +434,7 @@ namespace EchoColony
 
             if ((clicked || sendRequestedViaEnter) && !userMessage.NullOrEmpty())
             {
+				GroupChatGameComponent.Instance.RegistingSession(session); //*furel - hold registration* Call for registering the session once a message is send. It checks if the current session is already registered inside the function.																																																							 
                 session.AddMessage("You:: " + userMessage);
                 StartGroupConversation(userMessage);
                 userMessage           = "";
@@ -497,6 +471,8 @@ namespace EchoColony
 
             session = GroupChatGameComponent.Instance
                 .UpdateSessionParticipants(session, participants);
+
+            this.cachedHeights.Clear(); //*furel - GUI optimization + fix session consistency* Resets the text height in case there is loaded multiple sessions while selecting the participants.																																															 
 
             session.AddSystemMessage($"{pawn.LabelShort} stepped away");
             UpdateAvailableColonists();
@@ -678,7 +654,10 @@ namespace EchoColony
                     // Remove placeholder
                     if (session.History.Count > 0 &&
                         session.History.Last() == next.LabelShort + ": ...")
-                        session.History.RemoveAt(session.History.Count - 1);
+						{
+							session.History.RemoveAt(session.History.Count - 1);
+							cachedHeights.RemoveAt(cachedHeights.Count - 1); // *furel-GUI optimization* Removes the last hight calculated as was calculated for "..." so it can be calculated for the new text
+						}
 
                     if (!string.IsNullOrWhiteSpace(response) && response.Trim().Length >= 3)
                     {
@@ -972,6 +951,29 @@ namespace EchoColony
             }
         }
 
+        //*furel-GUI optimization* Moved the calculation of heights here. Is just the same as the original process.
+        private float CalculateMessageHeight(string msg, float width)
+        {
+            Log.Message("[EchoColony] Estoy calculanod altura.");
+            if (GroupChatSession.IsSystemMessage(msg)) return 24f;
+
+            string displayText = GroupChatSession.GetDisplayText(msg);
+            if (msg.StartsWith("You:") || msg.StartsWith("You::"))
+                return Text.CalcHeight(displayText, width) + 4f;
+
+            int colonIdx = displayText.IndexOf(": ");
+            if (colonIdx > 0)
+            {
+                string nameWithColon = displayText.Substring(0, colonIdx) + ": ";
+                float nameW = Text.CalcSize(nameWithColon).x;
+                string body = displayText.Substring(colonIdx + 2);
+                float bodyH = Text.CalcHeight(body, width - nameW) + 4f;
+                float fullH = Text.CalcHeight(displayText, width) + 4f;
+                return Mathf.Max(fullH, bodyH);
+            }
+            return Text.CalcHeight(displayText, width) + 4f;
+        }
+		
         private void ClearChat()
         {
             Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
@@ -979,6 +981,7 @@ namespace EchoColony
                 () =>
                 {
                     session.History.Clear();
+					cachedHeights.Clear(); //*furel-GUI optimization* Clear cachedHeights if Clear bottom is press																							  
                     session.AddSystemMessage("Chat cleared");
                     Messages.Message("Chat cleared.", MessageTypeDefOf.NeutralEvent);
                 }));
