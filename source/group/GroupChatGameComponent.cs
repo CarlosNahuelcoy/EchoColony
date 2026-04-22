@@ -1,4 +1,5 @@
 using RimWorld;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Verse;
@@ -20,6 +21,7 @@ namespace EchoColony
         // Returns an existing session whose participant set matches EXACTLY,
         // or creates a new one. Subset matching is intentionally avoided —
         // it was causing sessions with extra participants to be reused.
+        //*furel - improved id creation and search* Search for a existing id whit listed pawns or crates one if there is not exist 
         public GroupChatSession GetOrCreateSession(List<Pawn> participants)
         {
             var requestedIds = participants
@@ -48,6 +50,9 @@ namespace EchoColony
 
         // Updates the participant list of an existing session.
         // Called when a participant is added or removed mid-conversation.
+        //*furel - improved id creation and search* The original code creates many session IDs. Every time a window opens and participants change, an ID is created, but existing IDs are never searched.
+        //                                      This method searches for an existing session ID that matches the current participants; if it doesn't find one, it creates a new one.
+        //                                      It doesn't record it until a message is sent to the AI.
         public GroupChatSession UpdateSessionParticipants(GroupChatSession existing, List<Pawn> newParticipants)
         {
             var oldKey = groupChats.FirstOrDefault(kv => kv.Value == existing).Key;
@@ -60,8 +65,13 @@ namespace EchoColony
                 .ToList();
             existing.CachedParticipants = new List<Pawn>(newParticipants);
 
-            groupChats[existing.SessionId] = existing;
-            return existing;
+        //*furel - hold registration* Here is were we registrer the session in the save file.
+        public void RegistingSession(GroupChatSession session)
+        {
+            if (!groupChats.ContainsKey(session.SessionId))
+            {
+                groupChats.Add(session.SessionId, session);
+            }
         }
 
         public void AddLine(List<Pawn> participants, string line)

@@ -84,8 +84,8 @@ namespace EchoColony
                 Find.WorldGrid.LongLatOf(Find.CurrentMap.Tile));
 
             string[] parts  = nativeDate.Split(' ');
-            string dateOnly = parts.Length >= 3
-                ? $"{parts[0]} {parts[1]} {parts[2]}"
+            string dateOnly = parts.Length >= 6  //*furel - display full date* Incresed to 6 te parts to display.
+                ? $"{parts[0]} {parts[1]} {parts[2]} {parts[3]} {parts[4]} {parts[5]}" //*furel - display full date* {parts[0]} = Day; {parts[1]} = Number; {parts[2]} = of; {parts[3]} = Month; {parts[4]} = of; {parts[5]} = Year
                 : nativeDate;
 
             return $"--- {dateOnly} ---";

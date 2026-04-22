@@ -16,8 +16,16 @@
   <EchoColony.GlobalPrompt>Global prompt (applies to all colonists):</EchoColony.GlobalPrompt>
   <EchoColony.MaxResponseLength>Character limit per response: {0}</EchoColony.MaxResponseLength>
   <EchoColony.SaveButton>Save</EchoColony.SaveButton>
+    <!-- ======== Gizmos ========= -->
   <EchoColony.ChatGizmoLabel>Talk</EchoColony.ChatGizmoLabel>
   <EchoColony.ChatGizmoDesc>Start a conversation with this colonist.</EchoColony.ChatGizmoDesc>
+  <EchoColony.ChatGizmoChatPris>Talk to Prisoner</EchoColony.ChatGizmoChatPris>
+  <EchoColony.ChatGizmoChatPDes>Have a conversation with this prisoner.</EchoColony.ChatGizmoChatPDes>
+  <EchoColony.ChatGizmoChatSlave>Talk to Slave</EchoColony.ChatGizmoChatSlave>
+  <EchoColony.ChatGizmoChatSDes>Have a conversation with this slave.</EchoColony.ChatGizmoChatSDes>
+  <EchoColony.GroupChat>Group conversation</EchoColony.GroupChat>
+  <EchoColony.GroupChatDesc>Start a group chat with nearby colonists.</EchoColony.GroupChatDesc> 
+  
   <EchoColony.SendButton>Send</EchoColony.SendButton>
   <EchoColony.GeminiTooltip>
     gemini flash: Fast and light.
@@ -52,8 +60,7 @@
   <EchoColony.EnableTTS>Enable TTS (text to speech)</EchoColony.EnableTTS>
   <EchoColony.AutoPlayVoice>Auto-play voice on each reply</EchoColony.AutoPlayVoice>
   <EchoColony.GroupChatLabel>Group conversation with</EchoColony.GroupChatLabel>
-  <EchoColony.GroupChat>Group conversation</EchoColony.GroupChat>
-  <EchoColony.GroupChatDesc>Start a group chat with nearby colonists.</EchoColony.GroupChatDesc>
+
 
   <EchoColony.MemoriesOf>Memories of</EchoColony.MemoriesOf>
   <EchoColony.MemoriesEntries>entries</EchoColony.MemoriesEntries>

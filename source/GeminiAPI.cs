@@ -1236,12 +1236,15 @@ namespace EchoColony
                 string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
                 string folderPath  = Path.Combine(desktopPath, "EchoColony_Debug");
                 if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
-                string fullPath     = Path.Combine(folderPath, $"Player2_{type}_LATEST.txt");
+                string latestPath = Path.Combine(folderPath, $"Player2_{type}_LATEST.txt");
+                string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+                string historyPath = Path.Combine(folderPath, $"Player2_{type}_{timestamp}.txt");
                 string debugContent = $"=== PLAYER2 {type} DEBUG LOG ===\n" +
                                       $"Last Updated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n" +
                                       $"Type: {type}\n" +
                                       "".PadRight(50, '=') + "\n\n" + content;
-                File.WriteAllText(fullPath, debugContent);
+                File.WriteAllText(latestPath, debugContent);
+                File.WriteAllText(historyPath, debugContent);
             }
             catch (Exception ex)
             {
