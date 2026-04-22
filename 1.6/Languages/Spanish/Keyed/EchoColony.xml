@@ -16,8 +16,16 @@
   <EchoColony.GlobalPrompt>Prompt global (aplica a todos los colonos):</EchoColony.GlobalPrompt>
   <EchoColony.MaxResponseLength>Límite de caracteres por respuesta: {0}</EchoColony.MaxResponseLength>
   <EchoColony.SaveButton>Guardar</EchoColony.SaveButton>
+  <!-- ======== Gizmos ========= -->
   <EchoColony.ChatGizmoLabel>Hablar</EchoColony.ChatGizmoLabel>
   <EchoColony.ChatGizmoDesc>Iniciar una conversación con este colono.</EchoColony.ChatGizmoDesc>
+  <EchoColony.ChatGizmoChatPris>Hablar con prisionero</EchoColony.ChatGizmoChatPris>
+  <EchoColony.ChatGizmoChatPDes>Ten una conversación con este prisionero.</EchoColony.ChatGizmoChatPDes>
+  <EchoColony.ChatGizmoChatSlave>Hablar con Esclavo</EchoColony.ChatGizmoChatSlave>
+  <EchoColony.ChatGizmoChatSDes>Ten una conversación con este esclavo.</EchoColony.ChatGizmoChatSDes>
+  <EchoColony.GroupChat>Conversación grupal</EchoColony.GroupChat>
+  <EchoColony.GroupChatDesc>Iniciar una charla grupal con colonos cercanos.</EchoColony.GroupChatDesc> 
+  
   <EchoColony.SendButton>Enviar</EchoColony.SendButton>
   <EchoColony.GeminiTooltip>
     gemini-2.0-flash: Rápido y liviano.
@@ -51,8 +59,7 @@
   <EchoColony.EnableTTS>Habilitar TTS (texto a voz)</EchoColony.EnableTTS>
   <EchoColony.AutoPlayVoice>Reproducir automáticamente la voz en cada respuesta</EchoColony.AutoPlayVoice>
   <EchoColony.GroupChatLabel>Conversación grupal con</EchoColony.GroupChatLabel>
-  <EchoColony.GroupChat>Conversación grupal</EchoColony.GroupChat>
-  <EchoColony.GroupChatDesc>Iniciar una charla grupal con colonos cercanos.</EchoColony.GroupChatDesc>
+
 
   <EchoColony.MemoriesOf>Memorias de</EchoColony.MemoriesOf>
   <EchoColony.MemoriesEntries>entradas</EchoColony.MemoriesEntries>
