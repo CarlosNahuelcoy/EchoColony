@@ -50,7 +50,7 @@ namespace EchoColony
 
         public override void DoSettingsWindowContents(Rect inRect)
         {
-            float totalHeight = 3800f;
+            float totalHeight = 4200f;
 
             Rect viewRect = new Rect(0f, 0f, inRect.width - 20f, totalHeight);
             Widgets.BeginScrollView(inRect, ref settingsScrollPosition, viewRect);
@@ -219,6 +219,34 @@ namespace EchoColony
             list.GapLine();
 
             DrawVisionSection(list);
+            list.GapLine();
+
+            // ═══════════════════════════════════════════════════════════════
+            // FACTION COMMS CHAT
+            // ═══════════════════════════════════════════════════════════════
+            DrawSectionHeader(list, "Faction Comms Chat", new Color(0.7f, 1f, 0.85f));
+
+            list.CheckboxLabeled(
+                "Enable EchoColony chat options in comms console",
+                ref Settings.enableFactionCommsChat,
+                "Adds 'colonist speaks' and 'you speak directly' options when contacting factions via comms console.");
+
+            if (Settings.enableFactionCommsChat)
+            {
+                list.Gap(4f);
+                GUI.color = Color.gray;
+                list.Label("Goodwill changes cooldown:");
+                GUI.color = Color.white;
+                list.Label($"{Settings.factionChatGoodwillCooldownHours:F0}h between automatic goodwill changes from conversation.");
+                Settings.factionChatGoodwillCooldownHours = list.Slider(
+                    Settings.factionChatGoodwillCooldownHours, 1f, 72f);
+
+                list.Gap(2f);
+                GUI.color = Color.gray;
+                list.Label("Does not block chatting — only limits how often talking affects goodwill.");
+                GUI.color = Color.white;
+            }
+
             list.GapLine();
 
             DrawSectionHeader(list, "Global Prompt", new Color(0.7f, 0.9f, 1f));

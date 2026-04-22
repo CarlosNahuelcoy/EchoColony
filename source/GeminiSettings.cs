@@ -76,6 +76,13 @@ namespace EchoColony
         public string openRouterModel    = "mistral-7b";
 
         // ═══════════════════════════════════════════════════════════════
+        // FACTION COMMS CHAT
+        // ═══════════════════════════════════════════════════════════════
+        // Cooldown between goodwill changes from conversation (in hours)
+        public bool   enableFactionCommsChat              = true;
+        public float  factionChatGoodwillCooldownHours   = 24f;
+
+        // ═══════════════════════════════════════════════════════════════
         // CUSTOM PROVIDER (any OpenAI-compatible endpoint)
         // ═══════════════════════════════════════════════════════════════
         // Works with: LMStudio (server mode), Ollama (OpenAI compat),
@@ -211,6 +218,10 @@ namespace EchoColony
             Scribe_Values.Look(ref customEndpoint,  "customEndpoint",  "http://localhost:1234/v1/chat/completions");
             Scribe_Values.Look(ref customApiKey,    "customApiKey",    "");
             Scribe_Values.Look(ref customModelName, "customModelName", "");
+
+            // Faction comms chat
+            Scribe_Values.Look(ref enableFactionCommsChat,           "enableFactionCommsChat",           true);
+            Scribe_Values.Look(ref factionChatGoodwillCooldownHours, "factionChatGoodwillCooldownHours", 24f);
 
             Scribe_Values.Look(ref enableTTS,     "EnableTTS",     true);
             Scribe_Values.Look(ref autoPlayVoice, "AutoPlayVoice", true);
