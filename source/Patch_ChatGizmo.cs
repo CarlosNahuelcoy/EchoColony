@@ -24,29 +24,61 @@ namespace EchoColony
             if (pawn == null || pawn.Map == null || !pawn.Spawned)
                 yield break;
 
-            if (!IsValidChatPawn(pawn))
-                yield break;
+            //if (!IsValidChatPawn(pawn))
+            //    yield break;
 
             if (!AreComponentsInitialized())
             {
                 Log.Warning("[EchoColony] Components not initialized, skipping gizmos");
                 yield break;
             }
-
             List<Gizmo> extraGizmos = new List<Gizmo>();
             try
             {
-                // Individual chat - always available for valid pawns
-                extraGizmos.Add(CreateIndividualChatGizmo(pawn));
-
-                // Group chat - only for free colonists with others nearby
-                if (IsFreeColonist(pawn) && IsGroupChatAllowedForCurrentModel())
+                //*furel - selection improvments* Make a list for valid selected pawns for a group chat 
+                var selectedForGroup = Find.Selector.SelectedObjects
+                    .OfType<Pawn>()
+                    .Where(p => p != null && !p.Dead && p.Spawned && IsValidForGroupChat(p))
+                    .ToList();
+                //Solo chat
+                if (Find.Selector.SingleSelectedThing == pawn && IsValidChatPawn(pawn))
                 {
-                    var nearbyColonists = GetNearbyColonists(pawn);
-                    if (nearbyColonists.Count >= 1)
-                        extraGizmos.Add(CreateGroupChatGizmo(pawn, nearbyColonists));
+                    extraGizmos.Add(CreateIndividualChatGizmo(pawn));
                 }
+                
+                if (IsGroupChatAllowedForCurrentModel())
+                {
+                    //Selected group chat
+                    if (selectedForGroup.Count > 1)
+                    {
+                        if (pawn == selectedForGroup[0])
+                        {
+                            extraGizmos.Add(CreateGroupChatGizmo(pawn, selectedForGroup));
+                        }
+                    }
+                    //Solo opening group chat
+                    else if (IsValidForGroupChat(pawn))
+                    {
+                        var nearbyColonists = GetNearbyColonists(pawn);
+                        if (nearbyColonists.Count >= 1)
+                        {
+                            extraGizmos.Add(CreateGroupChatGizmo(pawn, nearbyColonists));
+                        }
+                    }
+                }  
             }
+            //{
+            //    // Individual chat - always available for valid pawns
+            //    extraGizmos.Add(CreateIndividualChatGizmo(pawn));
+
+            //    // Group chat - only for free colonists with others nearby
+            //    if (IsFreeColonist(pawn) && IsGroupChatAllowedForCurrentModel())
+            //    {
+            //        var nearbyColonists = GetNearbyColonists(pawn);
+            //        if (nearbyColonists.Count >= 1)
+            //            extraGizmos.Add(CreateGroupChatGizmo(pawn, nearbyColonists));
+            //    }
+            //}
             catch (Exception ex)
             {
                 Log.Error($"[EchoColony] Error in Patch_ChatGizmo for {pawn?.LabelShort}: {ex.Message}");
@@ -168,13 +200,13 @@ namespace EchoColony
 
             if (pawn.IsPrisoner)
             {
-                label = "Talk to Prisoner";
-                desc = "Have a conversation with this prisoner";
+                label = "EchoColony.ChatGizmoChatPris".Translate();
+                desc = "EchoColony.ChatGizmoChatPDes".Translate();
             }
             else if (pawn.IsSlave)
             {
-                label = "Talk to Slave";
-                desc = "Have a conversation with this slave";
+                label = "EchoColony.ChatGizmoChatSlave".Translate();
+                desc = "EchoColony.ChatGizmoChatSDes".Translate();
             }
 
             return new Command_Action
