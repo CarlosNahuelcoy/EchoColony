@@ -245,5 +245,15 @@ namespace EchoColony
 
             return sb.ToString();
         }
+
+        /// <summary>
+        /// Wraps an already-built prompt for Kobold's API format.
+        /// Used when the prompt is constructed externally (e.g. faction chat).
+        /// </summary>
+        public static string BuildRaw(string prompt)
+        {
+            if (string.IsNullOrWhiteSpace(prompt)) return prompt;
+            return prompt;
+        }
     }
 }
