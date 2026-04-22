@@ -29,11 +29,10 @@ namespace EchoColony
         public DailyGroupMemoryTracker GroupMemoryTracker;
 
         private Player2Heartbeat player2HeartbeatComponent;
-        private bool ttsInitialized = false;
+        private bool ttsInitialized     = false;
         private bool actionsInitialized = false;
 
-        // Cleanup tracking
-        private int lastCleanupTick = 0;
+        private int lastCleanupTick    = 0;
         private const int CLEANUP_INTERVAL = 60000; // Every in-game day
 
         void Awake()
@@ -51,14 +50,13 @@ namespace EchoColony
         {
             Log.Message("[EchoColony] Start() executed in MyStoryModComponent");
 
-            // Guard: Current.Game puede ser null durante generación de mundo nuevo
             if (Current.Game == null)
             {
                 Log.Warning("[EchoColony] Init() called but Current.Game is null — skipping until game is ready");
                 return;
             }
 
-            // Initialize ColonistMemoryManager
+            // ── ColonistMemoryManager ─────────────────────────────────────────────
             ColonistMemoryManager = Current.Game.GetComponent<ColonistMemoryManager>();
             if (ColonistMemoryManager == null)
             {
@@ -68,11 +66,10 @@ namespace EchoColony
 
             GroupMemoryTracker = ColonistMemoryManager.GetGroupMemoryTracker();
 
-            // Reset monologue state on game load
             Conversations.PawnMonologueManager.OnGameLoaded();
             TalesCache.Clear();
 
-            // Initialize SpontaneousMessageTracker
+            // ── SpontaneousMessageTracker ─────────────────────────────────────────
             var spontaneousTracker = Current.Game.GetComponent<SpontaneousMessages.SpontaneousMessageTracker>();
             if (spontaneousTracker == null)
             {
@@ -85,7 +82,7 @@ namespace EchoColony
                 Log.Message("[EchoColony] SpontaneousMessageTracker already exists");
             }
 
-            // Initialize Animal Chat Components
+            // ── AnimalChatGameComponent ───────────────────────────────────────────
             var animalChatComponent = Current.Game.GetComponent<Animals.AnimalChatGameComponent>();
             if (animalChatComponent == null)
             {
@@ -98,6 +95,7 @@ namespace EchoColony
                 Log.Message("[EchoColony] AnimalChatGameComponent already exists");
             }
 
+            // ── AnimalPromptManager ───────────────────────────────────────────────
             var animalPromptManager = Current.Game.GetComponent<Animals.AnimalPromptManager>();
             if (animalPromptManager == null)
             {
@@ -110,11 +108,47 @@ namespace EchoColony
                 Log.Message("[EchoColony] AnimalPromptManager already exists");
             }
 
-            // Initialize Animal Action Registry (always, even if actions disabled - for safety)
             Animals.Actions.AnimalActionRegistry.Initialize();
-
-            // Initialize Mech Action Registry
             Mechs.Actions.MechActionRegistry.Initialize();
+
+            // ── MechChatGameComponent ─────────────────────────────────────────────
+            var mechChatComponent = Current.Game.GetComponent<Mechs.MechChatGameComponent>();
+            if (mechChatComponent == null)
+            {
+                mechChatComponent = new Mechs.MechChatGameComponent(Current.Game);
+                Current.Game.components.Add(mechChatComponent);
+                Log.Message("[EchoColony] MechChatGameComponent added to game");
+            }
+            else
+            {
+                Log.Message("[EchoColony] MechChatGameComponent already exists");
+            }
+
+            // ── MechPromptManager ─────────────────────────────────────────────────
+            var mechPromptManager = Current.Game.GetComponent<Mechs.MechPromptManager>();
+            if (mechPromptManager == null)
+            {
+                mechPromptManager = new Mechs.MechPromptManager(Current.Game);
+                Current.Game.components.Add(mechPromptManager);
+                Log.Message("[EchoColony] MechPromptManager added to game");
+            }
+            else
+            {
+                Log.Message("[EchoColony] MechPromptManager already exists");
+            }
+
+            // ── FactionChatGameComponent ──────────────────────────────────────────
+            var factionChatComponent = Current.Game.GetComponent<Factions.FactionChatGameComponent>();
+            if (factionChatComponent == null)
+            {
+                factionChatComponent = new Factions.FactionChatGameComponent(Current.Game);
+                Current.Game.components.Add(factionChatComponent);
+                Log.Message("[EchoColony] FactionChatGameComponent added to game");
+            }
+            else
+            {
+                Log.Message("[EchoColony] FactionChatGameComponent already exists");
+            }
 
             EnsurePlayer2HeartbeatExists();
 
@@ -134,37 +168,10 @@ namespace EchoColony
                 actionsInitialized = true;
             }
 
-            // Initialize storyteller spontaneous message system
             if (MyMod.Settings != null && MyMod.Settings.IsStorytellerMessagesActive())
             {
                 StorytellerSpontaneousMessageSystem.StartSystem();
                 Log.Message("[EchoColony] Storyteller spontaneous message system started");
-            }
-
-            // Initialize Mech Chat Component
-            var mechChatComponent = Current.Game.GetComponent<Mechs.MechChatGameComponent>();
-            if (mechChatComponent == null)
-            {
-                mechChatComponent = new Mechs.MechChatGameComponent(Current.Game);
-                Current.Game.components.Add(mechChatComponent);
-                Log.Message("[EchoColony] MechChatGameComponent added to game");
-            }
-            else
-            {
-                Log.Message("[EchoColony] MechChatGameComponent already exists");
-            }
-
-            // Initialize Mech Prompt Manager
-            var mechPromptManager = Current.Game.GetComponent<Mechs.MechPromptManager>();
-            if (mechPromptManager == null)
-            {
-                mechPromptManager = new Mechs.MechPromptManager(Current.Game);
-                Current.Game.components.Add(mechPromptManager);
-                Log.Message("[EchoColony] MechPromptManager added to game");
-            }
-            else
-            {
-                Log.Message("[EchoColony] MechPromptManager already exists");
             }
         }
 
@@ -220,22 +227,39 @@ namespace EchoColony
 
             EnsurePlayer2HeartbeatExists();
 
-            // Periodic cleanup of action cooldowns
-            if (Find.TickManager != null && MyMod.Settings != null && MyMod.Settings.enableDivineActions)
+            // ── Periodic cleanup ──────────────────────────────────────────────────
+            if (Find.TickManager != null && MyMod.Settings != null)
             {
                 int currentTick = Find.TickManager.TicksGame;
 
                 if (currentTick - lastCleanupTick > CLEANUP_INTERVAL)
                 {
-                    Actions.Mood.AddPlayerThoughtAction.CleanupOldCooldowns();
-                    Animals.Actions.AnimalActionParser.CleanupOldCooldowns();
-                    Mechs.Actions.MechActionParser.CleanupOldCooldowns();
-                    TalesCache.PruneStale();   // ← agregás esta línea
-                    lastCleanupTick = currentTick;
+                    if (MyMod.Settings.enableDivineActions)
+                    {
+                        Actions.Mood.AddPlayerThoughtAction.CleanupOldCooldowns();
+                        Animals.Actions.AnimalActionParser.CleanupOldCooldowns();
+                        Mechs.Actions.MechActionParser.CleanupOldCooldowns();
+                    }
+
+                    TalesCache.PruneStale();
                     Conversations.PawnMonologueManager.Tick();
-                    Log.Message("[EchoColony] Cleaned up old action cooldowns");
+
+                    // ── Faction raid scheduler ────────────────────────────────────
+                    Factions.FactionRaidScheduler.Tick();
+
+                    lastCleanupTick = currentTick;
+                    Log.Message("[EchoColony] Periodic cleanup completed");
                 }
             }
+        }
+
+        // ── ExposeData for static systems ────────────────────────────────────────
+        // Called by the game's save/load cycle via a GameComponent wrapper.
+        // FactionActions and FactionRaidScheduler hold static state that must persist.
+        public void ExposeStaticData()
+        {
+            Factions.FactionActions.ExposeData();
+            Factions.FactionRaidScheduler.ExposeData();
         }
     }
 }
