@@ -24,28 +24,24 @@ namespace EchoColony
         //*furel - improved id creation and search* Search for a existing id whit listed pawns or crates one if there is not exist 
         public GroupChatSession GetOrCreateSession(List<Pawn> participants)
         {
+            var existing = GetSession(participants);  //*furel - improved id creation and search* Uses GetSession to search for a existing session for given pawns. Returns null if none is foud.
+            if (existing != null) return existing;
+
+            //*fuel - improved id creation and search* Crates the id for the session but is not register until a messege from the user is sended to the IA.
+            return new GroupChatSession(Guid.NewGuid().ToString(), participants);
+        }
+
+        //*furel - improved id creation and search* Modified GetSession to actualy just get the session that matches the probided list and be usen in GetOrCreateSession and UpdateSessionParticipants. Returns null isf none is found.
+        private GroupChatSession GetSession(List<Pawn> participants)
+        {
             var requestedIds = participants
                 .Where(p => p != null)
                 .Select(p => p.ThingID.ToString())
-                .OrderBy(rid => rid)
+                .OrderBy(id => id)
                 .ToList();
 
-            foreach (var pair in groupChats)
-            {
-                var session = pair.Value;
-                if (session?.ParticipantIds == null) continue;
-
-                var sessionIds = session.ParticipantIds.OrderBy(sid => sid).ToList();
-
-                if (sessionIds.SequenceEqual(requestedIds))
-                    return session;
-            }
-
-            // No matching session found — create a fresh one
-            string id      = System.Guid.NewGuid().ToString();
-            var newSession  = new GroupChatSession(id, participants);
-            groupChats[id]  = newSession;
-            return newSession;
+            return groupChats.Values.FirstOrDefault(s =>
+                s.ParticipantIds.OrderBy(id => id).SequenceEqual(requestedIds));
         }
 
         // Updates the participant list of an existing session.
@@ -55,16 +51,11 @@ namespace EchoColony
         //                                      It doesn't record it until a message is sent to the AI.
         public GroupChatSession UpdateSessionParticipants(GroupChatSession existing, List<Pawn> newParticipants)
         {
-            var oldKey = groupChats.FirstOrDefault(kv => kv.Value == existing).Key;
-            if (oldKey != null)
-                groupChats.Remove(oldKey);
+            var match = GetSession(newParticipants);
+            if (match != null) return match;
 
-            existing.ParticipantIds = newParticipants
-                .Where(p => p != null)
-                .Select(p => p.ThingID.ToString())
-                .ToList();
-            existing.CachedParticipants = new List<Pawn>(newParticipants);
-            return existing;
+            //*fuel - improved id creation and search* Crates the id for the session but is not register yet.
+            return new GroupChatSession(Guid.NewGuid().ToString(), newParticipants);
         }
 
         //*furel - hold registration* Here is were we registrer the session in the save file.
@@ -91,6 +82,49 @@ namespace EchoColony
             GetOrCreateSession(participants).History.Clear();
         }
 
+        //public void CleanupOrphanedGroupChats()
+        //{
+        //    if (groupChats == null) return;
+
+        //    // 1. Obtener todos los IDs de peones que el juego aún reconoce como existentes
+        //    var validPawnIDs = new HashSet<string>(
+        //        PawnsFinder.AllMapsWorldAndTemporary_AliveOrDead
+        //            .Where(p => p != null)
+        //            .Select(p => p.ThingID)
+        //    );
+
+        //    // 2. Identificar sesiones a eliminar
+        //    List<string> sessionsToRemove = new List<string>();
+
+        //    foreach (var kvp in groupChats)
+        //    {
+        //        GroupChatSession session = kvp.Value;
+
+        //        // Criterios de eliminación:
+        //        // - La sesión es nula
+        //        // - No tiene participantes
+        //        // - Al menos UNO de los participantes ya no existe en el mundo
+        //        if (session == null ||
+        //            session.ParticipantIds == null ||
+        //            session.ParticipantIds.Count == 0 ||
+        //            session.ParticipantIds.Any(id => !validPawnIDs.Contains(id)))
+        //        {
+        //            sessionsToRemove.Add(kvp.Key);
+        //        }
+        //    }
+
+        //    // 3. Ejecutar la limpieza
+        //    foreach (var sessionId in sessionsToRemove)
+        //    {
+        //        groupChats.Remove(sessionId);
+        //    }
+
+        //    if (sessionsToRemove.Count > 0)
+        //    {
+        //        Log.Message($"[EchoColony] Se eliminaron {sessionsToRemove.Count} sesiones de chat grupal (participantes inexistentes o datos corruptos).");
+        //    }
+        //}
+
         public override void ExposeData()
         {
             base.ExposeData();
@@ -115,6 +149,17 @@ namespace EchoColony
                     groupChats.Remove(key);
                 }
             }
+
+            //// 3. Ejecutar la eliminación
+            //foreach (string sessionId in sessionsToRemove)
+            //{
+            //    groupChats.Remove(sessionId);
+            //}
+
+            //if (sessionsToRemove.Count > 0)
+            //{
+            //    Log.Message($"[EchoColony] Limpieza de Grupos: Se eliminaron {sessionsToRemove.Count} sesiones porque uno o más miembros ya no existen.");
+            //}
         }
     }
 }
