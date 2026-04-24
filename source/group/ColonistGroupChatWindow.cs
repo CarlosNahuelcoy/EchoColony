@@ -19,8 +19,9 @@ namespace EchoColony
         private string      userMessage           = "";
         private bool        sendRequestedViaEnter = false;
         private bool        showParticipantManagement = false;
-        private List<float> cachedHeights = new List<float>();   //*furel* array for store text hights
-		
+        private List<float> cachedHeights = new List<float>();
+        private Vector2 portraitsScrollPos = Vector2.zero; //*furel* new variable for portraits scroll
+
         private HashSet<Pawn> KickedOut => session.KickedOutColonists;
         private Pawn          initiator;
 
@@ -158,11 +159,11 @@ namespace EchoColony
             float btnW = 70f;
             float gap  = 5f;
 
-            if (Widgets.ButtonText(new Rect(10f, y, btnW, 25f), "Export"))
+            if (Widgets.ButtonText(new Rect(10f, y, btnW, 25f), "EchoColony.GCWExpotB".Translate())) //*furel - button translation*
                 ExportChat();
 
             GUI.color = new Color(1f, 0.7f, 0.7f);
-            if (Widgets.ButtonText(new Rect(10f + btnW + gap, y, btnW, 25f), "Clear"))
+            if (Widgets.ButtonText(new Rect(10f + btnW + gap, y, btnW, 25f), "EchoColony.GCWClearB".Translate())) //*furel - button translation*
                 ClearChat();
             GUI.color = Color.white;
 
@@ -175,7 +176,7 @@ namespace EchoColony
 
             Rect memberBtn = new Rect(inRect.width - 140f, y, 130f, 25f);
             if (Widgets.ButtonText(memberBtn,
-                showParticipantManagement ? "Hide Members" : "Manage Members"))
+                showParticipantManagement ? "EchoColony.GCWHideMemB".Translate() : "EchoColony.GCWManegeMemB".Translate())) //*furel - button translation*
             {
                 showParticipantManagement = !showParticipantManagement;
                 if (showParticipantManagement)
@@ -183,15 +184,32 @@ namespace EchoColony
             }
 
             y += 35f;
-            DrawPortraits(inRect, ref y);
+            DrawPortraits(inRect, ref y); //y=45
         }
 
+        //*furel* Portraits go of windows if there are too mucho. Added a scroll. 
         private void DrawPortraits(Rect inRect, ref float y)
         {
             float size    = 60f;
             float spacing = 15f;
-            float total   = participants.Count * (size + spacing);
-            float startX  = (inRect.width - total) / 2f;
+            //float total   = participants.Count * (size + spacing);
+            //float startX  = (inRect.width - total) / 2f;
+            float rowHeight = size + 25f;
+
+            Rect scrollRect = new Rect(10f, y, inRect.width - 20f, rowHeight + 16f);
+
+            float totalContentWidth = participants.Count * (size + spacing);
+
+            float viewWidth = Mathf.Max(totalContentWidth, scrollRect.width - 16f);
+            Rect viewRect = new Rect(0, 0, viewWidth, rowHeight);
+
+            float startX = 0f;
+            if (totalContentWidth < scrollRect.width)
+            {
+                startX = (scrollRect.width - totalContentWidth) / 2f;
+            }
+
+            Widgets.BeginScrollView(scrollRect, ref portraitsScrollPos, viewRect);
 
             for (int i = 0; i < participants.Count; i++)
             {
@@ -201,29 +219,30 @@ namespace EchoColony
                 // Portrait with a subtle color border matching the pawn's chat color
                 Color pawnCol = GetPawnColor(p.LabelShort);
                 GUI.color     = new Color(pawnCol.r, pawnCol.g, pawnCol.b, 0.6f);
-                GUI.DrawTexture(new Rect(x - 2f, y - 2f, size + 4f, size + 4f),
+                GUI.DrawTexture(new Rect(x - 2f, 0, size + 4f, size + 4f),
                     BaseContent.WhiteTex);
                 GUI.color = Color.white;
 
-                GUI.DrawTexture(new Rect(x, y, size, size),
+                GUI.DrawTexture(new Rect(x, 2f, size, size),
                     PortraitsCache.Get(p, new Vector2(size, size), Rot4.South, default, 1.25f));
 
                 // Name in pawn color
                 GUI.color = pawnCol;
-                Widgets.Label(new Rect(x, y + size + 2f, size + 40f, 20f), p.LabelShort);
+                Widgets.Label(new Rect(x, size + 4f, size + 40f, 35f), p.LabelShort);
                 GUI.color = Color.white;
 
                 if (participants.Count >= 3 && p != initiator)
                 {
-                    Rect removeBtn = new Rect(x + size - 15f, y - 5f, 20f, 20f);
+                    Rect removeBtn = new Rect(x + size - 15f, 0, 20f, 20f);
                     GUI.color = Color.red;
                     if (Widgets.ButtonText(removeBtn, "×"))
                         RemoveParticipant(p);
                     GUI.color = Color.white;
                 }
             }
+            Widgets.EndScrollView();
 
-            y += size + 25f;
+            y += scrollRect.height + 10f;
         }
 
         // ── Participant management panel ─────────────────────────────────────────
@@ -234,13 +253,13 @@ namespace EchoColony
             Widgets.DrawBoxSolid(panelRect, new Color(0.2f, 0.2f, 0.2f, 0.8f));
 
             Widgets.Label(new Rect(panelRect.x + 10f, panelRect.y + 5f, 300f, 25f),
-                $"Colonists nearby: ({availableColonists.Count})");
+                "EchoColony.GCWManagerColonNear".Translate(availableColonists.Count));
 
             if (KickedOut.Count > 0)
             {
                 GUI.color = new Color(1f, 0.7f, 0.7f);
                 Widgets.Label(new Rect(panelRect.x + 320f, panelRect.y + 5f, 200f, 25f),
-                    $"Previously removed: ({KickedOut.Count})");
+                    "EchoColony.GCWManagerKickedOut".Translate(KickedOut.Count));
                 GUI.color = Color.white;
             }
 
@@ -302,16 +321,14 @@ namespace EchoColony
             Rect  scrollRect = new Rect(10f, y, inRect.width - 20f, chatHeight);
             float viewW      = scrollRect.width - 16f;
 
-            //*furel-GUI optimization* The change made consists of calculating the height only once when opening group chat windows; the original solution calculates the height of all the text on each update of the GUI, which is every tick.
-            while (cachedHeights.Count < session.History.Count) //*furel-GUI optimization* Whole number of heights stores are less than number of text entries it will enter the calculation process												
+            while (cachedHeights.Count < session.History.Count) 												
             {
-                int index = cachedHeights.Count;                //*furel-GUI optimization* Store the current position
-                string msg = session.History[index];            //*furel-GUI optimization* Get the message inside the current position
-                cachedHeights.Add(CalculateMessageHeight(msg, viewW)); //*furel-GUI optimization* Enter the calculation process							 
+                int index = cachedHeights.Count;               
+                string msg = session.History[index];            
+                cachedHeights.Add(CalculateMessageHeight(msg, viewW)); 						 
             }
-            //*furel* end changes
-
-            float viewH    = cachedHeights.Sum() + cachedHeights.Count * 6f; //*furel-GUI optimization* I changed the original "higths" variable to "cachedHeights"
+           
+            float viewH    = cachedHeights.Sum() + cachedHeights.Count * 6f; 
             Rect  viewRect = new Rect(0, 0, viewW, viewH);
 
             Widgets.BeginScrollView(scrollRect, ref scrollPos, viewRect);
@@ -320,7 +337,7 @@ namespace EchoColony
             for (int i = 0; i < session.History.Count; i++)
             {
                 string msg     = session.History[i];
-                float  lineH   = cachedHeights[i]; //*furel-GUI optimization* I changed the original "higths" variable to "cachedHeights"
+                float  lineH   = cachedHeights[i]; 
                 Rect   lineRect = new Rect(0, lineY, viewW, lineH);
 
                 if (msg.StartsWith("[DATE_SEPARATOR]"))
@@ -434,7 +451,7 @@ namespace EchoColony
 
             if ((clicked || sendRequestedViaEnter) && !userMessage.NullOrEmpty())
             {
-				GroupChatGameComponent.Instance.RegistingSession(session); //*furel - hold registration* Call for registering the session once a message is send. It checks if the current session is already registered inside the function.																																																							 
+				GroupChatGameComponent.Instance.RegistingSession(session);																																																						 
                 session.AddMessage("You:: " + userMessage);
                 StartGroupConversation(userMessage);
                 userMessage           = "";
@@ -472,7 +489,7 @@ namespace EchoColony
             session = GroupChatGameComponent.Instance
                 .UpdateSessionParticipants(session, participants);
 
-            this.cachedHeights.Clear(); //*furel - GUI optimization + fix session consistency* Resets the text height in case there is loaded multiple sessions while selecting the participants.																																															 
+            this.cachedHeights.Clear();																							 
 
             session.AddSystemMessage($"{pawn.LabelShort} stepped away");
             UpdateAvailableColonists();
@@ -656,7 +673,7 @@ namespace EchoColony
                         session.History.Last() == next.LabelShort + ": ...")
 						{
 							session.History.RemoveAt(session.History.Count - 1);
-							cachedHeights.RemoveAt(cachedHeights.Count - 1); // *furel-GUI optimization* Removes the last hight calculated as was calculated for "..." so it can be calculated for the new text
+							cachedHeights.RemoveAt(cachedHeights.Count - 1);
 						}
 
                     if (!string.IsNullOrWhiteSpace(response) && response.Trim().Length >= 3)
@@ -951,10 +968,10 @@ namespace EchoColony
             }
         }
 
-        //*furel-GUI optimization* Moved the calculation of heights here. Is just the same as the original process.
+        // ── Height Text Calculation ────────────────────────────────────────────────────────
+
         private float CalculateMessageHeight(string msg, float width)
         {
-            Log.Message("[EchoColony] Estoy calculanod altura.");
             if (GroupChatSession.IsSystemMessage(msg)) return 24f;
 
             string displayText = GroupChatSession.GetDisplayText(msg);
@@ -977,13 +994,13 @@ namespace EchoColony
         private void ClearChat()
         {
             Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
-                "Are you sure you want to clear the entire chat history?",
+                "EchoColony.GCWClearMessage".Translate(),
                 () =>
                 {
                     session.History.Clear();
-					cachedHeights.Clear(); //*furel-GUI optimization* Clear cachedHeights if Clear bottom is press																							  
-                    session.AddSystemMessage("Chat cleared");
-                    Messages.Message("Chat cleared.", MessageTypeDefOf.NeutralEvent);
+					cachedHeights.Clear();																						  
+                    session.AddSystemMessage("EchoColony.GCWClearConfirmation".Translate());
+                    Messages.Message("EchoColony.GCWClearConfirmation".Translate(), MessageTypeDefOf.NeutralEvent);
                 }));
         }
     }
