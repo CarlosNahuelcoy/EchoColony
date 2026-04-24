@@ -64,6 +64,8 @@ namespace EchoColony
                 .Select(p => p.ThingID.ToString())
                 .ToList();
             existing.CachedParticipants = new List<Pawn>(newParticipants);
+            return existing;
+        }
 
         //*furel - hold registration* Here is were we registrer the session in the save file.
         public void RegistingSession(GroupChatSession session)
