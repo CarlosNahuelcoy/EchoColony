@@ -86,13 +86,13 @@
   <EchoColony.SavingMemories>Recording memories of the conversation...</EchoColony.SavingMemories>
   <EchoColony.MemoriesSaved>Conversation memories recorded</EchoColony.MemoriesSaved>
   
-	<!-- ===== Group Chat Window ===== -->
-  <EchoColony.GCWExpotB>Expot</EchoColony.GCWExpotB>
+<!-- ===== Group Chat Window ===== -->
+  <EchoColony.GCWExpotB>Export</EchoColony.GCWExpotB>
   <EchoColony.GCWClearB>Clear</EchoColony.GCWClearB>
   <EchoColony.GroupChatLabel>Group conversation with</EchoColony.GroupChatLabel>
   <EchoColony.GCWHideMemB>Hide Members</EchoColony.GCWHideMemB>
-  <EchoColony.GCWManegeMemB>Manege Members</EchoColony.GCWManegeMemB>
-  <EchoColony.GCWManagerColonNear>Colonists nearby: ({0}) </EchoColony.GCWManagerColonNear>  
+  <EchoColony.GCWManegeMemB>Manage Members</EchoColony.GCWManegeMemB>
+  <EchoColony.GCWManagerColonNear>Colonists nearby: ({0}) </EchoColony.GCWManagerColonNear>
   <EchoColony.GCWManagerKickedOut>Previously removed: ({0})</EchoColony.GCWManagerKickedOut>
   <EchoColony.GCWClearMessage>Are you sure you want to clear the entire chat history?</EchoColony.GCWClearMessage>
   <EchoColony.GCWClearConfirmation>Chat cleared</EchoColony.GCWClearConfirmation>
