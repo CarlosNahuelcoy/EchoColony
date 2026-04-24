@@ -58,7 +58,6 @@
   <EchoColony.Player2Warning>⚠️ Player2 está activo. Otras configuraciones de modelo son ignoradas.</EchoColony.Player2Warning>
   <EchoColony.EnableTTS>Habilitar TTS (texto a voz)</EchoColony.EnableTTS>
   <EchoColony.AutoPlayVoice>Reproducir automáticamente la voz en cada respuesta</EchoColony.AutoPlayVoice>
-  <EchoColony.GroupChatLabel>Conversación grupal con</EchoColony.GroupChatLabel>
 
 
   <EchoColony.MemoriesOf>Memorias de</EchoColony.MemoriesOf>
@@ -86,6 +85,18 @@
   <EchoColony.AllColonistsGone>La conversación llega a su fin.</EchoColony.AllColonistsGone>
   <EchoColony.SavingMemories>Grabando memorias de la conversación...</EchoColony.SavingMemories>
   <EchoColony.MemoriesSaved>Memorias de la conversación grabadas</EchoColony.MemoriesSaved>
+  
+  	<!-- ===== Group Chat Window ===== -->
+  <EchoColony.GCWExpotB>Exportar</EchoColony.GCWExpotB>
+  <EchoColony.GCWClearB>Limpiar</EchoColony.GCWClearB>
+  <EchoColony.GroupChatLabel>Conversación grupal con</EchoColony.GroupChatLabel>
+  <EchoColony.GCWHideMemB>Cerrar Gestor</EchoColony.GCWHideMemB>
+  <EchoColony.GCWManegeMemB>Gestionar Grupo</EchoColony.GCWManegeMemB>
+  <EchoColony.GCWManagerColonNear>Colonos cercanos: ({0}) </EchoColony.GCWManagerColonNear>  
+  <EchoColony.GCWManagerKickedOut>Previamente quitados: ({0})</EchoColony.GCWManagerKickedOut>
+  <EchoColony.GCWClearMessage>¿Estás seguro de que quieres borrar todo el historial de chat?</EchoColony.GCWClearMessage>
+  <EchoColony.GCWClearConfirmation>Chat borrado</EchoColony.GCWClearConfirmation>  
+  
 
   <!-- ===== EDITOR DE PROMPT ===== -->
   <EchoColony.PersonalizingTitle>Personalizando: {0}</EchoColony.PersonalizingTitle>
