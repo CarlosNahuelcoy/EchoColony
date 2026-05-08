@@ -6,18 +6,18 @@ using RimWorld;
 namespace EchoColony.SpontaneousMessages
 {
     /// <summary>
-    /// Rastrea el estado de mensajes espontáneos por colono
-    /// GameComponent persistente que se guarda con el save
+    /// Tracks the state of spontaneous messages per colonist.
+    /// Persistent GameComponent saved with the game file.
     /// </summary>
     public class SpontaneousMessageTracker : GameComponent
     {
         private static SpontaneousMessageTracker instance;
         public static SpontaneousMessageTracker Instance => instance;
 
-        // Tracking por colono usando ThingID como key
+        // Per-colonist tracking keyed by ThingID
         private Dictionary<string, ColonistMessageTracker> colonistTrackers = new Dictionary<string, ColonistMessageTracker>();
-        
-        // Timestamp para próximo chequeo de mensajes random globales
+
+        // Timestamp for the next global random message check
         private int nextRandomMessageCheck = 0;
 
         public SpontaneousMessageTracker(Game game)
@@ -28,7 +28,7 @@ namespace EchoColony.SpontaneousMessages
         public override void ExposeData()
         {
             base.ExposeData();
-            
+
             Scribe_Collections.Look(ref colonistTrackers, "colonistTrackers", LookMode.Value, LookMode.Deep);
             Scribe_Values.Look(ref nextRandomMessageCheck, "nextRandomMessageCheck", 0);
 
@@ -40,31 +40,27 @@ namespace EchoColony.SpontaneousMessages
         }
 
         public override void GameComponentTick()
-{
-    base.GameComponentTick();
-    
-    // ✅ STORYTELLER UPDATE
-    StorytellerSpontaneousMessageSystem.Update();
-    
-    // ✅ COLONIST MESSAGES 
-    if (Find.TickManager.TicksGame % GenDate.TicksPerHour != 0)
-        return;
+        {
+            base.GameComponentTick();
 
-    if (!MyMod.Settings.IsSpontaneousMessagesActive())
-        return;
+            StorytellerSpontaneousMessageSystem.Update();
 
-    // Limpiar trackers de colonos que ya no existen
-    CleanupOldTrackers();
+            if (Find.TickManager.TicksGame % GenDate.TicksPerHour != 0)
+                return;
 
-    // Chequear mensajes random si está habilitado
-    if (MyMod.Settings.AreRandomMessagesEnabled())
-    {
-        CheckRandomMessages();
-    }
-}
+            if (!MyMod.Settings.IsSpontaneousMessagesActive())
+                return;
+
+            CleanupOldTrackers();
+
+            if (MyMod.Settings.AreRandomMessagesEnabled())
+            {
+                CheckRandomMessages();
+            }
+        }
 
         /// <summary>
-        /// Obtiene o crea el tracker para un colono específico
+        /// Gets or creates the tracker for a specific colonist.
         /// </summary>
         public ColonistMessageTracker GetTrackerFor(Pawn pawn)
         {
@@ -80,14 +76,13 @@ namespace EchoColony.SpontaneousMessages
         }
 
         /// <summary>
-        /// Verifica si un colono puede enviar un mensaje considerando todos los límites
+        /// Checks whether a colonist can send a message considering all limits.
         /// </summary>
         public bool CanSendMessage(Pawn pawn, TriggerType triggerType)
         {
             if (!MyMod.Settings.IsSpontaneousMessagesActive())
                 return false;
 
-            // Verificar que el modo permita este tipo de trigger
             if (triggerType == TriggerType.Incident && !MyMod.Settings.AreIncidentMessagesEnabled())
                 return false;
             if (triggerType == TriggerType.Random && !MyMod.Settings.AreRandomMessagesEnabled())
@@ -105,7 +100,7 @@ namespace EchoColony.SpontaneousMessages
         }
 
         /// <summary>
-        /// Registra que un colono envió un mensaje
+        /// Registers that a colonist sent a message.
         /// </summary>
         public void RegisterMessage(Pawn pawn, TriggerType triggerType)
         {
@@ -114,7 +109,24 @@ namespace EchoColony.SpontaneousMessages
         }
 
         /// <summary>
-        /// Marca o desmarca que un colono tiene un mensaje pendiente de respuesta
+        /// Registers that a colonist sent a message, storing the message text and topic.
+        /// </summary>
+        public void RegisterMessage(Pawn pawn, TriggerType triggerType, string messageText, string topic)
+        {
+            var tracker = GetTrackerFor(pawn);
+            if (tracker == null) return;
+
+            tracker.RegisterMessage(triggerType);
+
+            if (!string.IsNullOrWhiteSpace(messageText))
+                tracker.lastSentMessage = messageText;
+
+            if (!string.IsNullOrWhiteSpace(topic))
+                tracker.RegisterTopic(topic);
+        }
+
+        /// <summary>
+        /// Marks or unmarks that a colonist has a message pending a reply.
         /// </summary>
         public void SetPendingResponse(Pawn pawn, bool isPending)
         {
@@ -122,11 +134,13 @@ namespace EchoColony.SpontaneousMessages
             if (tracker != null)
             {
                 tracker.hasPendingResponse = isPending;
+                if (!isPending)
+                    tracker.lastSentMessage = "";
             }
         }
 
         /// <summary>
-        /// Verifica si un colono tiene un mensaje pendiente de respuesta
+        /// Checks whether a colonist has a message pending a reply.
         /// </summary>
         public bool HasPendingResponse(Pawn pawn)
         {
@@ -135,30 +149,28 @@ namespace EchoColony.SpontaneousMessages
         }
 
         /// <summary>
-        /// Chequea si es hora de evaluar mensajes random
+        /// Checks whether it is time to evaluate random messages.
         /// </summary>
         private void CheckRandomMessages()
         {
             int currentTick = Find.TickManager.TicksGame;
-            
+
             if (currentTick < nextRandomMessageCheck)
                 return;
 
-            // Establecer próximo chequeo
             float hoursToNext = MyMod.Settings.randomMessageIntervalHours;
             nextRandomMessageCheck = currentTick + (int)(hoursToNext * GenDate.TicksPerHour);
 
-            // Intentar generar mensaje random
             RandomMessageEvaluator.EvaluateRandomMessage();
         }
 
         /// <summary>
-        /// Limpia trackers de colonos que ya no existen
+        /// Removes trackers for colonists that no longer exist.
         /// </summary>
         private void CleanupOldTrackers()
         {
             if (Find.TickManager.TicksGame % (GenDate.TicksPerHour * 24) != 0)
-                return; // Solo limpiar una vez al día
+                return;
 
             var validThingIDs = new HashSet<string>();
             foreach (var map in Find.Maps)
@@ -178,7 +190,7 @@ namespace EchoColony.SpontaneousMessages
     }
 
     /// <summary>
-    /// Datos de tracking por colono individual
+    /// Tracking data for a single colonist.
     /// </summary>
     public class ColonistMessageTracker : IExposable
     {
@@ -187,24 +199,29 @@ namespace EchoColony.SpontaneousMessages
         public int lastMessageTick = 0;
         public bool hasPendingResponse = false;
 
-        // Timestamps del último mensaje por tipo de trigger
+        // Text of the last message sent without a reply, used to give follow-up context to the AI
+        public string lastSentMessage = "";
+
+        // Recent topics brought up, used to prevent the AI from repeating content
+        public List<string> recentTopics = new List<string>();
+        private const int MAX_RECENT_TOPICS = 4;
+
+        // Last message timestamp per trigger type
         public Dictionary<TriggerType, int> lastTriggerTime = new Dictionary<TriggerType, int>();
 
         public ColonistMessageTracker()
         {
-            // Constructor vacío para serialización
+            // Empty constructor for serialization
         }
 
         public ColonistMessageTracker(Pawn pawn)
         {
             lastDayChecked = GenDate.DaysPassed;
-            
-            // CRÍTICO: Inicializar lastMessageTick en un tiempo muy antiguo
-            // para que el colono pueda hablar inmediatamente
             lastMessageTick = 0;
-            
             messagesToday = 0;
             hasPendingResponse = false;
+            lastSentMessage = "";
+            recentTopics = new List<string>();
         }
 
         public void ExposeData()
@@ -213,20 +230,25 @@ namespace EchoColony.SpontaneousMessages
             Scribe_Values.Look(ref lastDayChecked, "lastDayChecked", 0);
             Scribe_Values.Look(ref lastMessageTick, "lastMessageTick", 0);
             Scribe_Values.Look(ref hasPendingResponse, "hasPendingResponse", false);
+            Scribe_Values.Look(ref lastSentMessage, "lastSentMessage", "");
             Scribe_Collections.Look(ref lastTriggerTime, "lastTriggerTime", LookMode.Value, LookMode.Value);
+            Scribe_Collections.Look(ref recentTopics, "recentTopics", LookMode.Value);
 
-            if (Scribe.mode == LoadSaveMode.LoadingVars && lastTriggerTime == null)
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
             {
-                lastTriggerTime = new Dictionary<TriggerType, int>();
+                if (lastTriggerTime == null)
+                    lastTriggerTime = new Dictionary<TriggerType, int>();
+                if (recentTopics == null)
+                    recentTopics = new List<string>();
             }
         }
 
         /// <summary>
-        /// Verifica si puede enviar mensaje considerando límites y cooldowns
+        /// Checks whether a message can be sent, considering limits and cooldowns.
         /// </summary>
         public bool CanSendMessage(Pawn pawn, TriggerType triggerType)
         {
-            // Reset diario
+            // Daily reset
             int today = GenDate.DaysPassed;
             if (today != lastDayChecked)
             {
@@ -234,24 +256,24 @@ namespace EchoColony.SpontaneousMessages
                 lastDayChecked = today;
             }
 
-            // Verificar límite diario
+            // Daily limit
             var settings = MyMod.Settings.GetOrCreateColonistSettings(pawn);
             if (messagesToday >= settings.maxMessagesPerDay)
                 return false;
 
-            // Verificar cooldown general
+            // General cooldown
             int ticksSinceLastMessage = Find.TickManager.TicksGame - lastMessageTick;
             float hoursSinceLastMessage = ticksSinceLastMessage / (float)GenDate.TicksPerHour;
-            
+
             if (hoursSinceLastMessage < settings.cooldownHours)
                 return false;
 
-            // Verificar cooldown específico del tipo de trigger (mínimo 2h entre mismo tipo)
+            // Per-trigger cooldown (minimum 2h between the same trigger type)
             if (lastTriggerTime.ContainsKey(triggerType))
             {
                 int ticksSinceTrigger = Find.TickManager.TicksGame - lastTriggerTime[triggerType];
                 float hoursSinceTrigger = ticksSinceTrigger / (float)GenDate.TicksPerHour;
-                
+
                 if (hoursSinceTrigger < 2f)
                     return false;
             }
@@ -260,7 +282,7 @@ namespace EchoColony.SpontaneousMessages
         }
 
         /// <summary>
-        /// Registra un mensaje enviado
+        /// Registers a sent message.
         /// </summary>
         public void RegisterMessage(TriggerType triggerType)
         {
@@ -269,32 +291,39 @@ namespace EchoColony.SpontaneousMessages
             lastTriggerTime[triggerType] = Find.TickManager.TicksGame;
             hasPendingResponse = true;
         }
+
+        /// <summary>
+        /// Adds a topic to the recent topics list, evicting the oldest if over the limit.
+        /// </summary>
+        public void RegisterTopic(string topic)
+        {
+            if (string.IsNullOrWhiteSpace(topic)) return;
+            recentTopics.Insert(0, topic);
+            if (recentTopics.Count > MAX_RECENT_TOPICS)
+                recentTopics.RemoveAt(recentTopics.Count - 1);
+        }
     }
 
     /// <summary>
-    /// Evaluador de mensajes aleatorios
+    /// Evaluates and dispatches random spontaneous messages.
     /// </summary>
     public static class RandomMessageEvaluator
     {
         public static void EvaluateRandomMessage()
         {
-            // Obtener colonos elegibles
             var eligible = SpontaneousMessageEvaluator.GetEligibleColonists(TriggerType.Random);
-            
+
             if (!eligible.Any())
                 return;
 
-            // Seleccionar uno al azar (con priorización de traits sociales si está activo)
             var selected = SpontaneousMessageEvaluator.SelectBestCandidate(eligible, TriggerType.Random, null);
-            
+
             if (selected == null)
                 return;
 
-            // Verificar si el colono "quiere hablar"
             if (!ColonistWillingnessEvaluator.WantsToSpeak(selected, TriggerType.Random, ""))
                 return;
 
-            // Generar mensaje
             var request = new MessageRequest(selected, TriggerType.Random, "casual conversation", 0.3f);
             MyStoryModComponent.Instance.StartCoroutine(
                 SpontaneousMessageGenerator.GenerateAndSendMessage(request)

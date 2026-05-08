@@ -4,13 +4,13 @@ using Verse;
 namespace EchoColony.SpontaneousMessages
 {
     /// <summary>
-    /// Construye el contexto específico para mensajes espontáneos
-    /// basándose en el contexto base del colono + situación que trigger el mensaje.
+    /// Builds the specific context for spontaneous messages
+    /// based on the colonist's base context + the situation that triggered the message.
     ///
-    /// Los tales verificados (eventos reales de la colonia) llegan automáticamente
-    /// a través de ColonistPromptContextBuilder.Build(), que ya los incluye.
-    /// Este builder añade un nudge específico para que el colono los USE activamente
-    /// al iniciar la conversación — especialmente en mensajes casuales.
+    /// Verified tales (real colony events) arrive automatically
+    /// through ColonistPromptContextBuilder.Build(), which already includes them.
+    /// This builder adds a specific nudge for the colonist to USE them actively
+    /// when initiating the conversation — especially in casual messages.
     /// </summary>
     public static class MessageContextBuilder
     {
@@ -18,7 +18,7 @@ namespace EchoColony.SpontaneousMessages
         {
             var sb = new StringBuilder();
 
-            // 1. Contexto base del colono — incluye tales verificados via TalesCache
+            // 1. Base colonist context — includes verified tales via TalesCache
             string baseContext = ColonistPromptContextBuilder.Build(request.colonist, "");
             sb.AppendLine(baseContext);
 
@@ -26,16 +26,37 @@ namespace EchoColony.SpontaneousMessages
             sb.AppendLine("═══════════════════════════════════════════════════");
             sb.AppendLine();
 
-            // 2. Instrucción sobre quién inicia
+            // 2. Pending response context — inject awareness if a previous message went unanswered
+            var colonistTracker = SpontaneousMessageTracker.Instance?.GetTrackerFor(request.colonist);
+            if (colonistTracker?.hasPendingResponse == true && !string.IsNullOrWhiteSpace(colonistTracker.lastSentMessage))
+            {
+                sb.AppendLine("IMPORTANT CONTEXT:");
+                sb.AppendLine($"You already reached out and said: \"{colonistTracker.lastSentMessage}\"");
+                sb.AppendLine("You have not received a response yet.");
+                sb.AppendLine("You may follow up on that, or bring up something new — but do not pretend the previous message never happened.");
+                sb.AppendLine();
+            }
+
+            // 3. Recent topics — prevent the AI from repeating content already brought up
+            if (colonistTracker?.recentTopics?.Count > 0)
+            {
+                sb.AppendLine("TOPICS YOU HAVE ALREADY BROUGHT UP RECENTLY:");
+                foreach (var topic in colonistTracker.recentTopics)
+                    sb.AppendLine($"  - {topic}");
+                sb.AppendLine("Do NOT repeat or revisit these topics. Choose something different.");
+                sb.AppendLine();
+            }
+
+            // 4. Who initiates
             sb.AppendLine("CRITICAL INSTRUCTION:");
-            sb.AppendLine("YOU are initiating this conversation with the player.");
-            sb.AppendLine("The player has NOT said anything yet — YOU are starting the chat.");
+            sb.AppendLine("YOU are initiating this conversation.");
+            sb.AppendLine("No one has said anything yet — YOU are starting this.");
             sb.AppendLine();
 
-            // 3. Contexto específico del trigger
+            // 5. Trigger-specific context
             sb.AppendLine(BuildTriggerContext(request));
 
-            // 4. Formato
+            // 6. Format requirements
             sb.AppendLine();
             sb.AppendLine("RESPONSE REQUIREMENTS:");
             sb.AppendLine("- Keep it BRIEF: 2-3 sentences maximum");
@@ -64,7 +85,7 @@ namespace EchoColony.SpontaneousMessages
                     sb.AppendLine($"An incident just occurred: {request.contextDescription}");
                     sb.AppendLine();
                     sb.AppendLine("YOUR TASK:");
-                    sb.AppendLine("Reach out to the player about this situation.");
+                    sb.AppendLine("Reach out about this situation.");
                     sb.AppendLine(GetIncidentSpecificGuidance(request.incidentTrigger));
                     sb.AppendLine();
                     sb.AppendLine("If your Verified Personal History contains a related past event,");
@@ -74,7 +95,7 @@ namespace EchoColony.SpontaneousMessages
 
                 case TriggerType.Random:
                     sb.AppendLine("SITUATION:");
-                    sb.AppendLine("You want to have a casual conversation with the player.");
+                    sb.AppendLine("You want to start a casual conversation.");
                     sb.AppendLine("There's no specific emergency — just something on your mind.");
                     sb.AppendLine();
                     sb.AppendLine("YOUR TASK:");
@@ -94,14 +115,14 @@ namespace EchoColony.SpontaneousMessages
                     sb.AppendLine("  - How you're feeling about colony life right now");
                     sb.AppendLine("  - Something you noticed or thought about today");
                     sb.AppendLine("  - Your current work or the weather");
-                    sb.AppendLine("  - A question for the player");
+                    sb.AppendLine("  - A question for someone in the colony");
                     sb.AppendLine();
                     sb.AppendLine("Keep it light and natural — like texting a friend.");
                     break;
 
                 case TriggerType.CriticalNeed:
                     sb.AppendLine("URGENT SITUATION:");
-                    sb.AppendLine($"You urgently need to tell the player: {request.contextDescription}");
+                    sb.AppendLine($"You urgently need to communicate this: {request.contextDescription}");
                     sb.AppendLine();
                     sb.AppendLine("YOUR TASK:");
                     sb.AppendLine("Inform them directly but don't be overly dramatic.");
@@ -113,7 +134,7 @@ namespace EchoColony.SpontaneousMessages
                     sb.AppendLine($"You've noticed: {request.contextDescription}");
                     sb.AppendLine();
                     sb.AppendLine("YOUR TASK:");
-                    sb.AppendLine("Alert the player to this situation.");
+                    sb.AppendLine("Alert your colony about this situation.");
                     sb.AppendLine("Express your concern naturally.");
                     sb.AppendLine();
                     sb.AppendLine("If your Verified Personal History contains something relevant,");

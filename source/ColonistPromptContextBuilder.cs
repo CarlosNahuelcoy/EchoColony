@@ -1019,7 +1019,7 @@ namespace EchoColony
 
             if (recentMemories != null && recentMemories.Any())
             {
-                sb.AppendLine("*Recent conversation memories (private chat with player):*");
+                sb.AppendLine("*Recent conversation memories:*");
 
                 int lastDay = tracker.GetLastMemoryDay();
                 if (lastDay != today && lastDay > 0)
@@ -1031,11 +1031,11 @@ namespace EchoColony
                     sb.AppendLine($"{prefix} {mem}");
                 }
 
-                sb.AppendLine("*Note: Focus on YOUR perspective in this private conversation.*");
+                sb.AppendLine("*Note: Focus on YOUR perspective in this conversation.*");
             }
             else
             {
-                sb.AppendLine("*No recent conversation memories. This is a private chat.*");
+                sb.AppendLine("*No recent conversation memories.*");
             }
 
             return sb.ToString();
@@ -1357,6 +1357,8 @@ namespace EchoColony
 
         private static string BuildPlayerPrompt(string userMessage)
         {
+            if (string.IsNullOrWhiteSpace(userMessage))
+                return string.Empty;
             return $"Player: \"{userMessage}\"";
         }
 
