@@ -5,14 +5,14 @@ using RimWorld;
 namespace EchoColony.SpontaneousMessages
 {
     /// <summary>
-    /// Generador principal de mensajes espontáneos
-    /// Orquesta todo el proceso: construcción de prompt, llamada a IA, registro en chat, y creación de letter
+    /// Main spontaneous message generator.
+    /// Orchestrates the full flow: prompt building, AI call, chat registration, and letter creation.
     /// </summary>
     public static class SpontaneousMessageGenerator
     {
         /// <summary>
-        /// Genera y envía un mensaje espontáneo completo
-        /// Este es el método principal que coordina todo el flujo
+        /// Generates and sends a complete spontaneous message.
+        /// This is the main method that coordinates the entire flow.
         /// </summary>
         public static IEnumerator GenerateAndSendMessage(MessageRequest request)
         {
@@ -28,20 +28,19 @@ namespace EchoColony.SpontaneousMessages
                 yield break;
             }
 
-            // Log para debug
             if (MyMod.Settings.debugMode)
             {
                 Log.Message($"[EchoColony] Generating spontaneous message for {request.colonist.LabelShort} (Type: {request.triggerType}, Context: {request.contextDescription})");
             }
 
-            // 1. Construir el prompt específico
+            // 1. Build the specific prompt
             string prompt = MessageContextBuilder.BuildPrompt(request);
 
-            // 2. Variable para capturar la respuesta
+            // 2. Variable to capture the response
             string aiResponse = null;
             bool responseReceived = false;
 
-            // 3. Llamar a la IA (usa el mismo sistema que el chat normal)
+            // 3. Call the AI (uses the same system as normal chat)
             yield return GeminiAPI.GetResponseFromModel(
                 request.colonist,
                 prompt,
@@ -52,8 +51,8 @@ namespace EchoColony.SpontaneousMessages
                 }
             );
 
-            // 4. Esperar respuesta
-            float timeout = 30f; // 30 segundos máximo
+            // 4. Wait for response
+            float timeout = 30f;
             float elapsed = 0f;
             while (!responseReceived && elapsed < timeout)
             {
@@ -61,24 +60,23 @@ namespace EchoColony.SpontaneousMessages
                 yield return new UnityEngine.WaitForSeconds(0.1f);
             }
 
-            // 5. Verificar que recibimos respuesta válida
+            // 5. Validate response
             if (string.IsNullOrWhiteSpace(aiResponse))
             {
                 Log.Warning($"[EchoColony] SpontaneousMessage: No response received for {request.colonist.LabelShort}");
                 yield break;
             }
 
-            // Verificar errores de API
             if (aiResponse.StartsWith("⚠ ERROR:") || aiResponse.StartsWith("ERROR:"))
             {
                 Log.Error($"[EchoColony] SpontaneousMessage: API error for {request.colonist.LabelShort}: {aiResponse}");
                 yield break;
             }
 
-            // 6. Limpiar la respuesta
+            // 6. Clean the response
             string cleanResponse = CleanResponse(aiResponse);
 
-            // 7. PRIMERO: Registrar el mensaje en el chat
+            // 7. Register the message in chat
             ChatGameComponent.Instance.AddLine(
                 request.colonist,
                 $"{request.colonist.LabelShort}: {cleanResponse}"
@@ -89,18 +87,22 @@ namespace EchoColony.SpontaneousMessages
                 Log.Message($"[EchoColony] Message registered in chat for {request.colonist.LabelShort}");
             }
 
-            // 8. Crear y mostrar la letter de notificación
+            // 8. Create and show the notification letter
             ShowColonistMessageLetter(request.colonist, cleanResponse, request.triggerType);
 
-            // 9. Actualizar el tracker
+            // 9. Update the tracker — store message text and topic to avoid repetition
             var tracker = SpontaneousMessageTracker.Instance;
             if (tracker != null)
             {
-                tracker.RegisterMessage(request.colonist, request.triggerType);
+                tracker.RegisterMessage(
+                    request.colonist,
+                    request.triggerType,
+                    cleanResponse,
+                    request.contextDescription
+                );
                 tracker.SetPendingResponse(request.colonist, true);
             }
 
-            // 10. Log final
             if (MyMod.Settings.debugMode)
             {
                 Log.Message($"[EchoColony] Spontaneous message completed for {request.colonist.LabelShort}");
@@ -108,7 +110,7 @@ namespace EchoColony.SpontaneousMessages
         }
 
         /// <summary>
-        /// Crea y muestra la letter de notificación
+        /// Creates and shows the notification letter.
         /// </summary>
         private static void ShowColonistMessageLetter(Pawn colonist, string message, TriggerType triggerType)
         {
@@ -129,7 +131,7 @@ namespace EchoColony.SpontaneousMessages
         }
 
         /// <summary>
-        /// Limpia la respuesta de la IA
+        /// Cleans the AI response of common artifacts.
         /// </summary>
         private static string CleanResponse(string response)
         {
@@ -138,32 +140,13 @@ namespace EchoColony.SpontaneousMessages
 
             string cleaned = response.Trim();
 
-            // Remover comillas si envuelven todo el texto
+            // Remove surrounding quotes if they wrap the entire text
             if (cleaned.StartsWith("\"") && cleaned.EndsWith("\"") && cleaned.Length > 2)
             {
                 cleaned = cleaned.Substring(1, cleaned.Length - 2).Trim();
             }
 
-            // Remover prefijos comunes que la IA podría agregar
-            string[] prefixesToRemove = {
-                "Hey, ",
-                "Well, ",
-                "So, ",
-                "Um, ",
-                "Uh, "
-            };
-
-            foreach (string prefix in prefixesToRemove)
-            {
-                if (cleaned.StartsWith(prefix, System.StringComparison.OrdinalIgnoreCase))
-                {
-                    // Solo remover si no es el inicio natural de la oración
-                    // (e.g. "Hey" al inicio de un saludo es válido)
-                    continue;
-                }
-            }
-
-            // Asegurarse de que no exceda límite razonable (aunque el prompt dice 2-3 oraciones)
+            // Truncate if it exceeds a reasonable length
             if (cleaned.Length > 500)
             {
                 int lastPeriod = cleaned.LastIndexOf('.', 500);
@@ -177,7 +160,7 @@ namespace EchoColony.SpontaneousMessages
         }
 
         /// <summary>
-        /// Método helper para debug: registra el prompt generado
+        /// Debug helper: logs the generated prompt for a given request.
         /// </summary>
         public static void DebugLogPrompt(MessageRequest request)
         {
