@@ -30,7 +30,14 @@ namespace EchoColony
             sb.AppendLine(systemPrompt);
             if (!string.IsNullOrWhiteSpace(globalPrompt))
                 sb.AppendLine(globalPrompt.Trim());
-
+            
+             string groupPrompt = ColonistGroupManager.GetGroupPrompt(pawn);
+            if (!string.IsNullOrWhiteSpace(groupPrompt))
+            {
+                sb.AppendLine("# Additional Instructions:");
+                sb.AppendLine(groupPrompt.Trim());
+            }  
+            
             if (!string.IsNullOrWhiteSpace(customPrompt))
             {
                 sb.AppendLine($"# Custom Instructions for {pawn.LabelShort}:");
@@ -1059,6 +1066,13 @@ namespace EchoColony
 
             if (!string.IsNullOrWhiteSpace(globalPrompt))
                 sb.AppendLine(globalPrompt.Trim());
+
+            string groupPrompt = ColonistGroupManager.GetGroupPrompt(pawn);
+            if (!string.IsNullOrWhiteSpace(groupPrompt))
+            {
+                sb.AppendLine("# Additional Instructions:");
+                sb.AppendLine(groupPrompt.Trim());
+            }    
 
             if (!string.IsNullOrWhiteSpace(customPrompt))
             {

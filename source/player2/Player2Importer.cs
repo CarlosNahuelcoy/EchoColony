@@ -21,7 +21,7 @@ namespace EchoColony
 
         if (request.isNetworkError || request.isHttpError)
         {
-            Log.Warning("[EchoColony] Failed to fetch Player2 characters: " + request.error);
+            Log.Message("[EchoColony] Failed to fetch Player2 characters: " + request.error);
             yield break;
         }
         try

@@ -16,15 +16,14 @@ namespace EchoColony
 
         public ColonistPromptEditor(Pawn pawn)
         {
-            this.pawn = pawn;
+            this.pawn       = pawn;
             this.tempPrompt = ColonistPromptManager.GetPrompt(pawn);
-            this.closeOnClickedOutside = true;
-            this.doCloseX = true;
+            this.closeOnClickedOutside  = true;
+            this.doCloseX               = true;
             this.absorbInputAroundWindow = true;
-            this.forcePause = true;
-            this.draggable = true;
+            this.forcePause             = true;
+            this.draggable              = true;
 
-            // 🧠 Restaurar voz guardada solo si Player2 está activo y TTS habilitado
             if (MyMod.Settings.modelSource == ModelSource.Player2 && MyMod.Settings.enableTTS)
             {
                 string savedVoice = ColonistVoiceManager.GetVoice(pawn);
@@ -35,94 +34,71 @@ namespace EchoColony
                     Log.Message($"[EchoColony] Loaded stored voice '{savedVoice}' for {pawn.LabelShort} into memory.");
                 }
             }
-    
-            // Solo cargar caracteres de Player2 si está activo
+
             if (MyMod.Settings.modelSource == ModelSource.Player2 && Player2CharacterCache.Characters.Count == 0)
             {
                 MyStoryModComponent.Instance.StartCoroutine(Player2Importer.LoadCharacters());
             }
         }
 
-        public override Vector2 InitialSize => new Vector2(500f, 500f);
+        // Slightly taller to accommodate the group section
+        public override Vector2 InitialSize => new Vector2(500f, 545f);
 
         public override void DoWindowContents(Rect inRect)
         {
             float currentY = 0f;
 
-            // ✅ HEADER CON TÍTULO Y BOTÓN DE MEMORIAS (SIN CHECKBOX)
             DrawHeader(inRect, ref currentY);
 
-            // Selector de voz (solo si Player2 está activo Y TTS está habilitado)
             if (MyMod.Settings.modelSource == ModelSource.Player2 && MyMod.Settings.enableTTS)
-            {
                 DrawVoiceSection(inRect, ref currentY);
-            }
 
-            // Sección de prompt personalizado (CON CHECKBOX)
+            DrawGroupSection(inRect, ref currentY);
+
             DrawPromptSection(inRect, ref currentY);
 
-            // Botón de guardar
             DrawSaveButton(inRect);
         }
 
         private void DrawHeader(Rect inRect, ref float currentY)
         {
-            // ✅ ÁREA DEL HEADER LIMPIA
-            Rect headerRect = new Rect(0, currentY, inRect.width, 35f);
-
-            // Título principal
             Text.Font = GameFont.Medium;
-            string title = "EchoColony.PersonalizingTitle".Translate(pawn.LabelCap);
-            Widgets.Label(new Rect(0, currentY, inRect.width - 100f, 30f), title);
+            Widgets.Label(new Rect(0, currentY, inRect.width - 100f, 30f),
+                "EchoColony.PersonalizingTitle".Translate(pawn.LabelCap));
             Text.Font = GameFont.Small;
 
-            // ✅ BOTÓN DE MEMORIAS MEJORADO (esquina superior derecha)
             Rect memoryButtonRect = new Rect(inRect.width - 90f, currentY, 85f, 30f);
-
-            // Fondo sutil para el botón
             Color originalColor = GUI.color;
-            GUI.color = new Color(0.8f, 0.9f, 1f, 0.8f); // Azul claro sutil
-
+            GUI.color = new Color(0.8f, 0.9f, 1f, 0.8f);
             if (Widgets.ButtonText(memoryButtonRect, "EchoColony.MemoriesButton".Translate()))
-            {
                 Find.WindowStack.Add(new ColonistMemoryViewer(pawn));
-            }
-
             GUI.color = originalColor;
 
-            // Tooltip informativo
             TooltipHandler.TipRegion(memoryButtonRect,
                 "EchoColony.MemoriesTooltip".Translate(pawn.LabelShort));
 
-            currentY += 40f; // Espacio después del header
+            currentY += 40f;
         }
 
         private void DrawVoiceSection(Rect inRect, ref float currentY)
         {
-            // ✅ SECCIÓN DE VOZ CON MEJOR ORGANIZACIÓN
-            
-            // Título de la sección con línea separadora
-            Rect voiceTitleRect = new Rect(0, currentY, inRect.width, 25f);
-            Widgets.Label(voiceTitleRect, "EchoColony.VoiceConfigurationTitle".Translate());
+            Widgets.Label(new Rect(0, currentY, inRect.width, 25f),
+                "EchoColony.VoiceConfigurationTitle".Translate());
             currentY += 30f;
 
-            // Línea separadora sutil
-            Rect separatorRect = new Rect(0, currentY - 5f, inRect.width, 1f);
-            Widgets.DrawBoxSolid(separatorRect, new Color(0.5f, 0.5f, 0.5f, 0.3f));
+            Widgets.DrawBoxSolid(new Rect(0, currentY - 5f, inRect.width, 1f),
+                new Color(0.5f, 0.5f, 0.5f, 0.3f));
 
-            // Selector de voz
-            Rect voiceLabelRect = new Rect(0f, currentY, 50f, 30f);
-            Widgets.Label(voiceLabelRect, "EchoColony.VoiceLabel".Translate());
+            Widgets.Label(new Rect(0f, currentY, 50f, 30f), "EchoColony.VoiceLabel".Translate());
 
             Rect dropdownRect = new Rect(60f, currentY, 150f, 30f);
             if (Widgets.ButtonText(dropdownRect, GetSelectedVoiceName(pawn)))
             {
-                List<FloatMenuOption> options = new List<FloatMenuOption>();
+                var options = new List<FloatMenuOption>();
                 foreach (var voice in TTSVoiceCache.Voices)
                 {
                     string voiceId = voice.id;
-                    string displayName = $"{voice.name} [{voice.language}]";
-                    options.Add(new FloatMenuOption(displayName, () =>
+                    options.Add(new FloatMenuOption($"{voice.name} [{voice.language}]", () =>
                     {
                         ChatGameComponent.Instance.SetVoiceForPawn(pawn, voiceId);
                         ColonistVoiceManager.SetVoice(pawn, voiceId);
@@ -131,121 +107,173 @@ namespace EchoColony
                 Find.WindowStack.Add(new FloatMenu(options));
             }
 
-            // Botón de importar de Player2
             Rect importBtnRect = new Rect(220f, currentY, 100f, 30f);
-            GUI.color = new Color(0.9f, 1f, 0.9f); // Verde claro
+            GUI.color = new Color(0.9f, 1f, 0.9f);
             if (Widgets.ButtonText(importBtnRect, "EchoColony.ImportButton".Translate()))
-            {
                 HandlePlayer2Import();
-            }
             GUI.color = Color.white;
 
-            // Botón de prueba de voz
             Rect testVoiceRect = new Rect(330f, currentY, 70f, 30f);
-            GUI.color = new Color(1f, 0.9f, 0.8f); // Naranja claro
+            GUI.color = new Color(1f, 0.9f, 0.8f);
             TooltipHandler.TipRegion(testVoiceRect, "EchoColony.TestVoiceTooltip".Translate());
             if (Widgets.ButtonText(testVoiceRect, "EchoColony.TestButton".Translate()))
             {
                 string voiceId = ChatGameComponent.Instance.GetVoiceForPawn(pawn);
                 if (!string.IsNullOrEmpty(voiceId) && !string.IsNullOrEmpty(testText))
-                {
                     MyStoryModComponent.Instance.StartCoroutine(
-                        TTSManager.Speak(testText, voiceId, "female", "en_US", 1f)
-                    );
-                }
+                        TTSManager.Speak(testText, voiceId, "female", "en_US", 1f));
             }
             GUI.color = Color.white;
 
             currentY += 35f;
 
-            // Campo de texto para prueba de voz
-            Rect testTextLabelRect = new Rect(0f, currentY, 120f, 20f);
-            Widgets.Label(testTextLabelRect, "EchoColony.TestTextLabel".Translate());
-
-            Rect testTextRect = new Rect(0f, currentY + 20f, inRect.width, 30f);
+            Widgets.Label(new Rect(0f, currentY, 120f, 20f), "EchoColony.TestTextLabel".Translate());
             GUI.SetNextControlName("TestTextArea");
-            testText = Widgets.TextField(testTextRect, testText);
+            testText = Widgets.TextField(new Rect(0f, currentY + 20f, inRect.width, 30f), testText);
 
-            currentY += 65f; // Espacio después de la sección de voz
+            currentY += 65f;
+        }
+
+        /// <summary>
+        /// Compact group row: shows current group tag + Change button + Manage Groups button.
+        /// </summary>
+        private void DrawGroupSection(Rect inRect, ref float currentY)
+        {
+            // Separator
+            Widgets.DrawBoxSolid(new Rect(0, currentY, inRect.width, 1f),
+                new Color(0.5f, 0.5f, 0.5f, 0.3f));
+            currentY += 6f;
+
+            // "Group:" label
+            Widgets.Label(new Rect(0f, currentY, 48f, 26f), "Group:");
+
+            // Current group tag
+            var currentGroup = ColonistGroupManager.GetGroup(pawn);
+            float tagX = 52f;
+
+            if (currentGroup != null)
+            {
+                // Colored tag background
+                float tagW = Mathf.Min(Text.CalcSize(currentGroup.name).x + 16f, 140f);
+                Rect tagBg = new Rect(tagX, currentY + 3f, tagW, 22f);
+                Widgets.DrawBoxSolid(tagBg, new Color(currentGroup.color.r, currentGroup.color.g,
+                    currentGroup.color.b, 0.35f));
+                Widgets.DrawBox(tagBg);
+
+                // Small color dot inside tag
+                Rect dot = new Rect(tagBg.x + 4f, tagBg.y + 4f, 14f, 14f);
+                Widgets.DrawBoxSolid(dot, currentGroup.color);
+
+                Text.Anchor = TextAnchor.MiddleLeft;
+                Widgets.Label(new Rect(dot.xMax + 4f, tagBg.y, tagBg.width - dot.width - 10f, tagBg.height),
+                    currentGroup.name);
+                Text.Anchor = TextAnchor.UpperLeft;
+
+                tagX += tagW + 8f;
+            }
+            else
+            {
+                GUI.color = Color.gray;
+                Text.Anchor = TextAnchor.MiddleLeft;
+                Widgets.Label(new Rect(tagX, currentY, 80f, 26f), "None");
+                Text.Anchor = TextAnchor.UpperLeft;
+                GUI.color = Color.white;
+                tagX += 88f;
+            }
+
+            // Change button — FloatMenu with all groups + None
+            Rect changeBtn = new Rect(tagX, currentY, 60f, 26f);
+            if (Widgets.ButtonText(changeBtn, "Change"))
+            {
+                var options = new List<FloatMenuOption>();
+
+                options.Add(new FloatMenuOption("None", () => ColonistGroupManager.ClearGroup(pawn)));
+
+                foreach (var group in ColonistGroupManager.GetAllGroups())
+                {
+                    string groupId   = group.id;
+                    string groupName = group.name;
+                    options.Add(new FloatMenuOption(groupName, () =>
+                        ColonistGroupManager.SetGroup(pawn, groupId)));
+                }
+
+                Find.WindowStack.Add(new FloatMenu(options));
+            }
+
+            // Manage Groups button — opens GroupManagerWindow
+            Rect manageBtn = new Rect(inRect.width - 120f, currentY, 118f, 26f);
+            GUI.color = new Color(0.85f, 0.85f, 1f);
+            if (Widgets.ButtonText(manageBtn, "Manage Groups"))
+                Find.WindowStack.Add(new GroupManagerWindow());
+            GUI.color = Color.white;
+
+            currentY += 34f;
+
+            // Separator
+            Widgets.DrawBoxSolid(new Rect(0, currentY, inRect.width, 1f),
+                new Color(0.5f, 0.5f, 0.5f, 0.3f));
+            currentY += 6f;
         }
 
         private void DrawPromptSection(Rect inRect, ref float currentY)
         {
-            // ✅ TÍTULO DE SECCIÓN CON LÍNEA SEPARADORA
-            Rect promptTitleRect = new Rect(0, currentY, inRect.width, 25f);
-            Widgets.Label(promptTitleRect, "EchoColony.CustomPromptTitle".Translate());
+            Widgets.Label(new Rect(0, currentY, inRect.width, 25f),
+                "EchoColony.CustomPromptTitle".Translate());
             currentY += 30f;
 
-            // Línea separadora sutil
-            Rect separatorRect = new Rect(0, currentY - 5f, inRect.width, 1f);
-            Widgets.DrawBoxSolid(separatorRect, new Color(0.5f, 0.5f, 0.5f, 0.3f));
+            Widgets.DrawBoxSolid(new Rect(0, currentY - 5f, inRect.width, 1f),
+                new Color(0.5f, 0.5f, 0.5f, 0.3f));
 
-            // ✅ CHECKBOX MOVIDO AQUÍ - mejor ubicación contextual
-            Rect ageToggleLabel = new Rect(0f, currentY, 250f, 25f);
-            Widgets.Label(ageToggleLabel, "EchoColony.IgnoreAgeLabel".Translate());
-
+            // Age ignore checkbox
+            Widgets.Label(new Rect(0f, currentY, 250f, 25f),
+                "EchoColony.IgnoreAgeLabel".Translate());
             Rect ageToggle = new Rect(260f, currentY + 2f, 24f, 24f);
             bool currentValue = ColonistPromptManager.GetIgnoreAge(pawn);
-            bool tempValue = currentValue;
+            bool tempValue    = currentValue;
             Widgets.Checkbox(ageToggle.position, ref tempValue);
             if (tempValue != currentValue)
-            {
                 ColonistPromptManager.SetIgnoreAge(pawn, tempValue);
-            }
-            TooltipHandler.TipRegion(new Rect(0f, currentY, 300f, 25f), "EchoColony.IgnoreAgeTooltip".Translate());
+            TooltipHandler.TipRegion(new Rect(0f, currentY, 300f, 25f),
+                "EchoColony.IgnoreAgeTooltip".Translate());
 
-            currentY += 35f; // Espacio después del checkbox
+            currentY += 35f;
 
-            // ✅ ÁREA DE TEXTO CORREGIDA CON SCROLL FUNCIONAL
-            float buttonHeight = 30f;
-            float padding = 10f;
-            float textAreaTop = currentY;
-            float textHeight = inRect.height - textAreaTop - buttonHeight - padding;
+            // Prompt textarea — fills remaining space above save button
+            const float buttonHeight = 30f;
+            const float padding      = 10f;
+            float textHeight = inRect.height - currentY - buttonHeight - padding;
 
-            Rect scrollOuterRect = new Rect(0, textAreaTop, inRect.width, textHeight);
-
-            // Fondo negro y borde blanco
+            Rect scrollOuterRect = new Rect(0, currentY, inRect.width, textHeight);
             Widgets.DrawBoxSolid(scrollOuterRect, Color.black);
             Widgets.DrawBox(scrollOuterRect);
 
             Rect scrollViewRect = scrollOuterRect.ContractedBy(4f);
+            float textWidth     = scrollViewRect.width - 16f;
 
-            // ✅ CALCULAR ALTURA CORRECTA DEL CONTENIDO
-            float textWidth = scrollViewRect.width - 16f; // Espacio para scrollbar
-            
-            // Usar una altura mínima que permita scroll
-            float minHeight = scrollViewRect.height;
-            
-            // Calcular altura real del texto
-            GUIStyle tempStyle = new GUIStyle(GUI.skin.textArea);
-            tempStyle.wordWrap = true;
-            tempStyle.fontSize = 14;
-            tempStyle.padding = new RectOffset(6, 6, 6, 6);
-            
+            GUIStyle tempStyle = new GUIStyle(GUI.skin.textArea)
+            {
+                wordWrap = true,
+                fontSize = 14,
+                padding  = new RectOffset(6, 6, 6, 6),
+            };
             float textContentHeight = tempStyle.CalcHeight(new GUIContent(tempPrompt), textWidth);
-            
-            // Asegurar que siempre haya scroll disponible
-            float contentHeight = Mathf.Max(textContentHeight + 40f, minHeight + 50f);
-
-            Rect viewRect = new Rect(0f, 0f, textWidth, contentHeight);
+            float contentHeight     = Mathf.Max(textContentHeight + 40f, scrollViewRect.height + 50f);
+            Rect viewRect           = new Rect(0f, 0f, textWidth, contentHeight);
 
             Widgets.BeginScrollView(scrollViewRect, ref scroll, viewRect);
 
-            // ✅ TEXTAREA CON TAMAÑO CORRECTO
-            Rect textAreaRect = new Rect(0f, 0f, textWidth, contentHeight - 20f);
+            GUIStyle style = new GUIStyle(GUI.skin.textArea)
+            {
+                wordWrap         = true,
+                normal           = { textColor = Color.white },
+                padding          = new RectOffset(6, 6, 6, 6),
+                fontSize         = 14,
+            };
             GUI.SetNextControlName("PromptTextArea");
-
-            GUIStyle style = new GUIStyle(GUI.skin.textArea);
-            style.wordWrap = true;
-            style.normal.textColor = Color.white;
-            style.padding = new RectOffset(6, 6, 6, 6);
-            style.fontSize = 14;
-
-            tempPrompt = GUI.TextArea(textAreaRect, tempPrompt, style);
+            tempPrompt = GUI.TextArea(new Rect(0f, 0f, textWidth, contentHeight - 20f), tempPrompt, style);
 
             Widgets.EndScrollView();
 
-            // Enfocar el área de texto al abrir la ventana
             if (!hasFocused && Event.current.type == EventType.Layout)
             {
                 GUI.FocusControl("PromptTextArea");
@@ -255,15 +283,15 @@ namespace EchoColony
 
         private void DrawSaveButton(Rect inRect)
         {
-            // ✅ BOTÓN DE GUARDAR CON MEJOR ESTILO
-            float buttonHeight = 30f;
+            const float buttonHeight = 30f;
             Rect saveButtonRect = new Rect(inRect.width - 100f, inRect.height - buttonHeight, 100f, buttonHeight);
-            
-            GUI.color = new Color(0.8f, 1f, 0.8f); // Verde claro
+
+            GUI.color = new Color(0.8f, 1f, 0.8f);
             if (Widgets.ButtonText(saveButtonRect, "EchoColony.SaveButton".Translate()))
             {
                 ColonistPromptManager.SetPrompt(pawn, tempPrompt);
-                Messages.Message("EchoColony.ConfigurationSaved".Translate(pawn.LabelShort), MessageTypeDefOf.TaskCompletion);
+                Messages.Message("EchoColony.ConfigurationSaved".Translate(pawn.LabelShort),
+                    MessageTypeDefOf.TaskCompletion);
                 Close();
             }
             GUI.color = Color.white;
@@ -273,36 +301,29 @@ namespace EchoColony
         {
             if (Player2CharacterCache.Characters.Count == 0)
             {
-                // No hay personajes - mostrar advertencia
                 Messages.Message("EchoColony.NoCharactersFound".Translate(),
-                                MessageTypeDefOf.RejectInput, false);
+                    MessageTypeDefOf.RejectInput, false);
             }
             else if (Player2CharacterCache.Characters.Count == 1)
             {
-                // Solo un personaje - importar automáticamente
                 var character = Player2CharacterCache.Characters[0];
-
-                // Aplicar descripción y voz
                 tempPrompt = character.description;
                 if (!string.IsNullOrEmpty(character.voice_id))
                 {
                     ChatGameComponent.Instance.SetVoiceForPawn(pawn, character.voice_id);
                     ColonistVoiceManager.SetVoice(pawn, character.voice_id);
                 }
-
                 Messages.Message("EchoColony.CharacterImportedAuto".Translate(character.short_name),
-                                MessageTypeDefOf.TaskCompletion, false);
+                    MessageTypeDefOf.TaskCompletion, false);
             }
             else
             {
-                // Múltiples personajes - mostrar menú de selección
-                List<FloatMenuOption> options = new List<FloatMenuOption>();
+                var options = new List<FloatMenuOption>();
                 foreach (var character in Player2CharacterCache.Characters)
                 {
                     string label = $"{character.short_name} ({character.voice_id?.Substring(0, 6) ?? "No voice"})";
                     options.Add(new FloatMenuOption(label, () =>
                     {
-                        // Aplicar descripción y voz
                         tempPrompt = character.description;
                         if (!string.IsNullOrEmpty(character.voice_id))
                         {
@@ -310,7 +331,7 @@ namespace EchoColony
                             ColonistVoiceManager.SetVoice(pawn, character.voice_id);
                         }
                         Messages.Message("EchoColony.CharacterImported".Translate(character.short_name),
-                                        MessageTypeDefOf.TaskCompletion, false);
+                            MessageTypeDefOf.TaskCompletion, false);
                     }));
                 }
                 Find.WindowStack.Add(new FloatMenu(options));
