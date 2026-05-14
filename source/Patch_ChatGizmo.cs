@@ -33,27 +33,34 @@ namespace EchoColony
             {
                 var selectedForGroup = Find.Selector.SelectedObjects
                     .OfType<Pawn>()
-                    .Where(p => p != null && !p.Dead && p.Spawned && IsValidForGroupChat(p))
+                    .Where(p => IsValidForGroupChat(p)) //*furel* Simplified selection, IsValidForGruoupChat will check every thing.
                     .ToList();
-
+				//Individual Gizmos
                 if (Find.Selector.SingleSelectedThing == pawn && IsValidChatPawn(pawn))
                 {
                     extraGizmos.Add(CreateIndividualChatGizmo(pawn));
                     extraGizmos.Add(CreateQuickChatGizmo(pawn));
                 }
-
+				//-------- Group Gizmos ------------
                 if (IsGroupChatAllowedForCurrentModel())
                 {
+					//--------- Open Group Chat with Pawns selected --------------							
+					ColonistGroupChatWindow.GroupSelectionMode InitialMode = ColonistGroupChatWindow.GroupSelectionMode.Room; ;	//*furel* Group open menú selection. This is used to select the mode of group chat when is open.												   		 
                     if (selectedForGroup.Count > 1)
                     {
                         if (pawn == selectedForGroup[0])
-                            extraGizmos.Add(CreateGroupChatGizmo(pawn, selectedForGroup));
+							InitialMode = ColonistGroupChatWindow.GroupSelectionMode.MapWide; //*furel* If pawns are selected the Group Chat opens in "Map" mode															 
+                            extraGizmos.Add(CreateGroupChatGizmo(pawn, selectedForGroup, InitialMode)); //*furel* Added a new imput when creating the chat Windows
                     }
+					//--------- Open Group Chat with one pawn selected --------------						 
                     else if (IsValidForGroupChat(pawn))
                     {
-                        var nearbyColonists = GetNearbyColonists(pawn);
+						//*furel* New way to select participansts. GetNearbyColonists is deprecated.
+                        var nearbyColonists = new List<Pawn> ();
+                        nearbyColonists = ColonistGroupChatWindow.GetPawnsInRoom(pawn); //*furel* Getting the list of pawns with the new funtion.
+                        InitialMode = ColonistGroupChatWindow.GroupSelectionMode.Room;  //*furel* Open Group Chat Windos in Room mode.
                         if (nearbyColonists.Count >= 1)
-                            extraGizmos.Add(CreateGroupChatGizmo(pawn, nearbyColonists));
+                            extraGizmos.Add(CreateGroupChatGizmo(pawn, nearbyColonists, InitialMode)); //*furel* Added a new imput when creating the chat Windows
                     }
                 }
             }
@@ -106,40 +113,52 @@ namespace EchoColony
             }
         }
 
-        private static List<Pawn> GetNearbyColonists(Pawn pawn)
+		//*furel* No necessary any more with the method used now.																			
+        //private static List<Pawn> GetNearbyColonists(Pawn pawn)
+        //{
+        //    try
+        //    {
+        //        if (pawn?.Map == null) return new List<Pawn>();
+
+        //        var allPawns = pawn.Map.mapPawns?.AllPawnsSpawned;
+        //        if (allPawns == null) return new List<Pawn>();
+
+        //        return allPawns
+        //            .Where(p => p != null &&
+        //                        p != pawn &&
+        //                        !p.Dead &&
+        //                        !p.Destroyed &&
+        //                        p.RaceProps.Humanlike &&
+        //                        p.Spawned &&
+        //                        p.Position.IsValid &&
+        //                        pawn.Position.IsValid &&
+        //                        p.Position.InHorDistOf(pawn.Position, 10f) &&
+        //                        IsValidForGroupChat(p))
+        //            .ToList();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Log.Warning($"[EchoColony] Error getting nearby colonists for {pawn?.LabelShort}: {ex.Message}");
+        //        return new List<Pawn>();
+        //    }
+        //}
+
+		//*furel* Changed private to public so it can be used in ColonistGroupChatWindows.cs. It can be moved to a separate Utility.cs with other utility functions																		 
+        public static bool IsValidForGroupChat(Pawn pawn) 
         {
-            try
-            {
-                if (pawn?.Map == null) return new List<Pawn>();
+            //*furel* Added new filters to prevent assaign Chat Group for invalid pawns or animals
+            if (pawn == null || pawn.Dead || !pawn.Spawned || pawn.Destroyed || !pawn.RaceProps.Humanlike) 
+				return false;
 
-                var allPawns = pawn.Map.mapPawns?.AllPawnsSpawned;
-                if (allPawns == null) return new List<Pawn>();
+            if (pawn.IsPrisoner) 
+				return false;
 
-                return allPawns
-                    .Where(p => p != null &&
-                                p != pawn &&
-                                !p.Dead &&
-                                !p.Destroyed &&
-                                p.RaceProps.Humanlike &&
-                                p.Spawned &&
-                                p.Position.IsValid &&
-                                pawn.Position.IsValid &&
-                                p.Position.InHorDistOf(pawn.Position, 10f) &&
-                                IsValidForGroupChat(p))
-                    .ToList();
-            }
-            catch (Exception ex)
-            {
-                Log.Warning($"[EchoColony] Error getting nearby colonists for {pawn?.LabelShort}: {ex.Message}");
-                return new List<Pawn>();
-            }
-        }
+            if (pawn.Faction == Faction.OfPlayer && !pawn.IsSlave)
+                return true;
 
-        private static bool IsValidForGroupChat(Pawn pawn)
-        {
-            if (pawn.IsPrisoner) return false;
-            if (pawn.Faction == Faction.OfPlayer && !pawn.IsSlave) return true;
-            if (pawn.IsSlave && pawn.SlaveFaction == Faction.OfPlayer) return true;
+			if (pawn.IsSlaveOfColony)
+				return true;
+
             return false;
         }
 
@@ -230,8 +249,8 @@ namespace EchoColony
                 }
             };
         }
-
-        private static Command_Action CreateGroupChatGizmo(Pawn pawn, List<Pawn> nearbyColonists)
+		//*furel* Added open window mode as new variable entry so chat window can open, modes are defined in ColonistChatWindow.cs.
+        private static Command_Action CreateGroupChatGizmo(Pawn pawn, List<Pawn> nearbyColonists, ColonistGroupChatWindow.GroupSelectionMode mode)
         {
             return new Command_Action
             {
@@ -264,7 +283,7 @@ namespace EchoColony
                         }
 
                         validParticipants.Insert(0, pawn);
-                        Find.WindowStack.Add(new ColonistGroupChatWindow(validParticipants));
+                        Find.WindowStack.Add(new ColonistGroupChatWindow(validParticipants, mode)); 
                         Find.TickManager.CurTimeSpeed = TimeSpeed.Paused;
                     }
                     catch (Exception ex)
