@@ -1,6 +1,7 @@
 using UnityEngine;
 using Verse;
 using System.Collections.Generic;
+using Verse.Sound;				
 using System.Linq;
 using System.Collections;
 using RimWorld;
@@ -20,13 +21,23 @@ namespace EchoColony
         private bool        sendRequestedViaEnter = false;
         private bool        showParticipantManagement = false;
         private List<float> cachedHeights = new List<float>();
-        private Vector2 portraitsScrollPos = Vector2.zero; //*furel* new variable for portraits scroll
-
-        private HashSet<Pawn> KickedOut => session.KickedOutColonists;
+        private string lastMessageTextSeen = null; //*furel - hight calculation sistem* New variable for control.												  
+        private Vector2 portraitsScrollPos = Vector2.zero;
+        //private HashSet<Pawn> KickedOut => session.KickedOutColonists; *furel - Deleted Kickout list*
         private Pawn          initiator;
 
         private List<Pawn> availableColonists = new List<Pawn>();
+		
+//*furel - Mode group formation* New variable for tracking the whay groups are made.
+        public enum GroupSelectionMode
+        {
+            Room,       // Near colonist
+            Area,       // Area of 15 squares
+            MapWide     // All map
+        }
 
+        // Current mode (Room by default)
+        private GroupSelectionMode currentMode = GroupSelectionMode.Room;
         // Per-colonist color palette — distinct, readable on dark backgrounds
         private static readonly Color[] PawnColors = new Color[]
         {
@@ -48,25 +59,28 @@ namespace EchoColony
         private const float MAX_CHAT_DISTANCE     = 15f;
         private const float OUTDOOR_CHAT_DISTANCE = 8f;
 
-        public ColonistGroupChatWindow(List<Pawn> participants)
+        public ColonistGroupChatWindow(List<Pawn> participants, GroupSelectionMode initialMode) //*furel - Mode group formation* Added initialMode as variable imput.
         {
             this.initiator = participants.First();
-
+            this.currentMode = initialMode; //*furel - Mode group formation* 
             this.session = GroupChatGameComponent.Instance.GetOrCreateSession(participants);
+		
+		//*furel - Deleted Kickout list*
+        //    if (this.session.KickedOutColonists == null)
+        //        this.session.KickedOutColonists = new HashSet<Pawn>();
 
-            if (this.session.KickedOutColonists == null)
-                this.session.KickedOutColonists = new HashSet<Pawn>();
-
-            this.participants = participants
-                .Distinct()
-                .Where(p => !this.session.KickedOutColonists.Contains(p))
-                .ToList();
-
+            // this.participants = participants
+                // .Distinct()
+                // .Where(p => !this.session.KickedOutColonists.Contains(p))
+                // .ToList();
+				
+			this.participants = participants.Distinct().ToList();
+			
             if (this.participants.Count == 0 || !this.participants.Contains(this.initiator))
             {
                 this.participants.Clear();
                 this.participants.Add(this.initiator);
-                this.session.KickedOutColonists.Remove(this.initiator);
+                //this.session.KickedOutColonists.Remove(this.initiator); *furel - Deleted Kickout list*
             }
 
             this.session = GroupChatGameComponent.Instance
@@ -187,13 +201,11 @@ namespace EchoColony
             DrawPortraits(inRect, ref y); //y=45
         }
 
-        //*furel* Portraits go of windows if there are too mucho. Added a scroll. 
+
         private void DrawPortraits(Rect inRect, ref float y)
         {
             float size    = 60f;
             float spacing = 15f;
-            //float total   = participants.Count * (size + spacing);
-            //float startX  = (inRect.width - total) / 2f;
             float rowHeight = size + 25f;
 
             Rect scrollRect = new Rect(10f, y, inRect.width - 20f, rowHeight + 16f);
@@ -245,74 +257,106 @@ namespace EchoColony
             y += scrollRect.height + 10f;
         }
 
+		//*furel - Mode group formation* Changed how the management panel is drawn, `pliting the space in this call and creating two separated calls to draw their respective spaces 
         // ── Participant management panel ─────────────────────────────────────────
 
         private void DrawParticipantManagement(Rect inRect, ref float y)
-        {
-            Rect panelRect = new Rect(10f, y, inRect.width - 20f, 160f);
-            Widgets.DrawBoxSolid(panelRect, new Color(0.2f, 0.2f, 0.2f, 0.8f));
+        {  
+            float splitX = inRect.width * 0.15f;
+            Rect panelModes = new Rect(inRect.x + 5f, y, splitX - 10f, 160f);
+            Rect panelList = new Rect(inRect.x + splitX + 5f, y, inRect.width - splitX - 15f, 160f);
 
-            Widgets.Label(new Rect(panelRect.x + 10f, panelRect.y + 5f, 300f, 25f),
-                "EchoColony.GCWManagerColonNear".Translate(availableColonists.Count));
+            DrawModeSelectionMenu(panelModes); //*furel - Mode group formation* Call for Mode selesction menu.
 
-            if (KickedOut.Count > 0)
-            {
-                GUI.color = new Color(1f, 0.7f, 0.7f);
-                Widgets.Label(new Rect(panelRect.x + 320f, panelRect.y + 5f, 200f, 25f),
-                    "EchoColony.GCWManagerKickedOut".Translate(KickedOut.Count));
-                GUI.color = Color.white;
-            }
+            DrawAvailableColonistsList(panelList); //*furel - Mode group formation* Call for pawns in range menu.
 
-            Rect scrollRect = new Rect(
-                panelRect.x + 10f, panelRect.y + 30f,
-                panelRect.width - 20f, 120f);
-
-            float rowH      = 25f;
-            var   allToShow = new List<(Pawn pawn, bool isKicked)>();
-
-            foreach (var c in availableColonists) allToShow.Add((c, false));
-
-            var kickedNearby = KickedOut
-                .Where(p => p?.Map == participants.FirstOrDefault()?.Map && !p.Dead)
-                .Where(p => IsBasicEligibleFromCenter(p, CalculateConversationCenter(), p.Map))
-                .ToList();
-            foreach (var k in kickedNearby) allToShow.Add((k, true));
-
-            Rect viewRect = new Rect(0, 0, scrollRect.width - 16f, allToShow.Count * rowH);
-            Widgets.BeginScrollView(scrollRect, ref participantsScrollPos, viewRect);
-
-            for (int i = 0; i < allToShow.Count; i++)
-            {
-                var (colonist, isKicked) = allToShow[i];
-                Rect rowRect = new Rect(0, i * rowH, viewRect.width, rowH - 2f);
-
-                if (isKicked)         Widgets.DrawBoxSolid(rowRect, new Color(0.5f, 0.2f, 0.2f, 0.3f));
-                else if (i % 2 == 0) Widgets.DrawBoxSolid(rowRect, new Color(0.1f, 0.1f, 0.1f, 0.5f));
-
-                float nameOffset = isKicked ? 25f : 5f;
-                if (isKicked)
-                {
-                    GUI.color = Color.red;
-                    Widgets.Label(new Rect(rowRect.x + 5f, rowRect.y, 20f, rowRect.height), "✗");
-                }
-                GUI.color = isKicked ? new Color(1f, 0.8f, 0.8f) : Color.white;
-                Widgets.Label(new Rect(rowRect.x + nameOffset, rowRect.y, 130f, rowRect.height), colonist.LabelShort);
-                GUI.color = Color.white;
-
-                float dist = colonist.Position.DistanceTo(CalculateConversationCenter());
-                Widgets.Label(new Rect(rowRect.x + 160f, rowRect.y, 80f, rowRect.height), $"{dist:F1}m");
-
-                Rect actionBtn = new Rect(rowRect.x + rowRect.width - 80f, rowRect.y + 2f, 75f, 20f);
-                GUI.color = isKicked ? Color.yellow : Color.green;
-                if (Widgets.ButtonText(actionBtn, isKicked ? "Re-add" : "Add"))
-                    AddParticipant(colonist);
-                GUI.color = Color.white;
-            }
-
-            Widgets.EndScrollView();
-            y += panelRect.height + 10f;
+            y += panelList.height + 10f;
         }
 
+        //*furel - Mode group formation* Separated function to draw mode menu.
+		private void DrawModeSelectionMenu(Rect rect)
+        {
+            float btnHeight = 24f;
+            float spacing = 5f;
+
+
+            // Title
+            Widgets.Label(new Rect(rect.x, rect.y, rect.width, 20f), "EchoColony.GCWSelectMode".Translate());
+
+            var modes = new[] 
+            {
+                (GroupSelectionMode.Room, "EchoColony.GCWModeRoom"),
+                (GroupSelectionMode.Area, "EchoColony.GCWModeArea"),
+                (GroupSelectionMode.MapWide, "EchoColony.GCWModeMap")
+            };
+
+            float currentY = rect.y + 25f;
+            
+            foreach (var mode in modes)
+            {
+                Rect r = new Rect(rect.x, currentY, rect.width, btnHeight);
+                bool isSelected = (currentMode == mode.Item1);
+
+                // Widgets.RadioButtonLabeled draws the circle and the leabel 
+                 //returns true when is selected.
+                if (Widgets.RadioButtonLabeled(r, mode.Item2.Translate(), isSelected))
+                {
+                    if (!isSelected)
+                    {
+                        SoundDefOf.Tick_High.PlayOneShotOnCamera();
+                        currentMode = mode.Item1;
+
+                        // Update the list on mode selection 
+                        UpdateAvailableColonists();
+                    }
+                }
+
+                currentY += btnHeight + spacing;
+            }
+        }
+		//*furel - Mode group formation* Separated function to draw the avariable colonist, deleted Kickout 
+		private void DrawAvailableColonistsList(Rect rect)
+        {
+            Widgets.DrawBoxSolid(rect, new Color(0.2f, 0.2f, 0.2f, 0.8f));
+
+            Widgets.Label(new Rect(rect.x + 10f, rect.y + 5f, rect.xMax - 10f, 25f),
+                "EchoColony.GCWManagerColonNear".Translate(availableColonists.Count));
+				
+            Widgets.Label(new Rect(rect.x + 10f, rect.y + 5f, 200f, 25f),
+            "EchoColony.GCWManagerColonNear".Translate(availableColonists.Count));
+			
+            Rect scrollRect = new Rect(rect.x + 10f, rect.y + 30f, rect.width - 10f, 120f);
+            float rowH = 25f;
+            Rect viewRect = new Rect(0, 0, scrollRect.width - 16f, availableColonists.Count * rowH);																		   
+            Widgets.BeginScrollView(scrollRect, ref participantsScrollPos, viewRect);
+
+            for (int i = 0; i < availableColonists.Count; i++)
+            {
+                Pawn colonist = availableColonists[i];
+                Rect rowRect = new Rect(0, i * rowH, viewRect.width, rowH - 2f);
+
+                // Backgroud line
+                if (i % 2 == 0) Widgets.DrawBoxSolid(rowRect, new Color(0.1f, 0.1f, 0.1f, 0.5f));
+
+                // Icon and Name					  
+                Widgets.Label(new Rect(rowRect.x + 5f, rowRect.y, 130f, rowRect.height), colonist.LabelShort);
+                float dist = (colonist.Position - initiator.Position).LengthHorizontal;
+                GUI.color = Color.gray;
+                Widgets.Label(new Rect(rowRect.x + 150f, rowRect.y, 60f, rowRect.height), $"{dist:F1}m");
+                GUI.color = Color.white;
+
+                // ADD Button
+                Rect addBtn = new Rect(rowRect.x + rowRect.width - 85f, rowRect.y + 2f, 80f, 20f);
+                if (Widgets.ButtonText(addBtn, "EchoColony.GCWAdd".Translate()))
+                {
+                    AddParticipant(colonist);
+                    UpdateAvailableColonists();
+                    SoundDefOf.Tick_High.PlayOneShotOnCamera();
+                }						
+            }
+            Widgets.EndScrollView();
+        }
+		
         // ── Chat area ────────────────────────────────────────────────────────────
 
         private void DrawChatArea(Rect inRect, ref float y)
@@ -320,6 +364,29 @@ namespace EchoColony
             float chatHeight = inRect.height - y - 80f;
             Rect  scrollRect = new Rect(10f, y, inRect.width - 20f, chatHeight);
             float viewW      = scrollRect.width - 16f;
+//------------------------------------------------------------------------------------
+            //*furel - text display* Shield the way text is displayed. If group chat window was closed and re-opened hight wasn't calculated propedly.
+			if (viewW < 50f) return;						
+
+            string currentLastMsg = session.History.Count > 0 ? session.History.Last() : null;
+
+            if (currentLastMsg != lastMessageTextSeen || lastMessageTextSeen != currentLastMsg)
+            {
+                cachedHeights.Clear();
+
+                Text.Font = GameFont.Small; 
+                foreach (string m in session.History)
+                {
+                    cachedHeights.Add(CalculateMessageHeight(m, viewW));
+                }
+                lastMessageTextSeen = currentLastMsg;
+            }
+
+            if (cachedHeights.Count > session.History.Count)
+            {
+                cachedHeights.RemoveRange(session.History.Count, cachedHeights.Count - session.History.Count);
+            }
+//-------------------------------------------------------------------------------------																					  
 
             while (cachedHeights.Count < session.History.Count) 												
             {
@@ -462,126 +529,118 @@ namespace EchoColony
         }
 
         // ── Participant management ────────────────────────────────────────────────
-
-        private void AddParticipant(Pawn pawn)
+		//*furel* Removed Kickout search
+        private void AddParticipant(Pawn p)
         {
-            if (participants.Contains(pawn)) return;
-
-            KickedOut.Remove(pawn);
-            participants.Add(pawn);
-            EnsureColorFor(pawn);
-
-            session = GroupChatGameComponent.Instance
-                .UpdateSessionParticipants(session, participants);
-
-            session.AddSystemMessage($"{pawn.LabelShort} joins the conversation");
-            UpdateAvailableColonists();
-            scrollPos.y = float.MaxValue;
+            if (p == null || participants.Contains(p)) return;
+								   
+            participants.Add(p);										 
+            session = GroupChatGameComponent.Instance.UpdateSessionParticipants(session, participants);								 
         }
 
-        private void RemoveParticipant(Pawn pawn)
+        private void RemoveParticipant(Pawn p)
         {
-            if (participants.Count < 3 || pawn == initiator) return;
+            if (p == initiator) return;
 
-            participants.Remove(pawn);
-            KickedOut.Add(pawn);
-
-            session = GroupChatGameComponent.Instance
-                .UpdateSessionParticipants(session, participants);
-
-            this.cachedHeights.Clear();																							 
-
-            session.AddSystemMessage($"{pawn.LabelShort} stepped away");
-            UpdateAvailableColonists();
-            scrollPos.y = float.MaxValue;
+            if (participants.Contains(p))
+            {
+                participants.Remove(p);
+                // Actualizamos la sesión
+                session = GroupChatGameComponent.Instance.UpdateSessionParticipants(session, participants);
+                UpdateAvailableColonists();
+            }						 
         }
-
         // ── Proximity helpers ────────────────────────────────────────────────────
 
         private void UpdateAvailableColonists()
         {
-            if (participants == null || participants.Count == 0)
-            { availableColonists.Clear(); return; }
+			if (initiator == null || initiator.Map == null) return;
+			List<Pawn> potentialCandidates;
 
-            IntVec3 center = CalculateConversationCenter();
-            Map     map    = participants[0].Map;
-            if (map == null || !center.IsValid) { availableColonists.Clear(); return; }
-
-            CleanupKickedOutList();
-
-            availableColonists = GetChatEligibleColonistsFromCenter(center, map, participants)
-                .Where(p => !KickedOut.Contains(p))
-                .ToList();
-        }
-
-        private IntVec3 CalculateConversationCenter()
-        {
-            if (participants.Count == 0) return IntVec3.Invalid;
-            if (participants.Count == 1) return participants[0].Position;
-            return CellRect.FromLimits(
-                participants.Min(p => p.Position.x), participants.Min(p => p.Position.z),
-                participants.Max(p => p.Position.x), participants.Max(p => p.Position.z)
-            ).CenterCell;
-        }
-
-        private void CleanupKickedOutList()
-        {
-            if (KickedOut == null) return;
-            var dead = KickedOut
-                .Where(p => p.Dead || p.Map == null ||
-                            p.Map != participants.FirstOrDefault()?.Map)
-                .ToList();
-            foreach (var p in dead) KickedOut.Remove(p);
-        }
-
-        private List<Pawn> GetChatEligibleColonistsFromCenter(
-            IntVec3 center, Map map, List<Pawn> exclude)
-        {
-            exclude = exclude ?? new List<Pawn>();
-            return map.mapPawns.FreeColonistsSpawned
-                .Where(p => !exclude.Contains(p) &&
-                            IsBasicEligibleFromCenter(p, center, map) &&
-                            CanCommunicateFromCenter(center, map, p))
-                .ToList();
-        }
-
-        private bool IsBasicEligibleFromCenter(Pawn p, IntVec3 center, Map map)
-        {
-            if (p == null || map == null || p.Dead || p.Map != map) return false;
-            if (!p.RaceProps.Humanlike || p.Faction != Faction.OfPlayer) return false;
-            return p.Position.DistanceTo(center) <= MAX_CHAT_DISTANCE;
-        }
-
-        private bool CanCommunicateFromCenter(IntVec3 center, Map map, Pawn colonist)
-        {
-            if (map == null || colonist?.Map != map) return false;
-
-            Room centerRoom   = center.GetRoom(map);
-            Room colonistRoom = colonist.Position.GetRoom(map);
-
-            if (centerRoom != null && colonistRoom != null && centerRoom == colonistRoom)
-                return true;
-
-            float dist = center.DistanceTo(colonist.Position);
-            if (dist > OUTDOOR_CHAT_DISTANCE) return false;
-
-            if (centerRoom == null && colonistRoom == null)
-                return GenSight.LineOfSight(center, colonist.Position, map, true);
-
-            return HasDirectConnection(center, colonist.Position, map);
-        }
-
-        private bool HasDirectConnection(IntVec3 from, IntVec3 to, Map map)
-        {
-            if (!GenSight.LineOfSight(from, to, map, true)) return false;
-            foreach (var cell in GenSight.PointsOnLineOfSight(from, to))
+            // *furel* Seleccionamos la lógica de búsqueda según el modo activo
+            switch (currentMode)
             {
-                if (!cell.InBounds(map)) continue;
-                if (cell.GetDoor(map) is Building_Door door) return door.Open;
-                if (cell.Filled(map)) return false;
+                case GroupSelectionMode.Room:
+                    // Busca peones en la misma habitación que el iniciador[cite: 1]
+                    potentialCandidates = GetPawnsInRoom(initiator);
+                    break;
+
+                case GroupSelectionMode.Area:
+                    // Busca peones en un radio de 15 celdas (puedes usar la constante MAX_CHAT_DISTANCE)[cite: 1]
+                    potentialCandidates = GetPawnsInArea(initiator, 15f);
+                    break;
+
+                case GroupSelectionMode.MapWide:
+                default:
+                    // Busca a todos los colonos y esclavos válidos en todo el mapa[cite: 1]
+                    potentialCandidates = GetAllValidPawnsOnMap(initiator);
+                    break;
             }
-            return true;
+
+            availableColonists = potentialCandidates
+                .Where(p => !participants.Contains(p))
+                .ToList();
         }
+
+       // private IntVec3 CalculateConversationCenter()
+        // {
+            // if (participants.Count == 0) return IntVec3.Invalid;
+            // if (participants.Count == 1) return participants[0].Position;
+            // return CellRect.FromLimits(
+                // participants.Min(p => p.Position.x), participants.Min(p => p.Position.z),
+                // participants.Max(p => p.Position.x), participants.Max(p => p.Position.z)
+            // ).CenterCell;
+        // }
+
+
+        // private List<Pawn> GetChatEligibleColonistsFromCenter(
+            // IntVec3 center, Map map, List<Pawn> exclude)
+        // {
+            // exclude = exclude ?? new List<Pawn>();
+            // return map.mapPawns.FreeColonistsSpawned
+                // .Where(p => !exclude.Contains(p) &&
+                            // IsBasicEligibleFromCenter(p, center, map) &&
+                            // CanCommunicateFromCenter(center, map, p))
+                // .ToList();
+        // }
+
+        // private bool IsBasicEligibleFromCenter(Pawn p, IntVec3 center, Map map)
+        // {
+            // if (p == null || map == null || p.Dead || p.Map != map) return false;
+            // if (!p.RaceProps.Humanlike || p.Faction != Faction.OfPlayer) return false;
+            // return p.Position.DistanceTo(center) <= MAX_CHAT_DISTANCE;
+        // }
+
+        // private bool CanCommunicateFromCenter(IntVec3 center, Map map, Pawn colonist)
+        // {
+            // if (map == null || colonist?.Map != map) return false;
+
+            // Room centerRoom   = center.GetRoom(map);
+            // Room colonistRoom = colonist.Position.GetRoom(map);
+
+            // if (centerRoom != null && colonistRoom != null && centerRoom == colonistRoom)
+                // return true;
+
+            // float dist = center.DistanceTo(colonist.Position);
+            // if (dist > OUTDOOR_CHAT_DISTANCE) return false;
+
+            // if (centerRoom == null && colonistRoom == null)
+                // return GenSight.LineOfSight(center, colonist.Position, map, true);
+
+            // return HasDirectConnection(center, colonist.Position, map);
+        // }
+
+        // private bool HasDirectConnection(IntVec3 from, IntVec3 to, Map map)
+        // {
+            // if (!GenSight.LineOfSight(from, to, map, true)) return false;
+            // foreach (var cell in GenSight.PointsOnLineOfSight(from, to))
+            // {
+                // if (!cell.InBounds(map)) continue;
+                // if (cell.GetDoor(map) is Building_Door door) return door.Open;
+                // if (cell.Filled(map)) return false;
+            // }
+            // return true;
+        // }
 
         // ── Conversation coroutine ────────────────────────────────────────────────
 
@@ -607,22 +666,24 @@ namespace EchoColony
         private IEnumerator GroupChatCoroutine(List<Pawn> group, string message)
         {
             Map     map    = group[0].Map;
-            IntVec3 center = CalculateCenter(group);
+			
+			//*furel* Pawns are asigned on opening the windos. No needed with the new system.
+            // IntVec3 center = CalculateCenter(group);
 
-            for (int i = group.Count - 1; i >= 0; i--)
-            {
-                var p = group[i];
-                if (p.Dead || p.Map != map)
-                {
-                    session.AddSystemMessage($"{p.LabelShort} is no longer present");
-                    group.RemoveAt(i);
-                }
-                else if (!CanCommunicateFromCenter(center, map, p))
-                {
-                    session.AddSystemMessage($"{p.LabelShort} moved too far away");
-                    group.RemoveAt(i);
-                }
-            }
+            //for (int i = group.Count - 1; i >= 0; i--)
+            //{
+            //    var p = group[i];
+            //    if (p.Dead || p.Map != map)
+            //    {
+            //        session.AddSystemMessage($"{p.LabelShort} is no longer present");
+            //        group.RemoveAt(i);
+            //    }
+            //    else if (!CanCommunicateFromCenter(center, map, p))
+            //   {
+            //        session.AddSystemMessage($"{p.LabelShort} moved too far away");
+            //        group.RemoveAt(i);
+            //    }
+            //}
 
             if (group.Count == 0)
             {
@@ -630,7 +691,7 @@ namespace EchoColony
                 yield break;
             }
 
-            center = CalculateCenter(group);
+            //center = CalculateCenter(group); *furel* no needed with the new system.
 
             var participationCount = new Dictionary<Pawn, int>();
             foreach (var p in group) participationCount[p] = 0;
@@ -753,15 +814,15 @@ namespace EchoColony
             return trimmed;
         }
 
-        private IntVec3 CalculateCenter(List<Pawn> group)
-        {
-            if (group.Count == 0) return IntVec3.Invalid;
-            if (group.Count == 1) return group[0].Position;
-            return CellRect.FromLimits(
-                group.Min(p => p.Position.x), group.Min(p => p.Position.z),
-                group.Max(p => p.Position.x), group.Max(p => p.Position.z)
-            ).CenterCell;
-        }
+        // private IntVec3 CalculateCenter(List<Pawn> group)
+        // {
+            // if (group.Count == 0) return IntVec3.Invalid;
+            // if (group.Count == 1) return group[0].Position;
+            // return CellRect.FromLimits(
+                // group.Min(p => p.Position.x), group.Min(p => p.Position.z),
+                // group.Max(p => p.Position.x), group.Max(p => p.Position.z)
+            // ).CenterCell;
+        // }
 
         // ── Speaker selection ────────────────────────────────────────────────────
 
@@ -969,14 +1030,16 @@ namespace EchoColony
         }
 
         // ── Height Text Calculation ────────────────────────────────────────────────────────
-
+		//*furel* Sometimes the text gets cut off, so I give it a little more space and trim the space used to calculate the height to force it to increase.
         private float CalculateMessageHeight(string msg, float width)
         {
+			Text.Font = GameFont.Small;						   
             if (GroupChatSession.IsSystemMessage(msg)) return 24f;
 
+			float safeWidth = width - 8f;							 
             string displayText = GroupChatSession.GetDisplayText(msg);
             if (msg.StartsWith("You:") || msg.StartsWith("You::"))
-                return Text.CalcHeight(displayText, width) + 4f;
+                return Text.CalcHeight(displayText, safeWidth) + 6f;
 
             int colonIdx = displayText.IndexOf(": ");
             if (colonIdx > 0)
@@ -984,11 +1047,11 @@ namespace EchoColony
                 string nameWithColon = displayText.Substring(0, colonIdx) + ": ";
                 float nameW = Text.CalcSize(nameWithColon).x;
                 string body = displayText.Substring(colonIdx + 2);
-                float bodyH = Text.CalcHeight(body, width - nameW) + 4f;
-                float fullH = Text.CalcHeight(displayText, width) + 4f;
+                float bodyH = Text.CalcHeight(body, safeWidth - nameW) + 6f;
+                float fullH = Text.CalcHeight(displayText, safeWidth) + 6f;
                 return Mathf.Max(fullH, bodyH);
             }
-            return Text.CalcHeight(displayText, width) + 4f;
+            return Text.CalcHeight(displayText, safeWidth) + 6f;
         }
 		
         private void ClearChat()
@@ -1002,6 +1065,97 @@ namespace EchoColony
                     session.AddSystemMessage("EchoColony.GCWClearConfirmation".Translate());
                     Messages.Message("EchoColony.GCWClearConfirmation".Translate(), MessageTypeDefOf.NeutralEvent);
                 }));
+        }
+
+        //*furel* Get the list of pawns on a room.
+        // ── Get Pawn Room List ────────────────────────────────────────────────────────
+        public static List<Pawn> GetPawnsInRoom(Pawn initiator)
+        {
+            List<Pawn> results = new List<Pawn>();
+            if (initiator?.Map == null) return results;
+
+            // Check which rooms the initiator pawn is in, or if it's outside. If it's right in a doorway, take both rooms.
+            var initiatorRooms = GetAllRoomsForPawn(initiator, out bool initiatorTouchesExterior);
+
+            float exteriorRadius = 15f;
+            foreach (Pawn p in initiator.Map.mapPawns.AllPawnsSpawned)
+            {
+                if (p == initiator || !Patch_ChatGizmo.IsValidForGroupChat(p)) continue;
+
+                //Check which rooms the pawn is in, or if it's outside. If it's right in a doorway, take both rooms.
+                var pRooms = GetAllRoomsForPawn(p, out bool pTouchesExterior);
+
+				//If the starter and the pawn share space, add the pawn to the list.
+                if (initiatorRooms.Overlaps(pRooms) || (initiatorTouchesExterior && pTouchesExterior && p.Position.InHorDistOf(initiator.Position, exteriorRadius)))
+                {
+                    results.Add(p);
+                }
+            }
+            return results;
+        }
+
+        //*furel* Get the list of pawns on an area. 15f is the default Radious
+        // ── Get Pawn Area List (15 radious)────────────────────────────────────────────────────────
+        public static List<Pawn> GetPawnsInArea(Pawn initiator, float radius)
+        {
+            List<Pawn> inArea = new List<Pawn>();
+
+            Map map = initiator.Map;
+            if (map == null) return inArea;
+
+            foreach (Pawn p in map.mapPawns.AllPawnsSpawned)
+            {
+                if (p != initiator && Patch_ChatGizmo.IsValidForGroupChat(p))
+                {
+                    if (p.Position.InHorDistOf(initiator.Position, radius))
+                    {
+                        inArea.Add(p);
+                    }
+                }
+            }
+            return inArea;
+        }
+
+        //*furel* Get the list of pawns on a map.
+        // ── Get Pawn Map List ────────────────────────────────────────────────────────
+        private List<Pawn> GetAllValidPawnsOnMap(Pawn initiator)
+        {
+            return initiator.Map.mapPawns.AllPawnsSpawned
+                .Where(p => p != initiator && Patch_ChatGizmo.IsValidForGroupChat(p))
+                .ToList();
+        }
+
+        //*furel* A filter for pawns between rooms or exteriors. If the pawn is right at the door separating an interior from an exterior, it takes the room it is entering or leaving.
+        //─── Door check position ────────────────────────────────────────────────────────
+        private static HashSet<Room> GetAllRoomsForPawn(Pawn p, out bool touchesExterior)
+        {
+            HashSet<Room> rooms = new HashSet<Room>();
+            touchesExterior = false;
+
+            if (p?.Map == null) return rooms;
+
+            foreach (IntVec3 cell in GenAdj.AdjacentCellsAndInside)
+            {
+                IntVec3 checkPos = p.Position + cell;
+                if (checkPos.InBounds(p.Map))
+                {
+                    Room room = checkPos.GetRoom(p.Map);
+                    if (room != null)
+                    {
+                        if (room.PsychologicallyOutdoors) touchesExterior = true;
+                        else rooms.Add(room);
+                    }
+                }
+            }
+            return rooms;
+        }
+		
+		//*Furel* Cleans variables to be sure.
+        public override void PostOpen()
+        {
+            base.PostOpen();
+            cachedHeights.Clear();
+            lastMessageTextSeen = null;
         }
     }
 }
