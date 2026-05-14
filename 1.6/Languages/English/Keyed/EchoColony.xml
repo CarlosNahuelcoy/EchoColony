@@ -96,6 +96,12 @@
   <EchoColony.GCWManagerKickedOut>Previously removed: ({0})</EchoColony.GCWManagerKickedOut>
   <EchoColony.GCWClearMessage>Are you sure you want to clear the entire chat history?</EchoColony.GCWClearMessage>
   <EchoColony.GCWClearConfirmation>Chat cleared</EchoColony.GCWClearConfirmation>
+  <EchoColony.GCWSelectMode>Selection mode</EchoColony.GCWSelectMode>
+  <EchoColony.GCWModeRoom>Room</EchoColony.GCWModeRoom>
+  <EchoColony.GCWModeArea>Area</EchoColony.GCWModeArea>
+  <EchoColony.GCWModeMap>Map</EchoColony.GCWModeMap>
+  <EchoColony.GCWReAdd>Re-Add</EchoColony.GCWReAdd>
+  <EchoColony.GCWAdd>Add</EchoColony.GCWAdd>																	 
   
   <!-- ===== PROMPT EDITOR ===== -->
   <EchoColony.PersonalizingTitle>Customizing: {0}</EchoColony.PersonalizingTitle>
