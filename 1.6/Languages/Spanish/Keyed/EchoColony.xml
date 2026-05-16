@@ -101,7 +101,8 @@
   <EchoColony.GCWModeArea>Area</EchoColony.GCWModeArea>
   <EchoColony.GCWModeMap>Mapa</EchoColony.GCWModeMap>
   <EchoColony.GCWReAdd>Retornar</EchoColony.GCWReAdd>
-  <EchoColony.GCWAdd>Añadir</EchoColony.GCWAdd>																		 
+  <EchoColony.GCWAdd>Añadir</EchoColony.GCWAdd>
+  <EchoColony.GCWSend>Enviar</EchoColony.GCWSend>  
   
 
   <!-- ===== EDITOR DE PROMPT ===== -->
