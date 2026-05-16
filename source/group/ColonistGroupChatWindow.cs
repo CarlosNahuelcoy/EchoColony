@@ -323,7 +323,7 @@ namespace EchoColony
                 "EchoColony.GCWManagerColonNear".Translate(availableColonists.Count));
 				
             Widgets.Label(new Rect(rect.x + 10f, rect.y + 5f, 200f, 25f),
-            "EchoColony.GCWManagerColonNear".Translate(availableColonists.Count));
+                "EchoColony.GCWManagerColonNear".Translate(availableColonists.Count));
 			
             Rect scrollRect = new Rect(rect.x + 10f, rect.y + 30f, rect.width - 10f, 120f);
             float rowH = 25f;
@@ -514,7 +514,7 @@ namespace EchoColony
             });
 
             Rect sendRect = new Rect(inputRect.xMax + gap, y, btnW, 60f);
-            bool clicked  = Widgets.ButtonText(sendRect, "Send");
+            bool clicked  = Widgets.ButtonText(sendRect, "EchoColony.GCWSend".Translate());
 
             if ((clicked || sendRequestedViaEnter) && !userMessage.NullOrEmpty())
             {
