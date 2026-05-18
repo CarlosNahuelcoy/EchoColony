@@ -8,23 +8,8 @@ namespace EchoColony.Animals
     {
         private Dictionary<string, List<string>> animalChats = new Dictionary<string, List<string>>();
 
-        private static AnimalChatGameComponent instance;
-        public static AnimalChatGameComponent Instance
-        {
-            get
-            {
-                if (instance == null && Current.Game != null)
-                {
-                    instance = Current.Game.GetComponent<AnimalChatGameComponent>();
-                    if (instance == null)
-                    {
-                        instance = new AnimalChatGameComponent(Current.Game);
-                        Current.Game.components.Add(instance);
-                    }
-                }
-                return instance;
-            }
-        }
+        // Direct GetComponent pattern — no static caching, no risk of stale references or duplicate components
+        public static AnimalChatGameComponent Instance => Current.Game?.GetComponent<AnimalChatGameComponent>();
 
         public AnimalChatGameComponent(Game game) { }
 
@@ -34,9 +19,7 @@ namespace EchoColony.Animals
 
             string key = animal.ThingID;
             if (!animalChats.ContainsKey(key))
-            {
                 animalChats[key] = new List<string>();
-            }
 
             return animalChats[key];
         }
@@ -44,9 +27,7 @@ namespace EchoColony.Animals
         public void SaveChat(Pawn animal, List<string> chat)
         {
             if (animal == null) return;
-
-            string key = animal.ThingID;
-            animalChats[key] = new List<string>(chat);
+            animalChats[animal.ThingID] = new List<string>(chat);
         }
 
         public void ClearChat(Pawn animal)
@@ -55,9 +36,7 @@ namespace EchoColony.Animals
 
             string key = animal.ThingID;
             if (animalChats.ContainsKey(key))
-            {
                 animalChats[key].Clear();
-            }
         }
 
         public override void ExposeData()
@@ -65,53 +44,29 @@ namespace EchoColony.Animals
             base.ExposeData();
             Scribe_Collections.Look(ref animalChats, "animalChats", LookMode.Value, LookMode.Value);
 
-            if (Scribe.mode == LoadSaveMode.LoadingVars && animalChats == null)
-            {
+            if (Scribe.mode == LoadSaveMode.PostLoadInit && animalChats == null)
                 animalChats = new Dictionary<string, List<string>>();
-            }
         }
 
         public override void GameComponentTick()
         {
             base.GameComponentTick();
 
-            // Cleanup every in-game hour
             if (Find.TickManager.TicksGame % 2000 == 0)
-            {
                 CleanupDeadAnimals();
-            }
         }
 
         private void CleanupDeadAnimals()
         {
             if (animalChats == null || animalChats.Count == 0) return;
 
-            var toRemove = new List<string>();
-
-            foreach (var key in animalChats.Keys)
-            {
-                bool stillExists = false;
-
-                foreach (var map in Find.Maps)
-                {
-                    var animal = map.mapPawns.AllPawns.FirstOrDefault(p => p.ThingID == key);
-                    if (animal != null && !animal.Dead)
-                    {
-                        stillExists = true;
-                        break;
-                    }
-                }
-
-                if (!stillExists)
-                {
-                    toRemove.Add(key);
-                }
-            }
+            var toRemove = animalChats.Keys
+                .Where(key => !Find.Maps.Any(map =>
+                    map.mapPawns.AllPawns.Any(p => p.ThingID == key && !p.Dead)))
+                .ToList();
 
             foreach (var key in toRemove)
-            {
                 animalChats.Remove(key);
-            }
         }
     }
 }
