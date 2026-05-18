@@ -96,6 +96,13 @@
   <EchoColony.GCWManagerKickedOut>Previamente quitados: ({0})</EchoColony.GCWManagerKickedOut>
   <EchoColony.GCWClearMessage>¿Estás seguro de que quieres borrar todo el historial de chat?</EchoColony.GCWClearMessage>
   <EchoColony.GCWClearConfirmation>Chat borrado</EchoColony.GCWClearConfirmation>  
+  <EchoColony.GCWSelectMode>Modo de selección</EchoColony.GCWSelectMode>
+  <EchoColony.GCWModeRoom>Sala</EchoColony.GCWModeRoom>
+  <EchoColony.GCWModeArea>Area</EchoColony.GCWModeArea>
+  <EchoColony.GCWModeMap>Mapa</EchoColony.GCWModeMap>
+  <EchoColony.GCWReAdd>Retornar</EchoColony.GCWReAdd>
+  <EchoColony.GCWAdd>Añadir</EchoColony.GCWAdd>
+  <EchoColony.GCWSend>Enviar</EchoColony.GCWSend>  
   
 
   <!-- ===== EDITOR DE PROMPT ===== -->

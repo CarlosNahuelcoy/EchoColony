@@ -20,7 +20,7 @@ namespace EchoColony
         // so they can be rendered differently in the UI
         public const string SystemPrefix = "[SYSTEM]";
 
-        public HashSet<Pawn> KickedOutColonists = new HashSet<Pawn>();
+        //public HashSet<Pawn> KickedOutColonists = new HashSet<Pawn>(); *furel* removed KickOut
 
         public GroupChatSession() { }
 
@@ -116,13 +116,13 @@ namespace EchoColony
             Scribe_Collections.Look(ref ParticipantIds, "ParticipantIds", LookMode.Value);
             Scribe_Collections.Look(ref History,        "History",        LookMode.Value);
             Scribe_Values.Look(ref lastSessionDay,      "lastSessionDay", -1);
-            Scribe_Collections.Look(ref KickedOutColonists, "KickedOutColonists", LookMode.Reference);
+            //Scribe_Collections.Look(ref KickedOutColonists, "KickedOutColonists", LookMode.Reference);
 
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 if (ParticipantIds   == null) ParticipantIds   = new List<string>();
                 if (History          == null) History          = new List<string>();
-                if (KickedOutColonists == null) KickedOutColonists = new HashSet<Pawn>();
+                //if (KickedOutColonists == null) KickedOutColonists = new HashSet<Pawn>();
 
                 LastInteractionTime = Time.realtimeSinceStartup;
             }

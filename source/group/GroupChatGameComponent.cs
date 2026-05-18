@@ -21,17 +21,15 @@ namespace EchoColony
         // Returns an existing session whose participant set matches EXACTLY,
         // or creates a new one. Subset matching is intentionally avoided —
         // it was causing sessions with extra participants to be reused.
-        //*furel - improved id creation and search* Search for a existing id whit listed pawns or crates one if there is not exist 
         public GroupChatSession GetOrCreateSession(List<Pawn> participants)
         {
-            var existing = GetSession(participants);  //*furel - improved id creation and search* Uses GetSession to search for a existing session for given pawns. Returns null if none is foud.
+            var existing = GetSession(participants);
             if (existing != null) return existing;
 
-            //*fuel - improved id creation and search* Crates the id for the session but is not register until a messege from the user is sended to the IA.
+            //Crates the id for the session but is not register until a messege from the user is sended to the IA.
             return new GroupChatSession(Guid.NewGuid().ToString(), participants);
         }
 
-        //*furel - improved id creation and search* Modified GetSession to actualy just get the session that matches the probided list and be usen in GetOrCreateSession and UpdateSessionParticipants. Returns null isf none is found.
         private GroupChatSession GetSession(List<Pawn> participants)
         {
             var requestedIds = participants
@@ -44,21 +42,18 @@ namespace EchoColony
                 s.ParticipantIds.OrderBy(id => id).SequenceEqual(requestedIds));
         }
 
-        // Updates the participant list of an existing session.
+        // Searches for an existing session ID that matches the current participants; 
+		// if it doesn't find one, it creates a new one.
         // Called when a participant is added or removed mid-conversation.
-        //*furel - improved id creation and search* The original code creates many session IDs. Every time a window opens and participants change, an ID is created, but existing IDs are never searched.
-        //                                      This method searches for an existing session ID that matches the current participants; if it doesn't find one, it creates a new one.
-        //                                      It doesn't record it until a message is sent to the AI.
         public GroupChatSession UpdateSessionParticipants(GroupChatSession existing, List<Pawn> newParticipants)
         {
             var match = GetSession(newParticipants);
             if (match != null) return match;
-
-            //*fuel - improved id creation and search* Crates the id for the session but is not register yet.
+			
             return new GroupChatSession(Guid.NewGuid().ToString(), newParticipants);
         }
 
-        //*furel - hold registration* Here is were we registrer the session in the save file.
+        //Registrer the session in the save file.
         public void RegistingSession(GroupChatSession session)
         {
             if (!groupChats.ContainsKey(session.SessionId))
