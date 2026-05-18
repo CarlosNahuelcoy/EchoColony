@@ -15,24 +15,8 @@ namespace EchoColony.Animals
         // Legacy migration: old saves stored only a string prompt
         private Dictionary<string, string> animalPrompts_LEGACY = null;
 
-        // ── Singleton ────────────────────────────────────────────────────────────
-        private static AnimalPromptManager instance;
-        public static AnimalPromptManager Instance
-        {
-            get
-            {
-                if (instance == null && Current.Game != null)
-                {
-                    instance = Current.Game.GetComponent<AnimalPromptManager>();
-                    if (instance == null)
-                    {
-                        instance = new AnimalPromptManager(Current.Game);
-                        Current.Game.components.Add(instance);
-                    }
-                }
-                return instance;
-            }
-        }
+        // Direct GetComponent pattern — no static caching, no risk of stale references or duplicate components
+        public static AnimalPromptManager Instance => Current.Game?.GetComponent<AnimalPromptManager>();
 
         public AnimalPromptManager(Game game) { }
 
@@ -40,8 +24,7 @@ namespace EchoColony.Animals
 
         public static string GetPrompt(Pawn animal)
         {
-            var data = GetData(animal);
-            return data?.customPrompt ?? "";
+            return GetData(animal)?.customPrompt ?? "";
         }
 
         public static void SetPrompt(Pawn animal, string prompt)
@@ -106,7 +89,7 @@ namespace EchoColony.Animals
 
             Scribe_Collections.Look(ref animalData, "animalData", LookMode.Value, LookMode.Deep);
 
-            if (Scribe.mode == LoadSaveMode.LoadingVars && animalData == null)
+            if (Scribe.mode == LoadSaveMode.PostLoadInit && animalData == null)
                 animalData = new Dictionary<string, AnimalSaveData>();
         }
 
