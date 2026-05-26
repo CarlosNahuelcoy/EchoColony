@@ -189,6 +189,8 @@ namespace EchoColony
         // EXPOSE DATA
         // ═══════════════════════════════════════════════════════════════
 
+        public bool ollamaDisableThinking = false;
+
         public override void ExposeData()
         {
             base.ExposeData();
@@ -208,7 +210,8 @@ namespace EchoColony
 
             Scribe_Values.Look(ref localModelEndpoint, "LocalModelEndpoint", "http://localhost:11434/api/generate");
             Scribe_Values.Look(ref localModelName,     "LocalModelName",     "llama3.2:latest");
-            Scribe_Values.Look(ref localModelProvider, "localModelProvider", LocalModelProvider.LMStudio);
+            Scribe_Values.Look(ref localModelProvider,  "localModelProvider", LocalModelProvider.LMStudio);
+            Scribe_Values.Look(ref ollamaDisableThinking,  "ollamaDisableThinking",  false);
 
             Scribe_Values.Look(ref openRouterEndpoint, "OpenRouterEndpoint", "https://openrouter.ai/api/v1/chat/completions");
             Scribe_Values.Look(ref openRouterApiKey,   "OpenRouterApiKey",   "");

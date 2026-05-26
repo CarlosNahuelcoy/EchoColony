@@ -520,7 +520,16 @@ namespace EchoColony
             foreach (var disease in diseases)
                 healthStatus.Add($"sick with {disease.def.label}");
 
-            var missingParts = hediffs.OfType<Hediff_MissingPart>().ToList();
+            // Build set of body parts covered by a prosthetic or bionic
+            var prostheticParts = new HashSet<BodyPartRecord>(
+                hediffs.Where(h => h.def.addedPartProps != null && h.Part != null)
+                    .Select(h => h.Part));
+
+            // Only list missing parts NOT covered by a prosthetic above them in the hierarchy
+            var missingParts = hediffs.OfType<Hediff_MissingPart>()
+                .Where(h => h.Part != null && !IsPartCoveredByProsthetic(h.Part, prostheticParts))
+                .ToList();
+
             if (missingParts.Any())
             {
                 var parts = missingParts.Select(h => h.Part.Label).Distinct();
@@ -602,6 +611,20 @@ namespace EchoColony
                 : "";
         }
 
+        /// <summary>
+        /// Returns true if the given body part or any of its ancestors has a prosthetic or bionic installed,
+        /// meaning missing part hediffs below it should not be listed as truly missing.
+        /// </summary>
+        private static bool IsPartCoveredByProsthetic(BodyPartRecord part, HashSet<BodyPartRecord> prostheticParts)
+        {
+            var current = part;
+            while (current != null)
+            {
+                if (prostheticParts.Contains(current)) return true;
+                current = current.parent;
+            }
+            return false;
+        }
         private static string BuildOptimizedThoughts(Pawn pawn)
         {
             var memories = pawn.needs?.mood?.thoughts?.memories?.Memories;
@@ -1261,12 +1284,28 @@ namespace EchoColony
         }
 
         private static string BuildTraits(Pawn pawn)
-        {
-            if (pawn.story?.traits == null || !pawn.story.traits.allTraits.Any())
-                return "*Traits:* None";
+{
+    if (pawn.story?.traits == null || !pawn.story.traits.allTraits.Any())
+        return "*Traits:* None";
 
-            return "*Traits:* " + string.Join(", ", pawn.story.traits.allTraits.Select(t => t.LabelCap));
-        }
+    var entries = pawn.story.traits.allTraits.Select(t =>
+    {
+            string desc = t.def.description;
+            if (!string.IsNullOrEmpty(desc))
+            {
+                desc = System.Text.RegularExpressions.Regex.Replace(desc, "<.*?>", "");
+                desc = desc.Replace("[PAWN_nameDef]", pawn.LabelShort)
+                        .Replace("[PAWN_pronoun]", pawn.gender == Gender.Male ? "he" : "she")
+                        .Replace("[PAWN_possessive]", pawn.gender == Gender.Male ? "his" : "her")
+                        .Trim();
+                if (desc.Length > 120) desc = desc.Substring(0, 117) + "...";
+                return $"{t.LabelCap}: {desc}";
+            }
+            return t.LabelCap;
+        });
+
+        return "*Traits:* " + string.Join("\n  - ", entries);
+    }
 
         private static string BuildHealthInfo(Pawn pawn)
         {

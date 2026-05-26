@@ -75,8 +75,18 @@ namespace EchoColony.Conversations
             var traits = pawn.story?.traits?.allTraits;
             if (traits != null && traits.Count > 0)
             {
-                var traitLabels = traits.Take(3).Select(t => t.LabelCap).ToList();
-                sb.AppendLine($"Traits: {string.Join(", ", traitLabels)}");
+                var traitEntries = traits.Take(3).Select(t =>
+                {
+                    string desc = t.def.description;
+                    if (!string.IsNullOrEmpty(desc))
+                    {
+                        desc = System.Text.RegularExpressions.Regex.Replace(desc, "<.*?>", "").Trim();
+                        if (desc.Length > 80) desc = desc.Substring(0, 77) + "...";
+                        return $"{t.LabelCap}: {desc}";
+                    }
+                    return t.LabelCap;
+                });
+                sb.AppendLine($"Traits: {string.Join(" / ", traitEntries)}");
             }
 
             // Top skill

@@ -486,6 +486,15 @@ namespace EchoColony
             Settings.localModelEndpoint = list.TextEntry(Settings.localModelEndpoint);
             list.Label("EchoColony.LocalModelName".Translate());
             Settings.localModelName = list.TextEntry(Settings.localModelName);
+
+            if (Settings.localModelProvider == LocalModelProvider.Ollama)
+            {
+                list.Gap(4f);
+                list.CheckboxLabeled(
+                    "Disable thinking mode (Qwen3 and similar models)",
+                    ref Settings.ollamaDisableThinking,
+                    "Adds 'think: false' to Ollama requests. Faster responses but may reduce reasoning quality.");
+            }
         }
 
         private void DrawOpenRouterSettings(Listing_Standard list)
