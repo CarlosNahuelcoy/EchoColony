@@ -762,7 +762,8 @@ namespace EchoColony
                     break;
                 case LocalModelProvider.Ollama:
                 default:
-                    jsonBody = $"{{\"model\": \"{modelName}\", \"prompt\": \"{EscapeJson(prompt)}\", \"stream\": false, \"options\": {{\"num_ctx\": 16384}}}}";
+                    string thinkFlag = MyMod.Settings?.ollamaDisableThinking == true ? ", \"think\": false" : "";
+                    jsonBody = $"{{\"model\": \"{modelName}\", \"prompt\": \"{EscapeJson(prompt)}\", \"stream\": false{thinkFlag}, \"options\": {{\"num_ctx\": 16384}}}}";
                     break;
             }
 

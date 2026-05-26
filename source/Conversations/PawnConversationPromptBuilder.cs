@@ -281,7 +281,20 @@ namespace EchoColony.Conversations
                 sb.AppendLine($"Background: {backstory}");
 
             if (pawn.story?.traits?.allTraits != null && pawn.story.traits.allTraits.Any())
-                sb.AppendLine($"Personality: {string.Join(", ", pawn.story.traits.allTraits.Select(t => t.LabelCap))}");
+            {
+                var traitEntries = pawn.story.traits.allTraits.Select(t =>
+                {
+                    string desc = t.def.description;
+                    if (!string.IsNullOrEmpty(desc))
+                    {
+                        desc = System.Text.RegularExpressions.Regex.Replace(desc, "<.*?>", "").Trim();
+                        if (desc.Length > 100) desc = desc.Substring(0, 97) + "...";
+                        return $"{t.LabelCap}: {desc}";
+                    }
+                    return t.LabelCap;
+                });
+                sb.AppendLine($"Personality:\n  - {string.Join("\n  - ", traitEntries)}");
+            }
 
             string traitSpeech = GetTraitSpeechStyle(pawn);
             if (!string.IsNullOrEmpty(traitSpeech))
@@ -540,8 +553,14 @@ namespace EchoColony.Conversations
             if (spinalInjury != null)
                 return $"[MOBILITY: SPINAL INJURY ({spinalInjury.def.label}) — movement severely impaired due to structural damage to the spine, not pain alone]";
 
+            var prostheticParts = new HashSet<BodyPartRecord>(
+                hediffSet.hediffs
+                    .Where(h => h.def?.addedPartProps != null && h.Part != null)
+                    .Select(h => h.Part));
+
             var missingLegs = hediffSet.hediffs.OfType<Hediff_MissingPart>()
-                .Where(h => h.Part?.def?.defName == "Leg" || h.Part?.def?.defName == "Foot")
+                .Where(h => (h.Part?.def?.defName == "Leg" || h.Part?.def?.defName == "Foot")
+                        && !IsPartCoveredByProsthetic(h.Part, prostheticParts))
                 .ToList();
             if (missingLegs.Count >= 2)
                 return "[MOBILITY: Both legs missing — cannot walk at all without prosthetics]";
@@ -651,6 +670,17 @@ namespace EchoColony.Conversations
             return $"[CHEMICAL STATE: {string.Join("; ", states)}]";
         }
 
+        private static bool IsPartCoveredByProsthetic(BodyPartRecord part, HashSet<BodyPartRecord> prostheticParts)
+        {
+            var current = part;
+            while (current != null)
+            {
+                if (prostheticParts.Contains(current)) return true;
+                current = current.parent;
+            }
+            return false;
+        }
+
         // ── Speech impediment detection ───────────────────────────────────────────
 
         private static string GetSpeechImpediment(Pawn pawn)
@@ -698,34 +728,41 @@ namespace EchoColony.Conversations
         // ── Significant health conditions ─────────────────────────────────────────
 
         private static List<string> GetSignificantHealthConditions(Pawn pawn)
+{
+    var result = new List<string>();
+    var hediffSet = pawn.health?.hediffSet;
+    if (hediffSet == null) return result;
+
+    // Build set of parts covered by a prosthetic or bionic
+    var prostheticParts = new HashSet<BodyPartRecord>(
+        hediffSet.hediffs
+            .Where(h => h.def?.addedPartProps != null && h.Part != null)
+            .Select(h => h.Part));
+
+    foreach (var h in hediffSet.hediffs)
+    {
+        if (h?.def == null) continue;
+        if (h.def.defName == "MissingBodyPart")
         {
-            var result = new List<string>();
-            var hediffSet = pawn.health?.hediffSet;
-            if (hediffSet == null) return result;
-
-            foreach (var h in hediffSet.hediffs)
-            {
-                if (h?.def == null) continue;
-                if (h.def.defName == "MissingBodyPart")
-                {
-                    string partName = h.Part?.def?.label ?? "body part";
-                    if (h.Part?.def?.defName == "Tongue" || h.Part?.def?.defName == "Jaw") continue;
-                    result.Add($"missing {partName}");
-                }
-            }
-
-            var badHediffs = hediffSet.hediffs
-                .Where(h => h.Visible && h.def.isBad &&
-                            h.def.defName != "MissingBodyPart" &&
-                            h.Severity > 0.25f)
-                .OrderByDescending(h => h.Severity)
-                .Take(3)
-                .Select(h => h.def.label)
-                .ToList();
-
-            result.AddRange(badHediffs);
-            return result;
+            if (h.Part == null) continue;
+            if (h.Part.def?.defName == "Tongue" || h.Part.def?.defName == "Jaw") continue;
+            if (IsPartCoveredByProsthetic(h.Part, prostheticParts)) continue;
+            result.Add($"missing {h.Part.def?.label ?? "body part"}");
         }
+    }
+
+    var badHediffs = hediffSet.hediffs
+        .Where(h => h.Visible && h.def.isBad &&
+                    h.def.defName != "MissingBodyPart" &&
+                    h.Severity > 0.25f)
+        .OrderByDescending(h => h.Severity)
+        .Take(3)
+        .Select(h => h.def.label)
+        .ToList();
+
+    result.AddRange(badHediffs);
+    return result;
+}
 
         // ── Pain descriptor ───────────────────────────────────────────────────────
 
