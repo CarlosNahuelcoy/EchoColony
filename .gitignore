@@ -2,15 +2,12 @@
 bin/
 obj/
 source/obj/
-
 # DLLs
 *.dll
-
 # Visual Studio
 .vs/
 *.user
 *.cache
-
 # NuGet
 *.nuget.*
 project.assets.json

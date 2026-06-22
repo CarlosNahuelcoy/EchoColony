@@ -944,8 +944,37 @@ namespace EchoColony
             if (room?.Role != null && room.Role.defName != "None")
                 info.Add($"in {room.Role.label}");
 
-            var map = Find.CurrentMap;
+            var map = pawn.MapHeld ?? Find.CurrentMap;
             if (map?.resourceCounter?.TotalHumanEdibleNutrition < 10f) info.Add("colony low food");
+
+            // ── Weather, temperature and season — read from the actual map, not biome defaults ──
+            if (map != null)
+            {
+                // Real outdoor temperature at this moment
+                float outdoorTemp = map.mapTemperature?.OutdoorTemp ?? 0f;
+                string tempStr = outdoorTemp.ToStringTemperature("F0");
+                info.Add($"outdoor temperature: {tempStr}");
+
+                // Current weather label
+                string weatherLabel = map.weatherManager?.curWeather?.label;
+                if (!string.IsNullOrWhiteSpace(weatherLabel))
+                    info.Add($"weather: {weatherLabel}");
+
+                // Current season — derived from the tile's latitude and current tick,
+                // NOT from the biome. This correctly handles large planetary tilt scenarios.
+                Season season = GenLocalDate.Season(map);
+                info.Add($"season: {season.Label()}");
+
+                // Time of day
+                float hourFloat = GenLocalDate.HourFloat(map);
+                string timeOfDay = hourFloat < 6f  ? "night"
+                                : hourFloat < 10f ? "morning"
+                                : hourFloat < 14f ? "midday"
+                                : hourFloat < 19f ? "afternoon"
+                                : hourFloat < 22f ? "evening"
+                                : "night";
+                info.Add($"time of day: {timeOfDay}");
+            }
 
             return info.Any()
                 ? "*Current state:* " + string.Join(", ", info)
