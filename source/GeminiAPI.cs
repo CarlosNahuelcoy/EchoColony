@@ -1073,18 +1073,79 @@ namespace EchoColony
         {
             try
             {
-                var parsed = JSON.Parse(json);
-                if (parsed["response"] != null) return parsed["response"];
-                if (parsed["choices"] != null)
+                // Handle SSE streaming responses (e.g. NovelAI ignoring stream:false)
+                // SSE lines look like: data: {...}\ndata: {...}
+                if (json.Contains("data: {") || json.Contains("\ndata:"))
                 {
-                    var choice = parsed["choices"][0];
+                    var sb = new StringBuilder();
+                    var lines = json.Split('\n');
+                    foreach (var line in lines)
+                    {
+                        string trimmed = line.Trim();
+                        if (!trimmed.StartsWith("data: ")) continue;
+                        string chunk = trimmed.Substring(6).Trim();
+                        if (chunk == "[DONE]") break;
+                        try
+                        {
+                            var parsed = JSON.Parse(chunk);
+                            if (parsed["choices"] != null)
+                            {
+                                var choice = parsed["choices"][0];
+                                // Standard streaming delta format
+                                string delta = choice["delta"]?["content"]?.Value;
+                                if (!string.IsNullOrEmpty(delta)) { sb.Append(delta); continue; }
+                                // NovelAI format: text field directly on choice
+                                string text = choice["text"]?.Value;
+                                if (!string.IsNullOrEmpty(text)) sb.Append(text);
+                            }
+                        }
+                        catch { }
+                    }
+                    string assembled = sb.ToString().Trim();
+                    if (!string.IsNullOrEmpty(assembled)) return assembled;
+                }
+
+                // Also handle newline-delimited JSON (NDJSON) without "data: " prefix
+                // NovelAI may send raw JSON objects separated by newlines
+                if (!json.TrimStart().StartsWith("{") == false && json.Contains("}\n{"))
+                {
+                    var sb = new StringBuilder();
+                    var lines = json.Split('\n');
+                    foreach (var line in lines)
+                    {
+                        string trimmed = line.Trim();
+                        if (string.IsNullOrEmpty(trimmed)) continue;
+                        try
+                        {
+                            var parsed = JSON.Parse(trimmed);
+                            if (parsed["choices"] != null)
+                            {
+                                var choice = parsed["choices"][0];
+                                string text = choice["text"]?.Value;
+                                if (!string.IsNullOrEmpty(text)) sb.Append(text);
+                                string delta = choice["delta"]?["content"]?.Value;
+                                if (!string.IsNullOrEmpty(delta)) sb.Append(delta);
+                            }
+                        }
+                        catch { }
+                    }
+                    string assembled = sb.ToString().Trim();
+                    if (!string.IsNullOrEmpty(assembled)) return assembled;
+                }
+
+                // Original non-streaming parse
+                var root = JSON.Parse(json);
+                if (root["response"] != null) return root["response"];
+                if (root["choices"] != null)
+                {
+                    var choice = root["choices"][0];
                     if (choice["message"]?["content"] != null) return choice["message"]["content"];
                     if (choice["text"] != null) return choice["text"];
                 }
-                if (parsed["results"]?[0]["text"] != null) return parsed["results"][0]["text"];
-                if (parsed["text"] != null)
+                if (root["results"]?[0]["text"] != null) return root["results"][0]["text"];
+                if (root["text"] != null)
                 {
-                    string fullText = parsed["text"];
+                    string fullText = root["text"];
                     if (fullText.StartsWith("\"") && fullText.EndsWith("\"") && fullText.Length < 50)
                         return fullText.Substring(1, fullText.Length - 2);
                     return fullText;

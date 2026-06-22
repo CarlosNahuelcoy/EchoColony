@@ -105,10 +105,10 @@ namespace EchoColony.Factions
         /// Apply a goodwill change using RimWorld's native system.
         /// Shows the standard vanilla message: "Relations with X: +5"
         public static bool TryApplyGoodwillChange(
-            Faction faction,
-            int amount,
-            Pawn operatorPawn,
-            string reason = null)
+        Faction faction,
+        int amount,
+        Pawn operatorPawn,
+        string reason = null)
         {
             if (faction == null) return false;
             if (IsOnCooldown) return false;
@@ -126,13 +126,20 @@ namespace EchoColony.Factions
             // Cap changes to prevent instant alliance/war
             amount = Math.Max(-25, Math.Min(20, amount));
 
+            // Pick a HistoryEventDef that matches the direction of the change.
+            // Using GaveGift for negative amounts causes RimWorld to display the
+            // notification label backwards ("gave gift" on a penalty).
+            HistoryEventDef historyEvent = amount >= 0
+                ? HistoryEventDefOf.GaveGift
+                : HistoryEventDefOf.AttackedMember;
+
             // Use RimWorld's native goodwill system — shows the standard message
             faction.TryAffectGoodwillWith(
                 Faction.OfPlayer,
                 amount,
                 canSendMessage: true,
                 canSendHostilityLetter: amount < -15,
-                reason: HistoryEventDefOf.GaveGift,
+                reason: historyEvent,
                 lookTarget: operatorPawn
             );
 

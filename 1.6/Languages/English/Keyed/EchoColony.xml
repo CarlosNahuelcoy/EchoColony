@@ -496,4 +496,26 @@ Memories are automatically generated during conversations and help the colonist 
 
   <EchoColony.ChatLogHint>  The log records all AI dialogue as it happens. Drag the title bar to move it.</EchoColony.ChatLogHint>
 
+  <!-- Export / Import -->
+  <EchoColony.ExportButton>Export</EchoColony.ExportButton>
+  <EchoColony.ExportSuccess>Conversation exported for {0}.</EchoColony.ExportSuccess>
+  <EchoColony.ExportFailed>Export failed. Check the log for details.</EchoColony.ExportFailed>
+  
+  <EchoColony.ImportButtonShort>Import</EchoColony.ImportButtonShort>
+  <EchoColony.ImportTitle>Import memories for {0}</EchoColony.ImportTitle>
+  <EchoColony.ImportSubtitle>Files from: {0}</EchoColony.ImportSubtitle>
+  <EchoColony.ImportNoFiles>No exported conversations found. Export one first using the Export button in a chat window.</EchoColony.ImportNoFiles>
+  <EchoColony.ImportButton>Load</EchoColony.ImportButton>
+  <EchoColony.DeleteButton>Delete</EchoColony.DeleteButton>
+  <EchoColony.DeleteConfirm>Permanently delete the export "{0}"? This cannot be undone.</EchoColony.DeleteConfirm>
+  <EchoColony.DeleteSuccess>Export "{0}" deleted.</EchoColony.DeleteSuccess>
+  <EchoColony.DeleteFailed>Could not delete the file. Check the log for details.</EchoColony.DeleteFailed>
+  <EchoColony.ImportConfirm>Load "{0}" into {1}?\n\nThis will replace their current conversation ({2} lines, {3} memories).</EchoColony.ImportConfirm>
+  <EchoColony.ImportSuccess>Memories from "{0}" loaded into {1}.</EchoColony.ImportSuccess>
+  <EchoColony.ImportFailed>Import failed. The file may be corrupted.</EchoColony.ImportFailed>
+  
+  <EchoColony.ConvDailyLimitUnlimited>Daily conversation limit: Unlimited  (today: {0})</EchoColony.ConvDailyLimitUnlimited>
+  <EchoColony.ConvDailyLimitLabel>Daily conversation limit: {0}  (today: {1})</EchoColony.ConvDailyLimitLabel>
+  <EchoColony.ConvDailyLimitTooltip>Maximum AI conversations per in-game day across the whole colony. 0 = unlimited. Useful for large colonies to control API usage.</EchoColony.ConvDailyLimitTooltip>
+  
 </LanguageData>

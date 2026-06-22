@@ -1,6 +1,7 @@
 using UnityEngine;
 using Verse;
 using RimWorld;
+using EchoColony.Conversations;
 
 namespace EchoColony
 {
@@ -70,6 +71,23 @@ namespace EchoColony
 
             s.conversationCooldownHours = Mathf.RoundToInt(
                 listing.Slider(s.conversationCooldownHours, 0f, 24f));
+
+            listing.Gap(2f);
+
+            // ── Daily conversation limit ──────────────────────────────────────────
+            int today = ConversationCooldownTracker.ConversationsToday;
+            string dailyLimitLabel = s.conversationDailyLimit <= 0
+                ? "Daily conversation limit: Unlimited  (today: " + today + ")"
+                : "Daily conversation limit: " + s.conversationDailyLimit + "  (today: " + today + ")";
+
+            listing.Label(dailyLimitLabel,
+                tooltip: "Maximum AI conversations per in-game day across the whole colony. 0 = unlimited. Useful for large colonies to control API usage.");
+
+            s.conversationDailyLimit = Mathf.RoundToInt(
+                listing.Slider(s.conversationDailyLimit, 0f, 50f));
+
+            if (s.conversationDailyLimit < 2)
+                s.conversationDailyLimit = 0;    
 
             listing.Gap(6f);
 
