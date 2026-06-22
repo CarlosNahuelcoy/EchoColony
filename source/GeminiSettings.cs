@@ -166,6 +166,7 @@ namespace EchoColony
         public bool   conversationIncludeGuests    = false;
         public int    conversationDisableAtSpeed   = 3;
         public bool   conversationAllowSimultaneous = false;
+        public int    conversationDailyLimit        = 0; 
 
         // ═══════════════════════════════════════════════════════════════
         // MONOLOGUE SETTINGS
@@ -277,6 +278,7 @@ namespace EchoColony
             Scribe_Values.Look(ref conversationIncludeGuests,   "conversationIncludeGuests",   false);
             Scribe_Values.Look(ref conversationDisableAtSpeed,  "conversationDisableAtSpeed",  3);
             Scribe_Values.Look(ref conversationAllowSimultaneous,"conversationAllowSimultaneous",false);
+            Scribe_Values.Look(ref conversationDailyLimit,       "conversationDailyLimit",       0);
 
             Scribe_Values.Look(ref enableMonologues,       "enableMonologues",       false);
             Scribe_Values.Look(ref monologueCooldownHours, "monologueCooldownHours", 4);
