@@ -232,34 +232,37 @@ namespace EchoColony.Conversations
         /// Mirrors the dispatch logic in ColonistChatWindow.SendMessage().
         /// </summary>
         private static IEnumerator SendConversationRequest(string prompt, Action<string> onResponse)
-        {
-            if (MyMod.Settings == null)
-            {
-                onResponse?.Invoke("⚠ ERROR: Settings not loaded");
-                yield break;
-            }
+{
+    if (MyMod.Settings == null)
+    {
+        onResponse?.Invoke("⚠ ERROR: Settings not loaded");
+        yield break;
+    }
 
-            switch (MyMod.Settings.modelSource)
-            {
-                case ModelSource.Player2:
-                    yield return GeminiAPI.SendRequestToPlayer2WithPrompt(prompt, onResponse);
-                    break;
+    switch (MyMod.Settings.modelSource)
+    {
+        case ModelSource.Player2:
+            yield return GeminiAPI.SendRequestToPlayer2WithPrompt(prompt, onResponse);
+            break;
 
-                case ModelSource.Local:
-                    yield return GeminiAPI.SendRequestToLocalModel(prompt, onResponse);
-                    break;
+        case ModelSource.Local:
+            yield return GeminiAPI.SendRequestToLocalModel(prompt, onResponse);
+            break;
 
-                case ModelSource.OpenRouter:
-                    yield return GeminiAPI.SendRequestToOpenRouter(prompt, onResponse);
-                    break;
+        case ModelSource.OpenRouter:
+            yield return GeminiAPI.SendRequestToOpenRouter(prompt, onResponse);
+            break;
 
-                case ModelSource.Gemini:
-                default:
-                    yield return GeminiAPI.SendRequestToGemini(prompt, onResponse);
-                    break;
-            }
-        }
+        case ModelSource.Custom:
+            yield return GeminiAPI.SendRequestToCustomProvider(prompt, onResponse);
+            break;
 
+        case ModelSource.Gemini:
+        default:
+            yield return GeminiAPI.SendRequestToGemini(prompt, onResponse);
+            break;
+    }
+}
         // ── Settings helpers ──────────────────────────────────────────────────────
 
         private static bool IsConversationEnabled()

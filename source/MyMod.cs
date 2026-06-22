@@ -7,6 +7,7 @@ using RimWorld;
 using System.Linq;
 using EchoColony.SpontaneousMessages;
 using static EchoColony.GeminiSettings;
+using EchoColony.Conversations;
 
 namespace EchoColony
 {
@@ -773,6 +774,18 @@ namespace EchoColony
                     : "EchoColony.ConvCooldownLabel".Translate(Settings.conversationCooldownHours),
                 tooltip: "EchoColony.ConvCooldownTooltip".Translate());
             Settings.conversationCooldownHours = Mathf.RoundToInt(list.Slider(Settings.conversationCooldownHours, 0f, 24f));
+            list.Gap(8f); // esta línea ya existe, el bloque nuevo va ANTES de ella
+
+            // ── Daily conversation limit ──────────────────────────────────────────
+            int today = ConversationCooldownTracker.ConversationsToday;
+            string dailyLimitLabel = Settings.conversationDailyLimit <= 0
+                ? "EchoColony.ConvDailyLimitUnlimited".Translate(today)
+                : "EchoColony.ConvDailyLimitLabel".Translate(Settings.conversationDailyLimit, today);
+            list.Label(dailyLimitLabel,
+                tooltip: "EchoColony.ConvDailyLimitTooltip".Translate());
+            Settings.conversationDailyLimit = Mathf.RoundToInt(list.Slider(Settings.conversationDailyLimit, 0f, 50f));
+            if (Settings.conversationDailyLimit < 2)
+                Settings.conversationDailyLimit = 0;
             list.Gap(8f);
 
             list.Label("EchoColony.ConvAnimalModeLabel".Translate(), tooltip: "EchoColony.ConvAnimalModeTooltip".Translate());

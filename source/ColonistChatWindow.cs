@@ -39,6 +39,13 @@ namespace EchoColony
         // Captured once when the window opens (game is paused, overlay not yet visible).
         private string _visionBase64 = null;
 
+        // ── Layout constants ──────────────────────────────────────────────────
+        private const float HeaderHeight    = 66f;  // single compact row: portrait + name + buttons
+        private const float PortraitSize    = 60f;  // square crop
+        private const float ButtonRowHeight = 24f;
+        private const float ButtonWidth     = 92f;
+        private const float ButtonGap       = 4f;
+
         public ColonistChatWindow(Pawn pawn)
         {
             this.pawn = pawn;
@@ -106,7 +113,6 @@ namespace EchoColony
             }
             else
             {
-                // Gemini, OpenRouter, Player2, Custom — all use the standard context builder
                 contextPrompt = ColonistPromptContextBuilder.Build(pawn, "");
             }
 
@@ -177,41 +183,30 @@ namespace EchoColony
             if (cachedChatLog == null || cachedChatLog.Count != chatLog.Count)
                 cachedChatLog = new List<string>(chatLog);
 
-            Rect portraitRect = new Rect(0f, 0f, 60f, 60f);
-            GUI.DrawTexture(portraitRect, PortraitsCache.Get(pawn, new Vector2(60f, 60f), Rot4.South, default, 1.25f));
+            DrawHeader(inRect);
 
-            Text.Font = GameFont.Medium;
-            Widgets.Label(new Rect(45f, 10f, inRect.width - 50f, 30f), "EchoColony.TalkingWithLabel".Translate(pawn.LabelCap));
-            Text.Font = GameFont.Small;
-
-            if (MyMod.Settings?.enableVision == true)
-            {
-                string visionLabel = _visionBase64 != null ? "👁 Vision" : "👁 ✗";
-                GUI.color = _visionBase64 != null ? new Color(0.5f, 1f, 0.7f, 0.8f) : new Color(1f, 0.5f, 0.5f, 0.7f);
-                Widgets.Label(new Rect(inRect.width - 430f, 14f, 70f, 20f), visionLabel);
-                GUI.color = Color.white;
-            }
-
-            float chatHeight       = inRect.height - 110f;
-            Rect  scrollRect       = new Rect(0, 45f, inRect.width - 20f, chatHeight);
-            float scrollBarWidth   = 16f;
+            // ── Chat area ─────────────────────────────────────────────────────
+            float chatTop    = HeaderHeight + 4f;
+            float chatHeight = inRect.height - chatTop - 65f;
+            Rect  scrollRect = new Rect(0f, chatTop, inRect.width - 20f, chatHeight);
+            float scrollBarWidth     = 16f;
             float effectiveViewWidth = scrollRect.width - scrollBarWidth;
 
             float viewHeight = 0f;
-            List<float> heights = new List<float>();
-            Text.Anchor  = TextAnchor.UpperLeft;
+            var   heights    = new List<float>();
+            Text.Anchor   = TextAnchor.UpperLeft;
             Text.WordWrap = true;
 
             for (int i = 0; i < cachedChatLog.Count; i++)
             {
-                string msg   = cachedChatLog[i];
-                float  width = msg.StartsWith("[DATE_SEPARATOR]") ? effectiveViewWidth : effectiveViewWidth - 200f;
+                string msg    = cachedChatLog[i];
+                float  width  = msg.StartsWith("[DATE_SEPARATOR]") ? effectiveViewWidth : effectiveViewWidth - 200f;
                 float  height = Text.CalcHeight(GetDisplayMessage(msg), width) + 4f;
                 heights.Add(height);
                 viewHeight += height + 10f;
             }
 
-            Rect viewRect = new Rect(0, 0, effectiveViewWidth, viewHeight + 20f);
+            Rect viewRect = new Rect(0f, 0f, effectiveViewWidth, viewHeight + 20f);
             Widgets.BeginScrollView(scrollRect, ref scrollPos, viewRect);
 
             if (forceScrollToBottom)
@@ -220,12 +215,12 @@ namespace EchoColony
                 forceScrollToBottom = false;
             }
 
-            float y = 0;
+            float y = 0f;
             int   messagesToDraw = Math.Min(cachedChatLog.Count, heights.Count);
             for (int i = 0; i < messagesToDraw; i++)
             {
                 string msg         = cachedChatLog[i];
-                Rect   messageRect = new Rect(0, y, effectiveViewWidth, heights[i]);
+                Rect   messageRect = new Rect(0f, y, effectiveViewWidth, heights[i]);
 
                 if (msg.StartsWith("[DATE_SEPARATOR]"))
                     DrawDateSeparator(messageRect, msg);
@@ -238,6 +233,7 @@ namespace EchoColony
             Widgets.EndScrollView();
             Text.WordWrap = false;
 
+            // ── Input area ────────────────────────────────────────────────────
             if (Event.current.type == EventType.KeyDown &&
                 (Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.KeypadEnter) &&
                 GUI.GetNameOfFocusedControl() == "ChatInputField" &&
@@ -247,7 +243,7 @@ namespace EchoColony
                 Event.current.Use();
             }
 
-            Rect inputRect = new Rect(0, inRect.height - 60f, inRect.width - 110f, 50f);
+            Rect inputRect = new Rect(0f, inRect.height - 60f, inRect.width - 110f, 50f);
             GUI.SetNextControlName("ChatInputField");
 
             if (editingIndex == -1 &&
@@ -260,7 +256,7 @@ namespace EchoColony
             var textStyle = new GUIStyle(GUI.skin.textArea) { fontSize = 14, padding = new RectOffset(6, 6, 6, 6) };
             input = GUI.TextArea(inputRect, input, 500, textStyle);
 
-            Rect sendRect   = new Rect(inRect.width - 100f, inRect.height - 60f, 100f, 30f);
+            Rect sendRect    = new Rect(inRect.width - 100f, inRect.height - 60f, 100f, 30f);
             bool sendClicked = Widgets.ButtonText(sendRect, "EchoColony.SendButton".Translate());
 
             if (!waitingForResponse && (sendClicked || sendRequestedViaEnter))
@@ -269,9 +265,93 @@ namespace EchoColony
                 sendRequestedViaEnter = false;
                 GUI.FocusControl("ChatInputField");
             }
+        }
 
-            Rect clearRect = new Rect(inRect.width - 330f, 10f, 100f, 30f);
-            if (Widgets.ButtonText(clearRect, "EchoColony.ClearAllButton".Translate()))
+        // ── Header ────────────────────────────────────────────────────────────
+        // Row 1: portrait + pawn name + vision indicator
+        // Row 2: action buttons aligned right, separated by a thin line
+        private void DrawHeader(Rect inRect)
+        {
+            // Thin separator under the whole header
+            Widgets.DrawLineHorizontal(0f, HeaderHeight, inRect.width, new Color(0.3f, 0.3f, 0.3f, 0.5f));
+
+            // ── Row 1: portrait + name ────────────────────────────────────────
+            float row1Height = HeaderHeight - ButtonRowHeight - 6f;
+
+            // Square portrait zoomed into face — render tall, clip square
+            float renderH = PortraitSize * 2.2f;
+            float renderW = PortraitSize * 1.4f;
+            float faceOffsetY = renderH * 0.08f; // shift down to center on face
+            float faceOffsetX = (renderW - PortraitSize) / 2f;
+            GUI.BeginClip(new Rect(0f, 0f, PortraitSize, PortraitSize));
+            GUI.DrawTexture(
+                new Rect(-faceOffsetX, -faceOffsetY, renderW, renderH),
+                PortraitsCache.Get(pawn, new Vector2(renderW, renderH), Rot4.South, default, 1.0f));
+            GUI.EndClip();
+
+            // Name + title on the same vertical center as the portrait
+            float textX = PortraitSize + 8f;
+            float nameY = 6f;
+
+            Text.Font = GameFont.Medium;
+            Widgets.Label(new Rect(textX, nameY, inRect.width - textX - 200f, 26f),
+                "EchoColony.TalkingWithLabel".Translate(pawn.LabelCap));
+            Text.Font = GameFont.Small;
+
+            string title = pawn.story?.title ?? pawn.kindDef?.label ?? "";
+            if (!string.IsNullOrWhiteSpace(title))
+            {
+                GUI.color = new Color(0.6f, 0.6f, 0.6f);
+                Widgets.Label(new Rect(textX, nameY + 26f, inRect.width - textX - 200f, 18f),
+                    title.CapitalizeFirst());
+                GUI.color = Color.white;
+            }
+
+            // Vision indicator — right side, vertically centered
+            if (MyMod.Settings?.enableVision == true)
+            {
+                string visionLabel = _visionBase64 != null ? "👁 Vision" : "👁 ✗";
+                GUI.color = _visionBase64 != null
+                    ? new Color(0.5f, 1f, 0.7f, 0.8f)
+                    : new Color(1f, 0.5f, 0.5f, 0.7f);
+                Widgets.Label(new Rect(inRect.width - 75f, nameY + 4f, 70f, 20f), visionLabel);
+                GUI.color = Color.white;
+            }
+
+            // ── Buttons — right-aligned, bottom of header ─────────────────────
+            float btnY = HeaderHeight - ButtonRowHeight - 2f;
+
+            // Buttons right-to-left: Export | Import | Personalize | Clear all
+            float x = inRect.width;
+
+            x -= ButtonWidth;
+            if (Widgets.ButtonText(new Rect(x, btnY, ButtonWidth, ButtonRowHeight),
+                "EchoColony.ExportButton".Translate()))
+            {
+                string path = ConversationPorter.Export(pawn);
+                if (path != null)
+                    Messages.Message("EchoColony.ExportSuccess".Translate(pawn.LabelCap), MessageTypeDefOf.TaskCompletion, false);
+                else
+                    Messages.Message("EchoColony.ExportFailed".Translate(), MessageTypeDefOf.RejectInput, false);
+            }
+
+            x -= ButtonWidth + ButtonGap;
+            if (Widgets.ButtonText(new Rect(x, btnY, ButtonWidth, ButtonRowHeight),
+                "EchoColony.ImportButtonShort".Translate()))
+            {
+                Find.WindowStack.Add(new ConversationImportWindow(pawn));
+            }
+
+            x -= ButtonWidth + ButtonGap;
+            if (Widgets.ButtonText(new Rect(x, btnY, ButtonWidth, ButtonRowHeight),
+                "EchoColony.PersonalizeButton".Translate()))
+            {
+                Find.WindowStack.Add(new ColonistPromptEditor(pawn));
+            }
+
+            x -= ButtonWidth + ButtonGap;
+            if (Widgets.ButtonText(new Rect(x, btnY, ButtonWidth, ButtonRowHeight),
+                "EchoColony.ClearAllButton".Translate()))
             {
                 Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
                     "EchoColony.ClearAllConfirm".Translate(),
@@ -284,45 +364,6 @@ namespace EchoColony
                         ResetTurnCounter();
                     }));
             }
-
-            Rect exportRect = new Rect(inRect.width - 110f, 10f, 100f, 30f);
-            if (Widgets.ButtonText(exportRect, "EchoColony.ExportButton".Translate()))
-            {
-                int    ticks     = Find.TickManager.TicksGame;
-                float  longitude = Find.WorldGrid.LongLatOf(Find.CurrentMap.Tile).x;
-                int    year      = GenDate.Year(ticks, longitude);
-                string quadrum   = GenDate.Quadrum(ticks, longitude).ToString();
-                int    day       = GenDate.DayOfSeason(ticks, longitude);
-                string filename  = $"{pawn.Name.ToStringShort}_chat_Year{year}_Day{day}_{quadrum}.txt";
-                string folder    = Path.Combine(GenFilePaths.SaveDataFolderPath, "ColonistChats");
-                if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
-                string fullPath = Path.Combine(folder, filename);
-                try
-                {
-                    var cleanLog = new List<string>();
-                    foreach (var line in chatLog)
-                    {
-                        string clean = line;
-                        clean = clean.Replace("<b><i>", "*").Replace("</i></b>", "*");
-                        clean = clean.Replace("<b>", "").Replace("</b>", "");
-                        clean = clean.Replace("<i>", "").Replace("</i>", "");
-                        clean = System.Text.RegularExpressions.Regex.Replace(clean, "<color=.*?>", "");
-                        clean = clean.Replace("</color>", "");
-                        cleanLog.Add(clean);
-                    }
-                    File.WriteAllLines(fullPath, cleanLog);
-                    Messages.Message($"Conversation exported to:\n{fullPath}", MessageTypeDefOf.TaskCompletion, false);
-                }
-                catch (System.Exception ex)
-                {
-                    Log.Error($"[EchoColony] Error exporting conversation: {ex.Message}");
-                    Messages.Message("❌ Error exporting the conversation.", MessageTypeDefOf.RejectInput, false);
-                }
-            }
-
-            Rect personalizeRect = new Rect(inRect.width - 220f, 10f, 100f, 30f);
-            if (Widgets.ButtonText(personalizeRect, "EchoColony.PersonalizeButton".Translate()))
-                Find.WindowStack.Add(new ColonistPromptEditor(pawn));
         }
 
         private void TrySpeakLastLine(Pawn pawn)
@@ -394,10 +435,6 @@ namespace EchoColony
             return lines.Any() ? string.Join(" ", lines) : "I am not in combat, not being targeted, and have no bleeding.";
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // SEND MESSAGE — change 1 of 5
-        // ═══════════════════════════════════════════════════════════════
-
         private void SendMessage()
         {
             if (waitingForResponse || input.NullOrEmpty()) return;
@@ -419,18 +456,11 @@ namespace EchoColony
             string prompt;
 
             if (isKobold)
-            {
                 prompt = KoboldPromptBuilder.Build(pawn, userMsg);
-            }
             else if (isLMStudio)
-            {
                 prompt = LMStudioPromptBuilder.Build(pawn, userMsg);
-            }
             else if (isCustom)
-            {
-                // Custom provider receives plain text — no Gemini JSON wrapping
                 prompt = ColonistPromptContextBuilder.Build(pawn, userMsg);
-            }
             else
             {
                 messageHistory.Add(new GeminiMessage("user", userMsg));
@@ -440,27 +470,15 @@ namespace EchoColony
             IEnumerator coroutine;
 
             if (isKobold || isLMStudio || MyMod.Settings.modelSource == ModelSource.Local)
-            {
                 coroutine = GeminiAPI.SendRequestToLocalModel(prompt, OnResponse);
-            }
             else if (MyMod.Settings.modelSource == ModelSource.Player2)
-            {
                 coroutine = GeminiAPI.SendRequestToPlayer2(pawn, userMsg, OnResponse, _visionBase64);
-            }
             else if (MyMod.Settings.modelSource == ModelSource.OpenRouter)
-            {
                 coroutine = GeminiAPI.SendRequestToOpenRouter(prompt, OnResponse, _visionBase64);
-            }
             else if (isCustom)
-            {
-                // Custom: no vision support
                 coroutine = GeminiAPI.SendRequestToCustomProvider(prompt, OnResponse);
-            }
             else
-            {
-                // Gemini: prompt already has inlineData if vision is on
                 coroutine = GeminiAPI.SendRequestToGemini(prompt, OnResponse);
-            }
 
             if (MyMod.Settings.modelSource == ModelSource.Player2 && MyMod.Settings.enableTTS)
             {
@@ -470,10 +488,6 @@ namespace EchoColony
 
             MyStoryModComponent.Instance.StartCoroutine(coroutine);
         }
-
-        // ═══════════════════════════════════════════════════════════════
-        // ON RESPONSE — change 2 of 5
-        // ═══════════════════════════════════════════════════════════════
 
         private void OnResponse(string response)
         {
@@ -584,10 +598,6 @@ namespace EchoColony
             return cleanText;
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // SAVE MEMORY AUTOMATICALLY — change 3 of 5
-        // ═══════════════════════════════════════════════════════════════
-
         private void SaveMemoryAutomatically()
         {
             int turnsSinceLastSave = conversationTurnCount - lastSavedTurnCount;
@@ -607,8 +617,8 @@ namespace EchoColony
 
             if (!recentMessages.Any()) return;
 
-            string combined      = string.Join("\n", recentMessages);
-            string fullPrompt    = "Summarize this part of the conversation as if it were a personal memory from the colonist's perspective. Keep it brief, intimate, and natural—avoid literal quotes.\n\n" + combined;
+            string combined   = string.Join("\n", recentMessages);
+            string fullPrompt = "Summarize this part of the conversation as if it were a personal memory from the colonist's perspective. Keep it brief, intimate, and natural—avoid literal quotes.\n\n" + combined;
 
             System.Action<string> memoryCallback = (summary) =>
             {
@@ -690,10 +700,6 @@ namespace EchoColony
             ColonistVoiceManager.SetVoice(pawn, selectedVoice.id);
             Log.Message($"[EchoColony] (Late) Assigned voice '{selectedVoice.name}' to {pawn.LabelShort}");
         }
-
-        // ═══════════════════════════════════════════════════════════════
-        // POST CLOSE — change 4 of 5
-        // ═══════════════════════════════════════════════════════════════
 
         public override void PostClose()
         {
@@ -792,10 +798,6 @@ namespace EchoColony
             GUI.color   = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
         }
-
-        // ═══════════════════════════════════════════════════════════════
-        // DRAW REGULAR MESSAGE — change 5 of 5 (regeneration)
-        // ═══════════════════════════════════════════════════════════════
 
         private void DrawRegularMessage(Rect rect, string msg, int index, float viewWidth, List<string> currentChatLog)
         {
@@ -928,7 +930,6 @@ namespace EchoColony
                             else if (MyMod.Settings.modelSource == ModelSource.OpenRouter)
                                 coroutine = GeminiAPI.SendRequestToOpenRouter(userMsg, OnResponse, _visionBase64);
                             else if (MyMod.Settings.modelSource == ModelSource.Custom)
-                                // Regeneration: rebuild plain text prompt
                                 coroutine = GeminiAPI.SendRequestToCustomProvider(ColonistPromptContextBuilder.Build(pawn, userMsg), OnResponse);
                             else
                             {
