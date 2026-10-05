@@ -23,6 +23,7 @@ namespace EchoColony
             this.absorbInputAroundWindow = true;
             this.forcePause             = true;
             this.draggable              = true;
+            this.closeOnAccept          = false; // Enter inserts a new line in the prompt instead of closing
 
             if (MyMod.Settings.modelSource == ModelSource.Player2 && MyMod.Settings.enableTTS)
             {
@@ -271,6 +272,7 @@ namespace EchoColony
             };
             GUI.SetNextControlName("PromptTextArea");
             tempPrompt = GUI.TextArea(new Rect(0f, 0f, textWidth, contentHeight - 20f), tempPrompt, style);
+            PromptTextArea.SwallowEnterIfFocused("PromptTextArea");
 
             Widgets.EndScrollView();
 

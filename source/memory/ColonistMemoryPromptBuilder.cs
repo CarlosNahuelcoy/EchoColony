@@ -659,6 +659,8 @@ namespace EchoColony
 
         private static string GetAgeBehavioralDirective(Pawn pawn)
         {
+            if (ColonistPromptManager.GetIgnoreAge(pawn)) return string.Empty;
+
             int bioAge = pawn.ageTracker?.AgeBiologicalYears ?? 0;
             if (bioAge < 13)
                 return "- AGE DIRECTIVE: You are a child. Use simpler vocabulary, express emotions directly and naively, and view the world through immediate survival, play, or fear.";

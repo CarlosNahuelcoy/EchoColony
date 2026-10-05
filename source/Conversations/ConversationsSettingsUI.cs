@@ -160,9 +160,9 @@ namespace EchoColony
             Rect viewRect = new Rect(0f, 0f, outerRect.width - 16f, innerHeight);
 
             Widgets.BeginScrollView(scrollRect, ref promptScroll, viewRect);
-            s.conversationGlobalPrompt = Widgets.TextArea(
+            s.conversationGlobalPrompt = PromptTextArea.Draw(
                 new Rect(0f, 0f, viewRect.width, viewRect.height),
-                s.conversationGlobalPrompt);
+                s.conversationGlobalPrompt, "EchoConvGlobalPromptArea");
             Widgets.EndScrollView();
 
             listing.Gap(4f);

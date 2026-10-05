@@ -129,6 +129,8 @@ namespace EchoColony.Conversations
 
             int age = pawn.ageTracker?.AgeBiologicalYears ?? 0;
             sb.AppendLine($"Age: {age}, {pawn.gender}");
+            if (ColonistPromptManager.GetIgnoreAge(pawn))
+                sb.AppendLine("Biological age is irrelevant for this character — do NOT write them as a child.");
 
             sb.AppendLine(GetDetailedStatus(pawn));
 

@@ -98,7 +98,7 @@ namespace EchoColony
             sb.AppendLine(ColonistPromptContextBuilder.BuildSystemPromptPublic(speaker));
 
             int age = speaker.ageTracker?.AgeBiologicalYears ?? 0;
-            string ageGuidance = GetAgeGuidance(age);
+            string ageGuidance = ColonistPromptManager.GetIgnoreAge(speaker) ? null : GetAgeGuidance(age);
             if (!string.IsNullOrEmpty(ageGuidance))
                 sb.AppendLine($"Age behavior: {ageGuidance}");
 
