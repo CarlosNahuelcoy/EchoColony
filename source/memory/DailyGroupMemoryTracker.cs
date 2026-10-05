@@ -148,7 +148,7 @@ namespace EchoColony
             }
             else if (MyMod.Settings.modelSource == ModelSource.Player2)
             {
-                memoryCoroutine = GeminiAPI.SendRequestToPlayer2(null, prompt, callback);
+                memoryCoroutine = GeminiAPI.SendRequestToPlayer2WithPrompt(prompt, callback);
                 Log.Message("[EchoColony] 🚀 Optimizando memoria grupal con Player2");
             }
             else if (MyMod.Settings.modelSource == ModelSource.OpenRouter)

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using EchoColony.Actions;
 using EchoColony.Conversations;
 using RimWorld;
@@ -67,6 +68,11 @@ namespace EchoColony
             }
 
             RebuildHistoryFromLog();
+
+            if(ChatGameComponent.Instance.ShouldResetSession(pawn))
+            {
+                ColonistMemoryHelper.CheckAndGenerateMemory(pawn,1);
+            }
         }
 
         // ── History ───────────────────────────────────────────────────────────────
@@ -185,21 +191,42 @@ namespace EchoColony
             string userMsg = input.Trim();
             input = "";
 
+            //furel - Check if the session has expired for the colonist. If so, reset the session to don't include chat history to the prompt.
+            bool sessionExpired = ChatGameComponent.Instance.ShouldResetSession(pawn);
+            var info = ChatGameComponent.Instance.GetInteractionInfo(pawn);
+
+            if (sessionExpired)
+            {
+                ChatGameComponent.Instance.UpdateStartTurn(pawn, info.CurrentTurn);
+                ChatGameComponent.Instance.UpdateInteractionTick(pawn);
+            }
+
+            string groupContext = !sessionExpired ? GroupChatGameComponent.Instance.BuildGroupChatContextString(pawn)+"\n" : "";
+            string apiMsg;
+
+            if (!string.IsNullOrEmpty(groupContext))
+            {            
+                // Brevity constraint appended to the actual API message — not the context —
+                // so the model sees it immediately before generating its reply.
+                apiMsg = groupContext + userMsg + " [Answer in one sentence, 100 characters max. Be brief.]";
+                ChatGameComponent.Instance.ClearGroupHistory(pawn);
+            }
+            else
+            {
+                apiMsg = userMsg + " [Answer in one sentence, 100 characters max. Be brief.]";
+            }
+
             ChatGameComponent.Instance.AddLine(pawn, "[USER] " + "EchoColony.UserPrefix".Translate() + userMsg);
             waitingForResponse = true;
 
             // Rebuild history to include the message just logged.
             RebuildHistoryFromLog();
 
-            // Brevity constraint appended to the actual API message — not the context —
-            // so the model sees it immediately before generating its reply.
-            string apiMsg = userMsg + " [Answer in one sentence, 100 characters max. Be brief.]";
-
-            MyStoryModComponent.Instance.StartCoroutine(BuildCoroutine(userMsg, apiMsg));
+            MyStoryModComponent.Instance.StartCoroutine(BuildCoroutine(apiMsg));
             Close();
         }
 
-        private IEnumerator BuildCoroutine(string userMsg, string apiMsg)
+        private IEnumerator BuildCoroutine(string apiMsg)
         {
             bool isKobold   = MyMod.Settings.modelSource == ModelSource.Local
                               && MyMod.Settings.localModelProvider == LocalModelProvider.KoboldAI;
@@ -232,14 +259,18 @@ namespace EchoColony
             }
             else
             {
-                messageHistory.Add(new GeminiMessage("user", apiMsg));
-                string json = BuildGeminiJson(messageHistory);
+                var apiHistory = new List<GeminiMessage>(messageHistory);
+                if (apiHistory.Count > 0)
+                {
+                    apiHistory[apiHistory.Count - 1] = new GeminiMessage("user", apiMsg);
+                }
+
+                string json = BuildGeminiJson(apiHistory);
 
                 coroutine = MyMod.Settings.modelSource == ModelSource.OpenRouter
                     ? GeminiAPI.SendRequestToOpenRouter(json, OnResponse, _visionBase64)
                     : GeminiAPI.SendRequestToGemini(json, OnResponse, _visionBase64);
             }
-
             return coroutine;
         }
 
@@ -278,7 +309,22 @@ namespace EchoColony
                 }
             }
 
-            ChatGameComponent.Instance.AddLine(pawn, pawn.LabelShort + ": " + cleanResponse);
+            ChatGameComponent.Instance.AddLine(pawn, "[ASSISTANT]"+pawn.LabelShort + ": " + cleanResponse);
+
+            var info = ChatGameComponent.Instance.GetInteractionInfo(pawn);
+
+            //ChatGameComponent.Instance.UpdateConversationTurn(pawn, info.CurrentTurn+1);
+
+            //if (info.LastTick == 0)
+            //{
+                ChatGameComponent.Instance.RegisterInteraction(pawn, info.CurrentTurn + 1);
+           // }
+            //else
+            //{
+            //    ChatGameComponent.Instance.UpdateInteractionTick(pawn);
+            //}
+
+            ColonistMemoryHelper.CheckAndGenerateMemory(pawn);
 
             if (pawn.Spawned && !pawn.Dead)
                 ShowBubbleSequence(pawn, cleanResponse);

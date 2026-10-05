@@ -62,7 +62,7 @@ namespace EchoColony
                 sb.AppendLine();
             }
 
-            string idioma = Prefs.LangFolderName?.ToLower() ?? "english";
+            string idioma = LanguageDatabase.activeLanguage?.FriendlyNameEnglish ?? "English";
             sb.AppendLine("=== LANGUAGE ===");
             if (idioma != "english")
             {

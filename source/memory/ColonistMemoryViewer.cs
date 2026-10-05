@@ -57,7 +57,24 @@ public class ColonistMemoryViewer : Window
         // ✅ CORREGIDO: Usar GetOrCreate()
         var manager = ColonistMemoryManager.GetOrCreate();
         var tracker = manager?.GetTrackerFor(pawn);
-        allMemories = tracker?.GetAllMemories() ?? new Dictionary<int, string>();
+
+        var savedMemories = tracker?.GetAllMemories();
+        allMemories = savedMemories != null
+            ? new Dictionary<int, string>(savedMemories)
+            : new Dictionary<int, string>();
+
+        int currentDay = GenDate.DaysPassed;
+
+        // Carga la memoria/interacciones en curso del día de hoy desde GetCurrentDayMemoryFormatted
+        if (!allMemories.ContainsKey(currentDay) && tracker != null)
+        {
+            string todayFormatted = tracker.GetCurrentDayMemoryFormatted();
+            if (!string.IsNullOrWhiteSpace(todayFormatted) &&
+                !todayFormatted.StartsWith("*You haven't interacted"))
+            {
+                allMemories[currentDay] = todayFormatted;
+            }
+        }
 
         foreach (var day in allMemories.Keys)
         {
@@ -71,47 +88,10 @@ public class ColonistMemoryViewer : Window
         Log.Message($"[EchoColony] {"EchoColony.MemoriesLoaded".Translate(allMemories.Count, pawn.LabelShort)}");
     }
 
-    // Process pending edits after debounce delay
-    private void ProcessPendingEdits()
-    {
-        var keysToProcess = lastEditTimes
-            .Where(kvp => Time.unscaledTime - kvp.Value > EDIT_DEBOUNCE_TIME)
-            .Select(kvp => kvp.Key)
-            .ToList();
-
-        foreach (var day in keysToProcess)
-        {
-            if (pendingEdits.ContainsKey(day))
-            {
-                // ✅ CORREGIDO: Usar GetOrCreate()
-                var manager = ColonistMemoryManager.GetOrCreate();
-                var tracker = manager?.GetTrackerFor(pawn);
-                if (tracker != null)
-                {
-                    // Update the memory with debounced edit
-                    string originalMemory = allMemories.ContainsKey(day) ? allMemories[day] : "";
-                    string newMemory = pendingEdits[day];
-                    
-                    // Only save if there's a meaningful change
-                    if (!string.Equals(originalMemory.Trim(), newMemory.Trim(), System.StringComparison.OrdinalIgnoreCase))
-                    {
-                        tracker.SaveMemoryForDay(day, newMemory);
-                        Log.Message($"[EchoColony] Memory edited and saved for {pawn.LabelShort}, day {day}");
-                    }
-                }
-                
-                pendingEdits.Remove(day);
-            }
-            lastEditTimes.Remove(day);
-        }
-    }
-
     public override Vector2 InitialSize => new Vector2(750f, 600f);
 
     public override void DoWindowContents(Rect inRect)
     {
-        // Process any pending edits first
-        //ProcessPendingEdits();
 
         // Header
         Text.Font = GameFont.Medium;
@@ -209,18 +189,18 @@ public class ColonistMemoryViewer : Window
                                  contentRect.width - padding * 2, contentRect.height - padding * 2);
 
         // Calculate dynamic height based on expansion states
-        float baseEntryHeight = 80f;
-        float expandedEntryHeight = 180f;
         float spacing = 15f;
-        
+        float availableWidth = scrollRect.width - 16f;
+
+        // 1. Calculamos el alto total acumulado de todas las entradas dinámicas
         float totalHeight = 0f;
         foreach (var kvp in allMemories)
         {
-            bool isExpanded = entryExpandedStates.ContainsKey(kvp.Key) ? entryExpandedStates[kvp.Key] : false;
-            totalHeight += (isExpanded ? expandedEntryHeight : baseEntryHeight) + spacing;
+            bool isExpanded = entryExpandedStates.ContainsKey(kvp.Key) && entryExpandedStates[kvp.Key];
+            totalHeight += GetEntryHeight(kvp.Value, isExpanded, availableWidth) + spacing;
         }
-        
-        var viewRect = new Rect(0f, 0f, scrollRect.width - 16f, totalHeight);
+
+        var viewRect = new Rect(0f, 0f, availableWidth, totalHeight);
 
         Widgets.BeginScrollView(scrollRect, ref scrollPos, viewRect);
 
@@ -232,10 +212,11 @@ public class ColonistMemoryViewer : Window
             int day = kvp.Key;
             string memory = kvp.Value ?? "";
             bool isExpanded = entryExpandedStates.ContainsKey(day) ? entryExpandedStates[day] : false;
-            
-            float currentEntryHeight = isExpanded ? expandedEntryHeight : baseEntryHeight;
+
+            // 2. Obtenemos la altura calculada para esta tarjeta específica
+            float currentEntryHeight = GetEntryHeight(memory, isExpanded, viewRect.width);
             var entryRect = new Rect(0f, y, viewRect.width, currentEntryHeight);
-            
+
             // Alternating background
             Color bgColor = entryIndex % 2 == 0 
                 ? new Color(0.12f, 0.15f, 0.2f, 0.8f) 
@@ -291,7 +272,7 @@ public class ColonistMemoryViewer : Window
             // Expandable content
             if (isExpanded)
             {
-                var memoryContentRect = new Rect(15f, y + 40f, viewRect.width - 30f, expandedEntryHeight - 50f);
+                var memoryContentRect = new Rect(15f, y + 40f, viewRect.width - 30f, currentEntryHeight - 50f);
                 DrawMemoryContent(memoryContentRect, day, memory);
             }
             else
@@ -412,13 +393,33 @@ public class ColonistMemoryViewer : Window
                 // ✅ CORREGIDO: Usar GetOrCreate()
                 var manager = ColonistMemoryManager.GetOrCreate();
                 var tracker = manager?.GetTrackerFor(pawn);
-                tracker?.OptimizeCustomMemoryWithAI(day, pendingEdits[day]);
+                tracker?.OptimizeCustomMemoryWithAI(day, pendingEdits[day], pawn);
 
                 pendingEdits.Remove(day);
                 Messages.Message("La IA está personificando tu nota...", MessageTypeDefOf.TaskCompletion);
             }
         }
         GUI.color = Color.white;
+    }
+
+    private float GetEntryHeight(string memory, bool isExpanded, float width)
+    {
+        if (!isExpanded)
+            return 80f; // Altura colapsada estándar
+
+        // Ancho útil disponible para el texto dentro del recuadro
+        float textWidth = width - 50f;
+
+        // Medimos la altura exacta que ocupará la fuente GameFont.Tiny
+        Text.Font = GameFont.Tiny;
+        float requiredTextHeight = Text.CalcHeight(memory ?? "", textWidth);
+        Text.Font = GameFont.Small;
+
+        // Sumamos ~65px para cabeceras, márgenes y botones
+        float totalCalculated = requiredTextHeight + 65f;
+
+        // Mínimo 180px, Máximo 400px (ajustable)
+        return Mathf.Clamp(totalCalculated, 180f, 400f);
     }
 
     public override void PostClose()

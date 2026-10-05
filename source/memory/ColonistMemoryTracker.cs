@@ -13,17 +13,21 @@ namespace EchoColony
     {
         private Dictionary<int, string> memories = new Dictionary<int, string>();
         private Pawn pawn; // Reference for logging
+        public Pawn Pawn => this.pawn;
+        private List<RawInteraction> currentDayInteractions = new List<RawInteraction>(); //*furel - new memory system* New component, currentDayInteraction has to stack just one day of memories.
 
         // Constructor without parameters (required for RimWorld serialization)
         public ColonistMemoryTracker()
         {
             this.pawn = null;
+            this.currentDayInteractions = new List<RawInteraction>(); 
         }
 
         // Constructor to assign the pawn
         public ColonistMemoryTracker(Pawn pawn)
         {
             this.pawn = pawn;
+            this.currentDayInteractions = new List<RawInteraction>();
         }
 
         /// <summary>
@@ -42,255 +46,167 @@ namespace EchoColony
             }
         }
 
-        // Calculate simple edit distance between two strings
-        private int CalculateEditDistance(string s1, string s2)
-        {
-            if (string.IsNullOrEmpty(s1)) return s2?.Length ?? 0;
-            if (string.IsNullOrEmpty(s2)) return s1?.Length ?? 0;
-
-            int[,] dp = new int[s1.Length + 1, s2.Length + 1];
-
-            for (int i = 0; i <= s1.Length; i++)
-                dp[i, 0] = i;
-            for (int j = 0; j <= s2.Length; j++)
-                dp[0, j] = j;
-
-            for (int i = 1; i <= s1.Length; i++)
-            {
-                for (int j = 1; j <= s2.Length; j++)
-                {
-                    int cost = s1[i - 1] == s2[j - 1] ? 0 : 1;
-                    dp[i, j] = Math.Min(Math.Min(dp[i - 1, j] + 1, dp[i, j - 1] + 1), dp[i - 1, j - 1] + cost);
-                }
-            }
-
-            return dp[s1.Length, s2.Length];
-        }
-
         private string GetCurrentDateHeader()
-{
-    try
-    {
-        long ticks = GenTicks.TicksAbs;
-        Vector2 location = (pawn != null && pawn.Tile >= 0)
-            ? Find.WorldGrid.LongLatOf(pawn.Tile)
-            : Find.WorldGrid.LongLatOf(Find.CurrentMap?.Tile ?? 0);
-
-        string nativeDate = GenDate.DateFullStringWithHourAt(ticks, location);
-
-        // ✅ VALIDACIÓN SEGURA: Verificar que tenemos suficientes partes
-        string[] parts = nativeDate.Split(' ');
-        if (parts.Length >= 6)
         {
-            string yearWithoutComma = parts[5].TrimEnd(',');
-            return $"{parts[0]} {parts[1]} {parts[2]} {parts[3]} {parts[4]} {yearWithoutComma}";
-        }
-        else
-        {
-            // Fallback: devolver la fecha completa si el formato es diferente
-            Log.Warning($"[EchoColony] Unexpected date format: {nativeDate}");
-            return nativeDate;
-        }
-    }
-    catch (Exception ex)
-    {
-        Log.Error($"[EchoColony] Error getting date header: {ex.Message}");
-        return $"Day {GenDate.DaysPassed}";
-    }
-}
-        /// <summary>
-        /// Improved: Saves optimized memory using AI to summarize when there's existing content
-        /// CRITICAL: Only combines with AI when there's genuinely NEW content
-        /// </summary>
-        public void SaveMemoryForDay(int day, string newSummary)
-{
-    try
-    {
-        if (string.IsNullOrWhiteSpace(newSummary))
-        {
-            Log.Warning($"[EchoColony] Attempt to save empty memory for {pawn?.LabelShort ?? "Unknown"} day {day}");
-            return;
-        }
-
-        string fechaSinHora = GetCurrentDateHeader();
-
-        // If memory already exists for this day, validate before combining
-        if (memories.ContainsKey(day))
-        {
-            string existingMemory = memories[day];
-
-            // ✅ VALIDACIÓN SEGURA: Verificar que el string tiene contenido antes de substring
-            string existingContent = "";
-            if (!string.IsNullOrEmpty(existingMemory))
-            {
-                int separatorIndex = existingMemory.IndexOf("]\n");
-                if (separatorIndex >= 0 && separatorIndex + 2 < existingMemory.Length)
-                {
-                    existingContent = existingMemory.Substring(separatorIndex + 2);
-                }
-                else
-                {
-                    existingContent = existingMemory;
-                }
-            }
-
-            // VALIDATION 1: Identical content
-            if (existingContent.Trim().Equals(newSummary.Trim(), StringComparison.OrdinalIgnoreCase))
-            {
-                Log.Message($"[EchoColony] Identical memory detected for {pawn?.LabelShort ?? "Unknown"} day {day}, skipping");
-                return;
-            }
-
-            // VALIDATION 2: New content already included
-            if (existingContent.Length > newSummary.Length && 
-                existingContent.Contains(newSummary, StringComparison.OrdinalIgnoreCase))
-            {
-                Log.Message($"[EchoColony] New content already included in existing memory for {pawn?.LabelShort ?? "Unknown"} day {day}, skipping");
-                return;
-            }
-
-            // VALIDATION 3: Content too short
-            if (newSummary.Length < 30)
-            {
-                Log.Message($"[EchoColony] New content too short ({newSummary.Length} chars) for {pawn?.LabelShort ?? "Unknown"} day {day}, skipping");
-                return;
-            }
-
-            // Check for minimal changes
-            int editDistance = CalculateEditDistance(existingContent.Trim(), newSummary.Trim());
-            if (editDistance < 10)
-            {
-                Log.Message($"[EchoColony] Minor change ({editDistance} chars) for {pawn?.LabelShort ?? "Unknown"} day {day}, updating directly");
-                memories[day] = $"[{fechaSinHora}]\n{newSummary}";
-                return;
-            }
-
-            // ✅ VALIDACIÓN SEGURA: Truncar solo si el string es lo suficientemente largo
-            string newContentSample = newSummary.Length > 50 ? newSummary.Substring(0, 50) : newSummary;
-            if (existingContent.ToLowerInvariant().Contains(newContentSample.ToLowerInvariant()))
-            {
-                Log.Message($"[EchoColony] Similar memory already exists for {pawn?.LabelShort ?? "Unknown"} day {day}, skipping");
-                return;
-            }
-
-            // Check percentage of similarity
-            double similarity = 1.0 - (double)editDistance / Math.Max(existingContent.Length, newSummary.Length);
-            if (similarity > 0.85)
-            {
-                Log.Message($"[EchoColony] High similarity ({similarity:P0}) detected for {pawn?.LabelShort ?? "Unknown"} day {day}, updating directly");
-                memories[day] = $"[{fechaSinHora}]\n{newSummary}";
-                return;
-            }
-
-            // VALIDATION 4: Existing content much longer (probably viewing)
-            if (existingContent.Length > newSummary.Length * 2)
-            {
-                Log.Message($"[EchoColony] Existing content ({existingContent.Length} chars) much longer than new ({newSummary.Length} chars), likely viewing - skipping");
-                return;
-            }
-
-            Log.Message($"[EchoColony] Combining memories for {pawn?.LabelShort ?? "Unknown"} day {day} using AI (existing: {existingContent.Length} chars, new: {newSummary.Length} chars)");
-
-            // Use AI to create optimized summary
-            CombineMemoriesWithAI(day, existingContent, newSummary, fechaSinHora);
-        }
-        else
-        {
-            // First memory of the day
-            memories[day] = $"[{fechaSinHora}]\n{newSummary}";
-            Log.Message($"[EchoColony] New memory saved for {pawn?.LabelShort ?? "Unknown"} day {day} ({newSummary.Length} chars)");
-        }
-    }
-    catch (ArgumentOutOfRangeException ex)
-    {
-        Log.Error($"[EchoColony] Index out of range error saving memory for {pawn?.LabelShort ?? "Unknown"} day {day}: {ex.Message}");
-        Log.Error($"[EchoColony] Memory length: {newSummary?.Length ?? 0}, Stack: {ex.StackTrace}");
-        
-        // Fallback: guardar directamente sin procesamiento
-        string fechaSinHora = GetCurrentDateHeader();
-        memories[day] = $"[{fechaSinHora}]\n{newSummary ?? "Error: empty summary"}";
-    }
-    catch (Exception ex)
-    {
-        Log.Error($"[EchoColony] Unexpected error saving memory for {pawn?.LabelShort ?? "Unknown"} day {day}: {ex.Message}");
-        Log.Error($"[EchoColony] Stack: {ex.StackTrace}");
-    }
-}
-        /// <summary>
-        /// Combines memories using AI to create a unique and optimized summary
-        /// </summary>
-        private void CombineMemoriesWithAI(int day, string existingContent, string newContent, string dateHeader)
-        {
-            string combinedInput = $"Memoria existente del día:\n{existingContent}\n\nNueva información:\n{newContent}";
-
-            string promptForSummary = "Combine these two memories from the same day into a single unified and natural memory. " +
-                         "Keep all important events but write as if it were a single coherent experience of the day. " +
-                         "Avoid redundancies and maintain a personal and intimate tone. Don't use phrases like 'New entry' or 'Additionally'. " +
-                         "Maximum 200 words.";
-
-            string fullPrompt = promptForSummary + "\n\n" + combinedInput;
-
-            // Callback to handle AI response
-            System.Action<string> summaryCallback = (aiSummary) =>
-            {
-                if (string.IsNullOrWhiteSpace(aiSummary))
-                {
-                    // Fallback: simple combination without AI
-                    Log.Warning($"[EchoColony] AI returned empty summary, using simple combination for {pawn?.LabelShort ?? "Unknown"}");
-                    memories[day] = $"[{dateHeader}]\n{existingContent} {newContent}";
-                }
-                else
-                {
-                    // Use AI-generated summary
-                    string cleanedSummary = aiSummary.Trim();
-                    memories[day] = $"[{dateHeader}]\n{cleanedSummary}";
-                    Log.Message($"[EchoColony] Memory optimized by AI for {pawn?.LabelShort ?? "Unknown"} day {day} (result: {cleanedSummary.Length} chars)");
-                }
-            };
-
-            // Send request to AI using configured model
             try
             {
-                GenerateOptimizedMemory(fullPrompt, summaryCallback);
+                long ticks = GenTicks.TicksAbs;
+                Vector2 location = (pawn != null && pawn.Tile >= 0)
+                    ? Find.WorldGrid.LongLatOf(pawn.Tile)
+                    : Find.WorldGrid.LongLatOf(Find.CurrentMap?.Tile ?? 0);
+
+                string nativeDate = GenDate.DateFullStringWithHourAt(ticks, location);
+
+                // ✅ VALIDACIÓN SEGURA: Verificar que tenemos suficientes partes
+                string[] parts = nativeDate.Split(' ');
+                if (parts.Length >= 6)
+                {
+                    string yearWithoutComma = parts[5].TrimEnd(',');
+                    return $"{parts[0]} {parts[1]} {parts[2]} {parts[3]} {parts[4]} {yearWithoutComma}";
+                }
+                else
+                {
+                    // Fallback: devolver la fecha completa si el formato es diferente
+                    Log.Warning($"[EchoColony] Unexpected date format: {nativeDate}");
+                    return nativeDate;
+                }
             }
             catch (Exception ex)
             {
-                Log.Error($"[EchoColony] Error generating optimized memory: {ex.Message}");
-                // Fallback: simple combination
-                memories[day] = $"[{dateHeader}]\n{existingContent} {newContent}";
+                Log.Error($"[EchoColony] Error getting date header: {ex.Message}");
+                return $"Day {GenDate.DaysPassed}";
+            }
+        }
+
+        //*furel - new memory system*
+        /// <summary>
+        /// It retrieves all interactions from the current day formatted into a single string for the prompt.
+        /// </summary>
+        public string GetCurrentDayMemoryFormatted()
+        {
+            if (currentDayInteractions == null || !currentDayInteractions.Any())
+                return string.Empty;
+
+            var sb = new StringBuilder();
+
+            foreach (var interaction in currentDayInteractions)
+            {
+                if (interaction != null && !string.IsNullOrWhiteSpace(interaction.text))
+                {
+                    sb.AppendLine($"- {interaction.ToPromptFormat()}");
+                }
+            }
+
+            return sb.ToString().TrimEnd();
+        }
+
+        /// <summary>
+        /// Returns the raw list of interactions for the current day in read-only mode.
+        /// </summary>
+        public IReadOnlyList<RawInteraction> GetCurrentDayInteractions()
+        {
+            return (IReadOnlyList<RawInteraction>)currentDayInteractions ?? System.Array.Empty<RawInteraction>();
+        }
+
+        //*furel - Memory system*
+        /// <summary>
+        /// Builds the string from the raw interactions to be added to the prompt to create the day memory. 
+        /// </summary>
+        /// <param name="dayToProcess">The day which is gonna be processed</param>
+        public void ProcessEndOfDay(int dayToProcess)
+        {
+            if (currentDayInteractions == null || currentDayInteractions.Count == 0)
+            {
+                Log.Message($"[EchoColony] No raw interactions to summarize for {pawn?.LabelShort ?? "Unknown"} on day {dayToProcess}.");
+                return;
+            }
+
+            // We're compiling all the raw data collected today
+            string rawJoinedText = string.Join("\n", currentDayInteractions);
+
+            // Important: We immediately clear the buffer so that the new day starts fresh 
+            // and to prevent data duplication if the AI callback takes a while.
+            ClearDayMemBuffer();
+
+            Log.Message($"[EchoColony] Triggering AI summary for {pawn?.LabelShort ?? "Unknown"} (Day {dayToProcess}) with {rawJoinedText.Length} chars of raw logs.");
+
+            // We send the block of raw text to the AI to generate the final daily summary
+            SummarizeRawDayWithAI(dayToProcess, rawJoinedText);
+        }
+
+        //*furel - improvement* Specific language.
+        /// <summary>
+        /// Sends the raw interactions of a specific day to the AI for summarization and saves the result in the memories dictionary.
+        /// </summary>
+        /// <param name="day"></param>
+        /// <param name="rawInteractions"></param>
+        private void SummarizeRawDayWithAI(int day, string rawInteractions)
+        {
+            if (pawn == null)
+            {
+                Log.Warning($"[EchoColony] Cannot summarize day {day}: Pawn is null.");
+                return;
+            }
+            string safeRawInteractions = rawInteractions ?? string.Empty;
+            string dateHeader = GetCurrentDateHeader();
+
+            string promptText = ColonistMemoryPromptBuilder.BuildDailyMemoryPrompt(pawn, day, safeRawInteractions);
+
+
+            System.Action<string> summaryCallback = (aiSummary) =>
+            {
+
+                if (!string.IsNullOrWhiteSpace(aiSummary))
+                {
+                    // We save the optimized summary in the historical entry for the processed day
+                    memories[day] = $"[{dateHeader}]\n{aiSummary.Trim()}";
+
+                    Log.Message($"[EchoColony] Saved permanent AI summary for {pawn?.LabelShort} for day {day}");
+                }
+                else
+                {
+                    // Emergency fallback if the AI fails due to a timeout or network error:
+                    // We save a truncated excerpt so that the information isn't lost entirely
+                    string fallbackText = rawInteractions.Length > 300 ? rawInteractions.Substring(0, 300) + "..." : rawInteractions;
+                    memories[day] = $"[{dateHeader}]\n[Automatic Summary Failed - Raw Record]:\n{fallbackText}";
+                    Log.Warning($"[EchoColony] AI summary failed or returned empty for {pawn?.LabelShort} day {day}. Fallback saved.");
+                }
+            };
+
+            try
+            {
+                GenerateOptimizedMemory(promptText, $"DAILY_SUMMARY_{GeminiAPI.CleanNameForFileName(pawn?.LabelShort)}", summaryCallback);
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"[EchoColony] Error generating daily summary via AI: {ex.Message}");
+                memories[day] = $"[{dateHeader}]\n{rawInteractions}";
             }
         }
 
         /// <summary>
-        /// Generates a prompt for individual memories using AI
+        /// Directly sets or overwrites a day's raw data without AI processing or date recalculation.
+        /// Designed for JSON file imports, backup restores, and debugging.
         /// </summary>
-        public void OptimizeCustomMemoryWithAI(int day, string editedMem)
+        public void SetMemoryForDay(int day, string fullMemoryText)
+        {
+            if (string.IsNullOrWhiteSpace(fullMemoryText)) return;
+
+            memories[day] = fullMemoryText;
+        }
+
+        /// <summary>
+        /// Sends a request to optimize edited memories using AI
+        /// </summary>
+        public void OptimizeCustomMemoryWithAI(int day, string editedMem, Pawn pawn)
         {
             if (string.IsNullOrWhiteSpace(editedMem)) return;
 
             // Get date header
             string dateHeader = GetCurrentDateHeader();
 
-            // Get complete colonist context
-            string systemIdentity = ColonistPromptContextBuilder.BuildSystemPromptPublic(pawn);
-            string currentContext = ColonistPromptContextBuilder.BuildContextPublic(pawn);
-
             // Build prompt
-            StringBuilder prompt = new StringBuilder();
-            prompt.AppendLine(systemIdentity);
-            prompt.AppendLine("\n### CURRENT CONTEXT ###");
-            prompt.AppendLine(currentContext);
-
-            prompt.AppendLine("\n### TASK ###");
-            prompt.AppendLine("Act like the colonist mentioned. Your user has written a draft of their memory.");
-            prompt.AppendLine("REWRITE the text in FIRST PERSON so that it looks like a real personal diary.");
-            prompt.AppendLine("- Use language that is appropriate to your features and health status.");
-            prompt.AppendLine("- Keep the facts from the draft but make it flow smoothly.");
-            prompt.AppendLine("- Do NOT include metatext or introductions.");
-            prompt.AppendLine("- Maximum 200 words.");
-
-            prompt.AppendLine("\n### DRAFT TO BE REWRITTEN ###");
-            prompt.AppendLine(editedMem);
+            string prompt = ColonistMemoryPromptBuilder.BuildCustomMemoryWithAI(pawn, editedMem);
 
             // Callback to save result
             System.Action<string> summaryCallback = (aiResponse) =>
@@ -305,7 +221,7 @@ namespace EchoColony
             // Send to AI
             try
             {
-                GenerateOptimizedMemory(prompt.ToString(), summaryCallback);
+                GenerateOptimizedMemory(prompt, $"EDITED_MEMORY_OPTIMIZATION_{GeminiAPI.CleanNameForFileName(pawn?.LabelShort)}", summaryCallback);
             }
             catch (Exception ex)
             {
@@ -316,7 +232,7 @@ namespace EchoColony
         /// <summary>
         /// Generates optimized memory using the configured AI model
         /// </summary>
-        private void GenerateOptimizedMemory(string prompt, System.Action<string> callback)
+        private void GenerateOptimizedMemory(string prompt, string type, System.Action<string> callback)
         {
             if (MyStoryModComponent.Instance == null)
             {
@@ -352,7 +268,7 @@ namespace EchoColony
             }
             else if (MyMod.Settings.modelSource == ModelSource.Player2)
             {
-                memoryCoroutine = GeminiAPI.SendRequestToPlayer2(pawn, prompt, callback);
+                memoryCoroutine = GeminiAPI.SendRequestToPlayer2WithPrompt(prompt, callback, $"{type}");
                 Log.Message("[EchoColony] Optimizing memory with Player2");
             }
             else if (MyMod.Settings.modelSource == ModelSource.OpenRouter)
@@ -468,20 +384,28 @@ namespace EchoColony
         {
             return new Dictionary<int, string>(memories);
         }
-
+        //*furel - new memory system* Order changed, from most recent to oldest, to oldest to newest.
         /// <summary>
-        /// Gets the last N memories, ordered by day (most recent first)
+        /// Gets the last N memories, ordered by day (oldest first)
         /// </summary>
         public List<string> GetLastMemories(int count = 10)
         {
             List<string> recentMemories = new List<string>();
 
             List<int> sortedDays = new List<int>(memories.Keys);
-            sortedDays.Sort((a, b) => b.CompareTo(a)); // Descending (most recent first)
+            sortedDays.Sort((a, b) => b.CompareTo(a));
 
+            List<int> targetDays = new List<int>();
             for (int i = 0; i < sortedDays.Count && i < count; i++)
             {
-                recentMemories.Add(memories[sortedDays[i]]);
+                targetDays.Add(sortedDays[i]);
+            }
+
+            targetDays.Reverse();
+
+            foreach (int day in targetDays)
+            {
+                recentMemories.Add(memories[day]);
             }
 
             return recentMemories;
@@ -533,6 +457,7 @@ namespace EchoColony
         {
             int count = memories.Count;
             memories.Clear();
+            ChatGameComponent.Instance.ClearGroupHistory(pawn);
             Log.Message($"[EchoColony] {count} memories removed for {pawn?.LabelShort ?? "Unknown"}");
         }
 
@@ -644,17 +569,61 @@ namespace EchoColony
             Log.Message($"[EchoColony] === END MEMORIES ===");
         }
 
+        /// <summary>
+        /// Registra una conversación directa con el jugador.
+        /// </summary>
+        public void RecordPlayerInteraction(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return;
+            currentDayInteractions.Add(new RawInteraction(InteractionType.Player, text));
+        }
+
+        /// <summary>
+        /// Registra una conversación grupal especificando los participantes.
+        /// </summary>
+        public void RecordGroupInteraction(string text, IEnumerable<string> participantNames)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return;
+
+            List<string> participantsList = participantNames != null
+                    ? participantNames.ToList()
+                    : new List<string>();
+
+            currentDayInteractions.Add(new RawInteraction(InteractionType.Group, text, participantsList));
+        }
+
+        public void RecordSmallTalkInteraction(string text, string otherColonistName)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return;
+
+            var participants = new List<string>();
+            if (!string.IsNullOrWhiteSpace(otherColonistName))
+                participants.Add(otherColonistName);
+
+            currentDayInteractions.Add(new RawInteraction(InteractionType.SmallTalk, text, participants));
+        }
+
+        /// <summary>
+        /// Registra un evento de la colonia o acción individual del colono.
+        /// </summary>
+        public void RecordEventInteraction(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return;
+            currentDayInteractions.Add(new RawInteraction(InteractionType.Event, text));
+        }
+
         // FIXED: Proper ExposeData implementation
         public void ExposeData()
         {
-            // CRITICAL: NO limpiar el diccionario en LoadingVars
-            // Esto era el bug que destruía las memorias antes de cargarlas
             
             Scribe_Collections.Look(ref memories, "memories", LookMode.Value, LookMode.Value);
 
-            // Post-load initialization
+            //*furel - memory system* save the imputs.
+            Scribe_Collections.Look(ref currentDayInteractions, "currentDayInteractions", LookMode.Deep);
+
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
+
                 if (memories == null)
                 {
                     memories = new Dictionary<int, string>();
@@ -677,9 +646,14 @@ namespace EchoColony
                         Log.Message($"[EchoColony]   Sample (day {firstDay}): {preview}");
                     }
                 }
+                //*furel - new memory system* initialization of currenDayInteraction after loading
+                if (currentDayInteractions == null)
+                {
+                    currentDayInteractions = new List<RawInteraction>();
+                }
             }
-            
-            // Logging durante guardado
+
+            //Log while saving
             if (Scribe.mode == LoadSaveMode.Saving)
             {
                 Log.Message($"[EchoColony] Saving {memories?.Count ?? 0} memories for {pawn?.LabelShort ?? "Unknown"}");
@@ -699,5 +673,74 @@ namespace EchoColony
         {
             this.pawn = pawn;
         }
+
+        //*furel - memory system* Clean memory day buffer
+        public void ClearDayMemBuffer()
+        {
+            currentDayInteractions.Clear();
+        }
+
+    }
+
+    /// <summary>
+    /// Defines the type of interaction for memory tracking.
+    /// </summary>
+    public enum InteractionType
+    {
+        Player,
+        Group,
+        SmallTalk,
+        Event
+        
+
+    }
+
+    public class RawInteraction : IExposable
+    {
+        public InteractionType type;
+        public string text;
+        public List<string> participants = new List<string>();
+
+        // Constructor sin parámetros necesario para Scribe
+        public RawInteraction() { }
+
+        public RawInteraction(InteractionType type, string text, List<string> participants = null)
+        {
+            this.type = type;
+            this.text = text;
+            this.participants = participants ?? new List<string>();
+        }
+
+        public void ExposeData()
+        {
+            Scribe_Values.Look(ref type, "type");
+            Scribe_Values.Look(ref text, "text");
+            Scribe_Collections.Look(ref participants, "participants", LookMode.Value);
+        }
+
+        /// <summary>
+        /// Generates the label format needed only when sending to the AI prompt
+        /// </summary>
+        public string ToPromptFormat()
+        {
+            switch (type)
+            {
+                case InteractionType.Group:
+                    string others = participants.Count > 0 ? string.Join(", ", participants) : "others";
+                    return $"[Group conversation with {others}]: {text}";
+
+                case InteractionType.Player:
+                    return $"[Player Conversation]: {text}";
+                
+                case InteractionType.SmallTalk:
+                    string targetPawn = participants.FirstOrDefault() ?? "another colonist";
+                    return $"[Conversation with {targetPawn}]: {text}";
+
+                case InteractionType.Event:
+                default:
+                    return text;
+            }
+        }
+
     }
 }

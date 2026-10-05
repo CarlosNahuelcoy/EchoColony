@@ -1,6 +1,7 @@
 using System.Collections;
 using Verse;
 using RimWorld;
+using System.Runtime.InteropServices.WindowsRuntime;
 
 namespace EchoColony.SpontaneousMessages
 {
@@ -32,6 +33,13 @@ namespace EchoColony.SpontaneousMessages
             {
                 Log.Message($"[EchoColony] Generating spontaneous message for {request.colonist.LabelShort} (Type: {request.triggerType}, Context: {request.contextDescription})");
             }
+
+            if(ChatGameComponent.Instance.ShouldResetSession(request.colonist))
+            {
+                yield return ColonistMemoryHelper.CheckAndGenerateMemoryRoutine(request.colonist, 1);
+            }
+
+            var info = ChatGameComponent.Instance.GetInteractionInfo(request.colonist);
 
             // 1. Build the specific prompt
             string prompt = MessageContextBuilder.BuildPrompt(request);
@@ -73,14 +81,31 @@ namespace EchoColony.SpontaneousMessages
                 yield break;
             }
 
+            //furel - Event registration user entry.
+
+            string eventLogEntry = TextEventRegistration(request);
+            ChatGameComponent.Instance.AddLine(request.colonist, $"[USER]{eventLogEntry}");
+
+
             // 6. Clean the response
             string cleanResponse = CleanResponse(aiResponse);
 
             // 7. Register the message in chat
             ChatGameComponent.Instance.AddLine(
                 request.colonist,
-                $"{request.colonist.LabelShort}: {cleanResponse}"
+                $"[ASSISTANT]{request.colonist.LabelShort}: {cleanResponse}"
             );
+
+            //furel - Updated conversation turn and interaction tick for the colonist, so it now counts to mantein the conversation flow. 
+            //ChatGameComponent.Instance.UpdateConversationTurn(request.colonist, info.CurrentTurn + 1);
+            //if (ChatGameComponent.Instance.GetInteractionInfo(request.colonist).LastTick == 0)
+            //{
+                ChatGameComponent.Instance.RegisterInteraction(request.colonist, info.CurrentTurn + 1);
+            //}
+            //else
+            //{
+            //    ChatGameComponent.Instance.UpdateInteractionTick(request.colonist);
+            //}
 
             if (MyMod.Settings.debugMode)
             {
@@ -167,8 +192,77 @@ namespace EchoColony.SpontaneousMessages
             if (!MyMod.Settings.debugMode)
                 return;
 
+            bool sessionExpired = ChatGameComponent.Instance.ShouldResetSession(request.colonist);
+            string groupContext = !sessionExpired ? GroupChatGameComponent.Instance.BuildGroupChatContextString(request.colonist) : "";
+
             string prompt = MessageContextBuilder.BuildPrompt(request);
             Log.Message($"[EchoColony] Spontaneous Message Prompt for {request.colonist.LabelShort}:\n{prompt}");
+        }
+
+        //furel - Mesage event registration text generation based on the type of trigger and urgency.
+        public static string TextEventRegistration(MessageRequest request)
+        {
+            if (request.colonist == null)
+                return "*(You approach the player to start a conversation.)*";
+
+            string details = !string.IsNullOrWhiteSpace(request.contextDescription)
+                ? request.contextDescription
+                : "recent events";
+
+            switch (request.triggerType)
+            {
+                case TriggerType.Incident:
+                    return GetIncidentLogText(request.incidentTrigger, details, request.urgency);
+
+                case TriggerType.CriticalNeed:
+                    return GetNeedLogText(details, request.urgency);
+
+                case TriggerType.Random:
+                default:
+                    return GetRandomLogText(details);
+            }
+        }
+
+        // 3. Redacción desde la perspectiva del colono que toma la iniciativa hacia el jugador
+        private static string GetIncidentLogText(IncidentTrigger trigger, string details, float urgency)
+        {
+            string mood = urgency >= 0.8f ? "with evident urgency" : "to comment on the situation";
+
+            switch (trigger)
+            {
+                case IncidentTrigger.Raid:
+                case IncidentTrigger.MechanoidCluster:
+                case IncidentTrigger.InfestationSpawned:
+                    return $"*(You notice the threat of {details} and immediately approach the player {mood})*";
+
+                case IncidentTrigger.ToxicFallout:
+                case IncidentTrigger.SolarFlare:
+                    return $"*(You approach the player concerned about the environmental danger: {details})*";
+
+                case IncidentTrigger.TraderCaravan:
+                    return $"*(You head towards the player {mood} about the arrival of the traders ({details}))*";
+
+                case IncidentTrigger.WandererJoin:
+                case IncidentTrigger.RefugeeChased:
+                    return $"*(You decide to discuss the arrival of the new member with the player. ({details}))*";
+
+                default:
+                    return $"*(You approach the player {mood} about what happened: {details})*";
+            }
+        }
+
+        private static string GetNeedLogText(string details, float urgency)
+        {
+            if (urgency >= 0.85f)
+            {
+                return $"*(You are in a critical state ({details}) and seek the player's help)*";
+            }
+            return $"*(You approach the player to express how you feel: {details})*";
+        }
+
+        private static string GetRandomLogText(string details)
+        {
+            return $"*(You take advantage of a moment during your tasks ({details}) to start a casual conversation with the player)*";
         }
     }
 }

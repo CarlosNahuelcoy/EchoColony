@@ -20,6 +20,7 @@ namespace EchoColony.Animals
 
             this.doCloseButton = false;
             this.doCloseX = true;
+            this.closeOnAccept = false; // Enter inserts a new line in the prompt
             this.forcePause = true;
             this.absorbInputAroundWindow = true;
         }
@@ -92,7 +93,7 @@ namespace EchoColony.Animals
             Rect viewRect = new Rect(0f, 0f, scrollRect.width - 16f, innerHeight);
 
             Widgets.BeginScrollView(scrollRect, ref scrollPosition, viewRect);
-            promptText = Widgets.TextArea(new Rect(0f, 0f, viewRect.width, viewRect.height), promptText);
+            promptText = PromptTextArea.Draw(new Rect(0f, 0f, viewRect.width, viewRect.height), promptText, "AnimalPromptArea");
             Widgets.EndScrollView();
 
             currentY += textAreaHeight + 10f;

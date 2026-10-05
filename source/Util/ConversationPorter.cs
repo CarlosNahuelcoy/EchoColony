@@ -124,7 +124,7 @@ namespace EchoColony
                             tracker.ClearAllMemories();
                             foreach (var kvp in memObj)
                                 if (int.TryParse(kvp.Key, out int day))
-                                    tracker.SaveMemoryForDay(day, kvp.Value.Value);
+                                    tracker.SetMemoryForDay(day, kvp.Value.Value);
                         }
                     }
                 }

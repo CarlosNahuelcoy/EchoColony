@@ -56,6 +56,8 @@ namespace EchoColony
         public string globalPrompt  = "";
         public int    maxResponseLength = 300;
 
+        public int chatSessionTimeoutHours = 5;
+
         public bool enableSocialAffectsPersonality = true;
         public bool enableRoleplayResponses        = true;
 
@@ -204,6 +206,8 @@ namespace EchoColony
             Scribe_Values.Look(ref enableMemorySystem,             "EnableMemorySystem",              true);
             Scribe_Values.Look(ref modelSource,                    "ModelSource",                    ModelSource.Player2);
             Scribe_Values.Look(ref selectedModel,                  "selectedModel",                  "");
+
+            Scribe_Values.Look(ref chatSessionTimeoutHours, "chatSessionTimeoutHours", 5);
 
             if (modelPreferences == null) modelPreferences = new GeminiModelPreferences();
             Scribe_Deep.Look(ref modelPreferences, "modelPreferences");
