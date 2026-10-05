@@ -49,11 +49,13 @@ namespace EchoColony
         public ColonistChatWindow(Pawn pawn)
         {
             this.pawn = pawn;
-            this.closeOnClickedOutside = true;
+            this.closeOnClickedOutside = false;
             this.doCloseX = true;
-            this.absorbInputAroundWindow = true;
+            this.absorbInputAroundWindow = false;
             this.forcePause = true;
             this.closeOnAccept = false;
+            this.preventCameraMotion = false;
+            this.draggable = true;
 
             forceScrollToBottom = true;
 
@@ -66,21 +68,51 @@ namespace EchoColony
                     Log.Warning($"[EchoColony] Vision capture failed for {pawn.LabelShort} — will send text only");
             }
 
-            UpdateContextPrompt();
-
             var rawChat = ChatGameComponent.Instance.GetChat(pawn);
             messageHistory = new List<GeminiMessage>();
 
+            //*furel - Constructor changes to support the new conversation storage logic, now the messages are stored in a list of GeminiMessage objects instead of a list of strings.
+            string userPrefix = "EchoColony.UserPrefix".Translate();
             foreach (string line in rawChat)
             {
                 if (line.StartsWith("[USER]"))
-                    messageHistory.Add(new GeminiMessage("user", line.Substring(6).Trim()));
+                {
+                    string content = line.Substring(6).Trim();
+                    if (content.StartsWith(userPrefix))
+                        content = content.Substring(userPrefix.Length);
+
+                    messageHistory.Add(new GeminiMessage("user", content));
+                }
+                //*furel - Changed the prefix for colonist lines, assistant is the current prefix.
+                else if (line.StartsWith("[ASSISTANT]"))
+                {
+                    messageHistory.Add(new GeminiMessage("model", line.Substring(pawn.LabelShort.Length + 12).Trim()));
+                }
+                //*furel - Added to retrocompatibility with previous versions of EchoColony, where the colonist's name was used as a prefix for their messages.
                 else if (line.StartsWith(pawn.LabelShort + ":"))
+                {
                     messageHistory.Add(new GeminiMessage("model", line.Substring(pawn.LabelShort.Length + 1).Trim()));
+                }
             }
 
             CalculateTurnCountFromHistory();
-            lastSavedTurnCount = conversationTurnCount;
+            lastSavedTurnCount = ChatGameComponent.Instance.GetInteractionInfo(pawn).LastSavedTurnCount;
+
+            //furel - Check if the session should be reset, if so, we generate a memory for the colonist for the unproceset turns.
+            if (ChatGameComponent.Instance.ShouldResetSession(pawn))
+            {
+                ColonistMemoryHelper.CheckAndGenerateMemory(pawn, 1);
+            }
+
+            // Si por algún motivo el turno guardado en savefile supera los turnos reales calculados, sincronizamos
+            if (lastSavedTurnCount > conversationTurnCount)
+            {
+                lastSavedTurnCount = conversationTurnCount;
+                ChatGameComponent.Instance.UpdateLastSavedTurn(pawn, lastSavedTurnCount);
+            }    
+
+            if (ChatGameComponent.Instance.GetInteractionInfo(pawn).CurrentTurn !=conversationTurnCount)
+                ChatGameComponent.Instance.UpdateConversationTurn(pawn, conversationTurnCount);
 
             if (MyMod.Settings.modelSource == ModelSource.Player2 && MyMod.Settings.enableTTS)
             {
@@ -98,30 +130,6 @@ namespace EchoColony
             Log.Message($"[EchoColony] Calculated turn count from history: {conversationTurnCount} turns ({userMessages} user, {modelMessages} model messages)");
         }
 
-        private void UpdateContextPrompt()
-        {
-            string contextPrompt;
-
-            if (MyMod.Settings.modelSource == ModelSource.Local)
-            {
-                if (MyMod.Settings.localModelProvider == LocalModelProvider.KoboldAI)
-                    contextPrompt = KoboldPromptBuilder.Build(pawn, "");
-                else if (MyMod.Settings.localModelProvider == LocalModelProvider.LMStudio)
-                    contextPrompt = LMStudioPromptBuilder.Build(pawn, "");
-                else
-                    contextPrompt = ColonistPromptContextBuilder.Build(pawn, "");
-            }
-            else
-            {
-                contextPrompt = ColonistPromptContextBuilder.Build(pawn, "");
-            }
-
-            if (messageHistory.Count > 0 && messageHistory[0].role == "user")
-                messageHistory[0] = new GeminiMessage("user", contextPrompt);
-            else
-                messageHistory.Insert(0, new GeminiMessage("user", contextPrompt));
-        }
-
         public class GeminiMessage
         {
             public string role;
@@ -137,7 +145,17 @@ namespace EchoColony
         private string BuildGeminiChatJson(List<GeminiMessage> history, string imageBase64 = null)
         {
             var sb = new System.Text.StringBuilder();
-            sb.Append("{\"contents\": [");
+
+            sb.Append("{");
+
+            // 1. Inyectamos el System Prompt oficial de Gemini
+            string systemPrompt = ColonistPromptContextBuilder.Build(pawn, "");
+            if (!string.IsNullOrWhiteSpace(systemPrompt))
+            {
+                sb.Append($"\"system_instruction\": {{\"parts\": [{{\"text\": \"{EscapeJson(systemPrompt)}\"}}]}},");
+            }
+
+            sb.Append("\"contents\": [");
 
             bool useVision = !string.IsNullOrEmpty(imageBase64) && MyMod.Settings?.enableVision == true;
 
@@ -180,6 +198,9 @@ namespace EchoColony
 
         public override void DoWindowContents(Rect inRect)
         {
+            bool savedWordWrap = Text.WordWrap; //furel - Save the current word wrap state to restore it later.
+            TextAnchor savedAnchor = Text.Anchor; //furel - Save the current text anchor state to restore it later.
+
             if (cachedChatLog == null || cachedChatLog.Count != chatLog.Count)
                 cachedChatLog = new List<string>(chatLog);
 
@@ -265,6 +286,9 @@ namespace EchoColony
                 sendRequestedViaEnter = false;
                 GUI.FocusControl("ChatInputField");
             }
+
+            Text.WordWrap = savedWordWrap;
+            Text.Anchor = savedAnchor;
         }
 
         // ── Header ────────────────────────────────────────────────────────────
@@ -358,6 +382,7 @@ namespace EchoColony
                     () =>
                     {
                         ChatGameComponent.Instance.ClearChat(pawn);
+                        ChatGameComponent.Instance.CleanInteractionInfo(pawn);
                         messageHistory.Clear();
                         editingIndex  = -1;
                         editedMessage = "";
@@ -392,10 +417,12 @@ namespace EchoColony
                 Log.Message($"[EchoColony] Assigned {selectedVoice.gender} voice '{selectedVoice.name}' to {pawn.LabelShort}.");
             }
 
-            string lastLine = ChatGameComponent.Instance.GetChat(pawn).LastOrDefault(l => l.StartsWith(pawn.LabelShort + ":"));
+            string lastLine = ChatGameComponent.Instance.GetChat(pawn).LastOrDefault(l => l.StartsWith("[ASSISTANT]") || l.StartsWith(pawn.LabelShort + ":"));
             if (!string.IsNullOrWhiteSpace(lastLine))
             {
-                string cleanText = CleanTextForTTS(lastLine.Substring(pawn.LabelShort.Length + 1).Trim());
+                
+                string textOnly = lastLine.StartsWith("[ASSISTANT]") ? lastLine.Substring(pawn.LabelShort.Length + 12).Trim() : lastLine;
+                string cleanText = CleanTextForTTS(textOnly);
                 if (!string.IsNullOrWhiteSpace(cleanText))
                 {
                     string voiceGender = TTSVoiceCache.Voices?.FirstOrDefault(v => v.id == voiceId)?.gender ?? "female";
@@ -442,10 +469,38 @@ namespace EchoColony
             string userMsg = input;
             input = "";
 
-            ChatGameComponent.Instance.AddLine(pawn, "[USER] " + "EchoColony.UserPrefix".Translate() + userMsg);
-            ChatGameComponent.Instance.AddLine(pawn, pawn.LabelShort + ": ...");
+            //furel - Histori message history session check, if the session is expired, we reset the conversation turn count and update the interaction tick.
+            //is done here so is history messages are not present in the prompt.
+            //---------------------------------
+            bool sessionExpired = ChatGameComponent.Instance.ShouldResetSession(pawn);
+
+            if (sessionExpired)
+            {  
+                ChatGameComponent.Instance.UpdateStartTurn(pawn, conversationTurnCount);
+                ChatGameComponent.Instance.UpdateInteractionTick(pawn);
+            }
+            //-------------------------------------------
+
+            //furel - grup chat context, it checks if the pawnd had a group chat before, if so, it adds the context to the prompt, if not, it sends the message without context.
+            //-------------------------------------------
+            string groupContext = !sessionExpired ? GroupChatGameComponent.Instance.BuildGroupChatContextString(pawn) : "";
+
+            if (!string.IsNullOrEmpty(groupContext))
+            {
+                ChatGameComponent.Instance.ClearGroupHistory(pawn);
+            }
+            //enrichedUserMsg the group chat context + the input of the user.
+            string enrichedUserMsg = string.IsNullOrEmpty(groupContext)
+                ? userMsg
+                : $"{groupContext}\n{userMsg}";
+
+            //We add the user message to the message history to prevent loosing the user input and the grupo context not been shown in the UI
+            //but we add the enrichedUserMsg to the prompt, so the model has the context of the group chat.
+            messageHistory.Add(new GeminiMessage("user", userMsg));
+
+            ChatGameComponent.Instance.AddLine(pawn, "[USER] " + userMsg);
+            ChatGameComponent.Instance.AddLine(pawn, "[ASSISTANT]" + pawn.LabelShort + ": ...");
             cachedChatLog       = null;
-            UpdateContextPrompt();
             waitingForResponse  = true;
             forceScrollToBottom = true;
 
@@ -456,15 +511,17 @@ namespace EchoColony
             string prompt;
 
             if (isKobold)
-                prompt = KoboldPromptBuilder.Build(pawn, userMsg);
+                prompt = KoboldPromptBuilder.Build(pawn, enrichedUserMsg);
             else if (isLMStudio)
-                prompt = LMStudioPromptBuilder.Build(pawn, userMsg);
+                prompt = LMStudioPromptBuilder.Build(pawn, enrichedUserMsg);
             else if (isCustom)
-                prompt = ColonistPromptContextBuilder.Build(pawn, userMsg);
+                prompt = ColonistPromptContextBuilder.Build(pawn, enrichedUserMsg);
             else
             {
-                messageHistory.Add(new GeminiMessage("user", userMsg));
-                prompt = BuildGeminiChatJson(messageHistory, _visionBase64);
+                //Now we save the group context in the messege history so future messages can have the context of the group chat, but we don't show it in the UI.
+                var apiHistory = new List<GeminiMessage>(messageHistory);
+                apiHistory[apiHistory.Count - 1] = new GeminiMessage("user", enrichedUserMsg);
+                prompt = BuildGeminiChatJson(apiHistory, _visionBase64);
             }
 
             IEnumerator coroutine;
@@ -472,7 +529,7 @@ namespace EchoColony
             if (isKobold || isLMStudio || MyMod.Settings.modelSource == ModelSource.Local)
                 coroutine = GeminiAPI.SendRequestToLocalModel(prompt, OnResponse);
             else if (MyMod.Settings.modelSource == ModelSource.Player2)
-                coroutine = GeminiAPI.SendRequestToPlayer2(pawn, userMsg, OnResponse, _visionBase64);
+                coroutine = GeminiAPI.SendRequestToPlayer2(pawn, enrichedUserMsg, OnResponse, _visionBase64);
             else if (MyMod.Settings.modelSource == ModelSource.OpenRouter)
                 coroutine = GeminiAPI.SendRequestToOpenRouter(prompt, OnResponse, _visionBase64);
             else if (isCustom)
@@ -492,7 +549,7 @@ namespace EchoColony
         private void OnResponse(string response)
         {
             var    chat        = ChatGameComponent.Instance.GetChat(pawn);
-            string thinkingMsg = pawn.LabelShort + ": ...";
+            string thinkingMsg = "[ASSISTANT]" + pawn.LabelShort + ": ...";
             if (chat.LastOrDefault() == thinkingMsg) chat.RemoveAt(chat.Count - 1);
 
             if (string.IsNullOrWhiteSpace(response))
@@ -562,7 +619,7 @@ namespace EchoColony
                 }
             }
 
-            ChatGameComponent.Instance.AddLine(pawn, pawn.LabelShort + ": " + cleanResponse);
+            ChatGameComponent.Instance.AddLine(pawn, "[ASSISTANT]" + pawn.LabelShort + ": " + cleanResponse);
 
             if (actionResults?.Any() == true)
                 foreach (var result in actionResults)
@@ -571,11 +628,19 @@ namespace EchoColony
             cachedChatLog = null; waitingForResponse = false; input = ""; forceScrollToBottom = true;
             messageHistory.Add(new GeminiMessage("model", response));
             conversationTurnCount++;
+
             Log.Message($"[EchoColony] Turn completed #{conversationTurnCount} for {pawn.LabelShort}");
 
-            int turnsSinceLastSave = conversationTurnCount - lastSavedTurnCount;
-            if (turnsSinceLastSave >= 4 && turnsSinceLastSave % 4 == 0)
-                SaveMemoryAutomatically();
+            //If is the first interaction or is reset it registers the tick and the turn if not, it updates the tick of the interaction,
+            //so we can track the last tick of the interaction.
+
+            ChatGameComponent.Instance.RegisterInteraction(pawn, conversationTurnCount);
+
+            // --- FUREL: NEW CONVERSATION STORAGE LOGIC ---
+            // last saved turn now is stored in the interaction info, so we can track the number of turns since the last save to use it whit spontaneous
+            // conversations and quick conversations.
+
+            ColonistMemoryHelper.CheckAndGenerateMemory(pawn);
 
             if (MyMod.Settings.modelSource == ModelSource.Player2 && MyMod.Settings.enableTTS && MyMod.Settings.autoPlayVoice)
             {
@@ -598,96 +663,6 @@ namespace EchoColony
             return cleanText;
         }
 
-        private void SaveMemoryAutomatically()
-        {
-            int turnsSinceLastSave = conversationTurnCount - lastSavedTurnCount;
-            if (turnsSinceLastSave < 4 || messageHistory.Count < 4) return;
-
-            var manager = ColonistMemoryManager.GetOrCreate();
-            if (manager == null) return;
-
-            Messages.Message("EchoColony.SavingMemories".Translate(), MessageTypeDefOf.SilentInput, false);
-
-            int messagesToSkip = lastSavedTurnCount * 2;
-            var recentMessages = messageHistory
-                .Skip(messagesToSkip)
-                .Where(m => m.role == "user" || m.role == "model")
-                .TakeLast(8)
-                .Select(m => (m.role == "user" ? "Jugador: " : pawn.LabelShort + ": ") + m.content);
-
-            if (!recentMessages.Any()) return;
-
-            string combined   = string.Join("\n", recentMessages);
-            string fullPrompt = "Summarize this part of the conversation as if it were a personal memory from the colonist's perspective. Keep it brief, intimate, and natural—avoid literal quotes.\n\n" + combined;
-
-            System.Action<string> memoryCallback = (summary) =>
-            {
-                if (string.IsNullOrWhiteSpace(summary))
-                    summary = $"Conversation with the player during turn {conversationTurnCount}. {combined.Substring(0, Math.Min(100, combined.Length))}...";
-
-                var tracker = manager.GetTrackerFor(pawn);
-                if (tracker != null)
-                {
-                    try
-                    {
-                        tracker.SaveMemoryForDay(GenDate.DaysPassed, summary.Trim());
-                        lastSavedTurnCount = conversationTurnCount;
-                        Messages.Message("EchoColony.MemoriesSaved".Translate(), MessageTypeDefOf.SilentInput, false);
-                    }
-                    catch (Exception ex) { Log.Error($"[EchoColony] Error saving memory: {ex.Message}"); }
-                }
-            };
-
-            try
-            {
-                bool isKobold   = MyMod.Settings.modelSource == ModelSource.Local && MyMod.Settings.localModelProvider == LocalModelProvider.KoboldAI;
-                bool isLMStudio = MyMod.Settings.modelSource == ModelSource.Local && MyMod.Settings.localModelProvider == LocalModelProvider.LMStudio;
-
-                IEnumerator memoryCoroutine;
-
-                if (isKobold)
-                {
-                    memoryCoroutine = GeminiAPI.SendRequestToLocalModel(KoboldPromptBuilder.Build(pawn, fullPrompt), memoryCallback);
-                    Log.Message("[EchoColony] Starting memory with KoboldAI");
-                }
-                else if (isLMStudio)
-                {
-                    memoryCoroutine = GeminiAPI.SendRequestToLocalModel(LMStudioPromptBuilder.Build(pawn, fullPrompt), memoryCallback);
-                    Log.Message("[EchoColony] Starting memory with LMStudio");
-                }
-                else if (MyMod.Settings.modelSource == ModelSource.Local)
-                {
-                    memoryCoroutine = GeminiAPI.SendRequestToLocalModel(fullPrompt, memoryCallback);
-                    Log.Message("[EchoColony] Starting memory with local model");
-                }
-                else if (MyMod.Settings.modelSource == ModelSource.Player2)
-                {
-                    memoryCoroutine = GeminiAPI.SendRequestToPlayer2(pawn, fullPrompt, memoryCallback);
-                    Log.Message("[EchoColony] Starting memory with Player2");
-                }
-                else if (MyMod.Settings.modelSource == ModelSource.OpenRouter)
-                {
-                    memoryCoroutine = GeminiAPI.SendRequestToOpenRouter(fullPrompt, memoryCallback);
-                    Log.Message("[EchoColony] Starting memory with OpenRouter");
-                }
-                else if (MyMod.Settings.modelSource == ModelSource.Custom)
-                {
-                    memoryCoroutine = GeminiAPI.SendRequestToCustomProvider(fullPrompt, memoryCallback);
-                    Log.Message("[EchoColony] Starting memory with Custom Provider");
-                }
-                else
-                {
-                    string jsonPrompt = BuildGeminiChatJson(new List<GeminiMessage> { new GeminiMessage("user", fullPrompt) });
-                    memoryCoroutine   = GeminiAPI.SendRequestToGemini(jsonPrompt, memoryCallback);
-                    Log.Message("[EchoColony] Starting memory with Gemini");
-                }
-
-                if (memoryCoroutine != null && MyStoryModComponent.Instance != null)
-                    MyStoryModComponent.Instance.StartCoroutine(memoryCoroutine);
-            }
-            catch (Exception ex) { Log.Error($"[EchoColony] Error starting memory generation: {ex.Message}"); }
-        }
-
         private void TryAssignVoiceToPawn(Pawn pawn)
         {
             if (TTSVoiceCache.Voices == null || TTSVoiceCache.Voices.Count == 0) return;
@@ -705,86 +680,22 @@ namespace EchoColony
         {
             base.PostClose();
 
-            if (lastSavedTurnCount > conversationTurnCount) lastSavedTurnCount = conversationTurnCount;
-            int unsavedTurns = conversationTurnCount - lastSavedTurnCount;
-
-            if (messageHistory == null || messageHistory.Count <= 1) return;
-
-            int messagesToSkip = lastSavedTurnCount * 2;
-            var remainingMessagesList = messageHistory
-                .Skip(Math.Max(1, messagesToSkip))
-                .Where(m => (m.role == "user" || m.role == "model") && !string.IsNullOrWhiteSpace(m.content))
-                .Select(m => (m.role == "user" ? "Jugador: " : pawn.LabelShort + ": ") + m.content)
-                .ToList();
-
-            if (!remainingMessagesList.Any() || unsavedTurns < 1) return;
-
-            string combined = string.Join("\n", remainingMessagesList);
-            if (combined.Length < 30) { lastSavedTurnCount = conversationTurnCount; return; }
-
-            var manager = ColonistMemoryManager.GetOrCreate();
-            var tracker = manager?.GetTrackerFor(pawn);
-            if (tracker == null) return;
-
-            int today = GenDate.DaysPassed;
-            var existingMemory = tracker.GetMemoryForDay(today);
-            if (!string.IsNullOrEmpty(existingMemory))
-            {
-                string sample = combined.Length > 40 ? combined.Substring(0, 40) : combined;
-                if (existingMemory.Contains(sample, System.StringComparison.OrdinalIgnoreCase))
-                { lastSavedTurnCount = conversationTurnCount; return; }
-            }
-
-            Messages.Message("EchoColony.SavingMemories".Translate(), MessageTypeDefOf.SilentInput, false);
-
-            string fullPrompt = "Summarize this final part of the conversation as if it were a personal memory from the colonist's perspective. Keep it brief, intimate, and natural—avoid literal quotes.\n\n" + combined;
-
-            System.Action<string> finalMemoryCallback = (summary) =>
-            {
-                if (!string.IsNullOrWhiteSpace(summary))
-                {
-                    tracker.SaveMemoryForDay(today, summary.Trim());
-                    lastSavedTurnCount = conversationTurnCount;
-                    Log.Message($"[EchoColony] Final memory saved for {pawn.LabelShort} (day {today})");
-                }
-            };
-
-            try
-            {
-                IEnumerator finalCoroutine = null;
-                bool isLocal = MyMod.Settings.modelSource == ModelSource.Local;
-
-                if (isLocal)
-                {
-                    string localPrompt = (MyMod.Settings.localModelProvider == LocalModelProvider.KoboldAI)
-                        ? KoboldPromptBuilder.Build(pawn, fullPrompt)
-                        : (MyMod.Settings.localModelProvider == LocalModelProvider.LMStudio)
-                        ? LMStudioPromptBuilder.Build(pawn, fullPrompt)
-                        : fullPrompt;
-                    finalCoroutine = GeminiAPI.SendRequestToLocalModel(localPrompt, finalMemoryCallback);
-                }
-                else if (MyMod.Settings.modelSource == ModelSource.Player2)
-                    finalCoroutine = GeminiAPI.SendRequestToPlayer2(pawn, fullPrompt, finalMemoryCallback);
-                else if (MyMod.Settings.modelSource == ModelSource.OpenRouter)
-                    finalCoroutine = GeminiAPI.SendRequestToOpenRouter(fullPrompt, finalMemoryCallback);
-                else if (MyMod.Settings.modelSource == ModelSource.Custom)
-                    finalCoroutine = GeminiAPI.SendRequestToCustomProvider(fullPrompt, finalMemoryCallback);
-                else
-                {
-                    string jsonPrompt = BuildGeminiChatJson(new List<GeminiMessage> { new GeminiMessage("user", fullPrompt) });
-                    finalCoroutine = GeminiAPI.SendRequestToGemini(jsonPrompt, finalMemoryCallback);
-                }
-
-                if (finalCoroutine != null)
-                    MyStoryModComponent.Instance.StartCoroutine(finalCoroutine);
-            }
-            catch (Exception ex) { Log.Error($"[EchoColony] Error generating final memory: {ex.Message}"); }
+           ColonistMemoryHelper.CheckAndGenerateMemory(pawn, 1);
         }
 
         private string GetDisplayMessage(string msg)
         {
             if (msg.StartsWith("[DATE_SEPARATOR]")) return msg.Substring("[DATE_SEPARATOR]".Length).Trim();
-            if (msg.StartsWith("[USER]"))           return msg.Substring(6);
+            if (msg.StartsWith("[USER]"))
+            {
+                string rawText = msg.Substring(6).Trim();
+                // Solo para mostrar en la interfaz:
+                return "EchoColony.UserPrefix".Translate() + ": " + rawText;
+            }
+            if (msg.StartsWith("[ASSISTANT]"))
+            {
+                return msg.Substring(11).Trim();
+            }   
             return msg;
         }
 
@@ -814,10 +725,30 @@ namespace EchoColony
                 editedMessage = Widgets.TextArea(labelRect, editedMessage);
                 if (Widgets.ButtonText(new Rect(viewWidth - 180f, rect.y + 5f, 80f, 25f), "EchoColony.SaveButton".Translate()))
                 {
-                    chatLog[index] = msg.StartsWith("[USER]")
-                        ? "[USER] " + editedMessage.Replace("You: ", "")
-                        : pawn.LabelShort + ": " + editedMessage.Replace(pawn.LabelShort + ": ", "").TrimStart();
-                    editingIndex = -1; editedMessage = ""; cachedChatLog = null;
+                    //furel - changed the logic to remove the user prefix from the message if it exists, so that the message is stored cleanly in the chat log.
+                    if (msg.StartsWith("[USER]"))
+                    {
+                        string userPrefix = "EchoColony.UserPrefix".Translate() + ":";
+                        string cleanEdit = editedMessage;
+
+                        if (cleanEdit.StartsWith(userPrefix))
+                            cleanEdit = cleanEdit.Substring(userPrefix.Length).Trim();
+
+                        chatLog[index] = "[USER] " + cleanEdit;
+                    }
+                    else
+                    {
+                        string cleanEdit = editedMessage;
+                        string assistantPrefix = "[ASSISTANT]" + pawn.LabelShort + ":";
+                        string simplePrefix = pawn.LabelShort + ":";
+
+                        if (cleanEdit.StartsWith(assistantPrefix))
+                            cleanEdit = cleanEdit.Substring(assistantPrefix.Length).Trim();
+                        else if (cleanEdit.StartsWith(simplePrefix))
+                            cleanEdit = cleanEdit.Substring(simplePrefix.Length).Trim();
+
+                        chatLog[index] = "[ASSISTANT]" + pawn.LabelShort + ": " + cleanEdit;
+                    }
                 }
                 if (Widgets.ButtonText(new Rect(viewWidth - 90f, rect.y + 5f, 80f, 25f), "EchoColony.CancelButton".Translate()))
                 { editingIndex = -1; editedMessage = ""; }
@@ -830,7 +761,7 @@ namespace EchoColony
 
                 bool isUserMsg      = msg.StartsWith("[USER]");
                 bool hasNext        = index + 1 < currentChatLog.Count;
-                bool nextIsColonist = hasNext && currentChatLog[index + 1].StartsWith(pawn.LabelShort + ":");
+                bool nextIsColonist = hasNext && (currentChatLog[index + 1].StartsWith(pawn.LabelShort + ":") || currentChatLog[index + 1].StartsWith("[ASSISTANT]"));
                 bool isLastExchange = isUserMsg && nextIsColonist;
 
                 if (isLastExchange)
@@ -853,7 +784,7 @@ namespace EchoColony
                         }
 
                         if (MyMod.Settings.modelSource == ModelSource.Player2)
-                            GeminiAPI.RebuildMemoryFromChat(pawn);
+                            GeminiAPI.RebuildMemoryFromChat(pawn, 0);
 
                         cachedChatLog = null;
                         Messages.Message("EchoColony.LastExchangeDeleted".Translate(), MessageTypeDefOf.RejectInput, false);
@@ -888,11 +819,16 @@ namespace EchoColony
                         isRegenerable = (index == currentChatLog.Count - 1) ||
                             (index + 1 == currentChatLog.Count - 1 && !currentChatLog[index + 1].StartsWith("[USER]"));
                     }
-                    bool showRegen = msg.StartsWith(pawn.LabelShort + ":") && !msg.EndsWith("...") && isRegenerable;
+                    bool showRegen = (msg.StartsWith("[ASSISTANT]") || msg.StartsWith(pawn.LabelShort + ":")) && !msg.EndsWith("...") && isRegenerable;
 
                     if (showRegen && Widgets.ButtonText(new Rect(viewWidth - 90f, rect.y, 80f, 25f), "EchoColony.RegenerateButton".Translate()))
                     {
-                        string userMsg = currentChatLog[index - 1].Substring(6);
+                        //*furel - changed process to be sure user prefix is removed from the message before sending it to the model again.
+                        string rawUserLine = currentChatLog[index - 1].Substring(6).Trim();
+                        string userPrefix = "EchoColony.UserPrefix".Translate() + ":";
+                        string userMsg = rawUserLine.StartsWith(userPrefix)
+                            ? rawUserLine.Substring(userPrefix.Length).Trim()
+                            : rawUserLine;
                         if (!string.IsNullOrWhiteSpace(userMsg))
                         {
                             chatLog.RemoveAt(index);
@@ -903,15 +839,17 @@ namespace EchoColony
                             {
                                 messageHistory.RemoveAt(messageHistory.Count - 1);
                                 messageHistory.RemoveAt(messageHistory.Count - 1);
+                                conversationTurnCount = Math.Max(0, conversationTurnCount - 1);
+                                if (lastSavedTurnCount > conversationTurnCount) lastSavedTurnCount = conversationTurnCount;
+                                ChatGameComponent.Instance.UpdateConversationTurn(pawn, conversationTurnCount);
                             }
 
-                            UpdateContextPrompt();
                             messageHistory.Add(new GeminiMessage("user", userMsg));
 
-                            while (chatLog.Count > 0 && chatLog.Last().StartsWith(pawn.LabelShort + ": ..."))
+                            while (chatLog.Count > 0 && chatLog.Last().StartsWith("[ASSISTANT]" + pawn.LabelShort + ": ..."))
                                 chatLog.RemoveAt(chatLog.Count - 1);
 
-                            ChatGameComponent.Instance.AddLine(pawn, pawn.LabelShort + ": ...");
+                            ChatGameComponent.Instance.AddLine(pawn, "[ASSISTANT]" + pawn.LabelShort + ": ...");
                             cachedChatLog = null; waitingForResponse = true; forceScrollToBottom = true;
 
                             IEnumerator coroutine;

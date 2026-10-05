@@ -65,6 +65,18 @@ namespace EchoColony
             list.CheckboxLabeled("EchoColony.EnableRoleplayResponses".Translate(), ref Settings.enableRoleplayResponses);
             list.CheckboxLabeled("EchoColony.IgnoreDangers".Translate(), ref Settings.ignoreDangersInConversations, "EchoColony.IgnoreDangersTooltip".Translate());
 
+            list.Gap(4f);
+
+            string timeoutDisplay = Settings.chatSessionTimeoutHours == 0
+                ? "EchoColony.ChatSessionTimeoutUnlimited".Translate().ToString()
+                : Settings.chatSessionTimeoutHours + "h";
+
+            list.Label("EchoColony.ChatSessionTimeoutHours".Translate() + ": " + Settings.chatSessionTimeoutHours + "h",
+                       tooltip: "EchoColony.ChatSessionTimeoutHoursTooltip".Translate());
+
+            // Slider con rango de 1 a 48 horas (convierte el float del Slider a int)
+            Settings.chatSessionTimeoutHours = Mathf.RoundToInt(list.Slider(Settings.chatSessionTimeoutHours, 1f, 48f));
+
             list.GapLine();
 
             DrawSectionHeader(list, "Memory System", new Color(0.7f, 0.9f, 1f));

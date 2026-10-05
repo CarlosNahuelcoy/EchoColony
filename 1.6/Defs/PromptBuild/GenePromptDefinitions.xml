@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <EchoColony.GeneAIPromptDef>
+    <defName>GenePrompt_FireSpewer</defName>
+    <targetGene>FireSpewer</targetGene>
+    <promptDescription>can spit fire out of organs in their throat</promptDescription>
+  </EchoColony.GeneAIPromptDef>
+
+  <EchoColony.GeneAIPromptDef>
+    <defName>GenePrompt_ArchiteMetabolism</defName>
+    <targetGene>ArchiteMetabolism</targetGene>
+    <customLabel>archite metabolism</customLabel>
+    <promptDescription>requires very little food to function</promptDescription>
+  </EchoColony.GeneAIPromptDef>
+
+</Defs>

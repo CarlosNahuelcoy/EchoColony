@@ -125,11 +125,15 @@ namespace EchoColony.Conversations
             string id = pawn.ThingID;
             try
             {
-                string prompt = PawnMonologuePromptBuilder.Build(pawn, triggerContext);
-                if (string.IsNullOrWhiteSpace(prompt)) yield break;
+                var promptResult = PawnMonologuePromptBuilder.Build(pawn, triggerContext);
+                if (!promptResult.HasValue) yield break;
+
+                // Combinar o empaquetar el System + User Prompt según lo que consuma tu API
+                string fullPrompt = $"{promptResult.Value.SystemPrompt}\n{promptResult.Value.UserPrompt}";
+                if (string.IsNullOrWhiteSpace(fullPrompt)) yield break;
 
                 string aiResponse = null;
-                yield return SendMonologueRequest(prompt, r => aiResponse = r);
+                yield return SendMonologueRequest(fullPrompt, r => aiResponse = r, pawn);
 
                 if (string.IsNullOrWhiteSpace(aiResponse) ||
                     aiResponse.StartsWith("⚠") || aiResponse.StartsWith("❌"))
@@ -157,12 +161,12 @@ namespace EchoColony.Conversations
         // ── API dispatch ──────────────────────────────────────────────────────────
         // Mirrors PawnConversationManager.SendConversationRequest
 
-        private static IEnumerator SendMonologueRequest(string prompt, Action<string> onResponse)
+        private static IEnumerator SendMonologueRequest(string prompt, Action<string> onResponse, Pawn pawn)
         {
             switch (MyMod.Settings.modelSource)
             {
                 case ModelSource.Player2:
-                    yield return GeminiAPI.SendRequestToPlayer2WithPrompt(prompt, onResponse);
+                    yield return GeminiAPI.SendRequestToPlayer2WithPrompt(prompt, onResponse, $"MONOLOGUE_{GeminiAPI.CleanNameForFileName(pawn?.LabelShort)}");
                     break;
                 case ModelSource.Local:
                     yield return GeminiAPI.SendRequestToLocalModel(prompt, onResponse);
@@ -190,5 +194,6 @@ namespace EchoColony.Conversations
             if (s != null)
                 Conversations.ConversationChatLogRenderer.LoadPosition(s.chatLogX, s.chatLogY, s.chatLogW, s.chatLogH);
         }
+
     }
 }

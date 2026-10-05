@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <!-- Example 1: Joywire (Requires functional note AND conduct directive)-->
+  <!--<EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Joywire</defName>
+    <targetHediff>Joywire</targetHediff>
+    <customLabel>joywire neural chip</customLabel>
+    - Short inline text replacing the game's base lore. -
+    <functionalNote>brain implant that forces continuous dopamine release</functionalNote>
+    -Interpretation instruction-
+    <behavioralDirective>You are unnaturally happy, excessively calm, and completely unbothered by tragic events or danger.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>-->
+
+  <!-- Example 2: Pure Prosthesis (Requires only a functional note) -->
+  <!--<EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BionicEye</defName>
+    <targetHediff>BionicEye</targetHediff>
+    <customLabel>bionic eye</customLabel>
+    <functionalNote>advanced optical implant with infrared vision</functionalNote>
+  </EchoColony.HediffAIPromptDef>-->
+
+  <!-- Example 3: Mental Condition (Requires only a behavioral directive)-->
+  <!--<EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Alzheimers</defName>
+    <targetHediff>Alzheimers</targetHediff>
+    <behavioralDirective>You frequently lose your train of thought, confuse people's names, and ask about things that happened hours ago.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>-->
+  
+  <!-- Exemple 4: Hediff with stages-->
+  <!--<EchoColony.Util.HediffAIPromptDef>
+    <defName>Flu_AIPrompt</defName>
+    <targetHediff>Flu</targetHediff>
+    <customLabel>flu</customLabel>
+    <functionalNote>viral respiratory infection</functionalNote>
+
+    <stages>
+      - Etapa 0 (minor en el juego) -
+      <li>
+        <stageIndex>0</stageIndex>
+        <functionalNote>mild fever, sneezing, still fully functional and capable of work</functionalNote>
+        <behavioralDirective>You have mild flu symptoms, but you can carry on with your tasks normally.</behavioralDirective>
+      </li>
+
+      - Etapa 1 o superior (major / extreme en el juego) -
+      <li>
+        <stageIndex>1</stageIndex>
+        <functionalNote>high fever, vomiting and bedridden exhaustion</functionalNote>
+        <behavioralDirective>You are severely sick with high fever. You feel miserable and desperately need bed rest.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.Util.HediffAIPromptDef> -->
+</Defs>

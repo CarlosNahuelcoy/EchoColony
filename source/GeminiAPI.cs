@@ -293,8 +293,10 @@ namespace EchoColony
             switch (MyMod.Settings.modelSource)
             {
                 case ModelSource.Player2:
-                    if (isAnimal || isMech)
-                        yield return SendRequestToPlayer2WithPrompt(prompt, onResponse);
+                    if (isAnimal)
+                        yield return SendRequestToPlayer2WithPrompt(prompt, onResponse, "ANIMAL_CHAT");
+                    else if (isMech)
+                        yield return SendRequestToPlayer2WithPrompt(prompt, onResponse, "MECH_CHAT");
                     else
                         yield return SendRequestToPlayer2(pawn, prompt, onResponse, imageBase64);
                     yield break;
@@ -337,9 +339,7 @@ namespace EchoColony
             string apiKey   = MyMod.Settings.apiKey;
             string endpoint = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
 
-            string requestJson = !string.IsNullOrEmpty(imageBase64)
-                ? InjectImageIntoGeminiJson(prompt, imageBase64)
-                : CreateGeminiRequestJson(prompt);
+            string requestJson = BuildGeminiPayload(prompt, imageBase64);
 
             if (MyMod.Settings?.debugMode == true)
                 LogDebugResponse("Gemini_Vision_Request", requestJson.Length > 200
@@ -401,65 +401,137 @@ namespace EchoColony
             }
         }
 
-        private static string CreateGeminiRequestJson(string prompt)
+        //furel - Modified BuildGeminiPayload to handle the new parse structure.
+        private static string BuildGeminiPayload(string prompt, string imageBase64 = null)
         {
-            string escapedPrompt = EscapeJson(prompt);
-            return $@"{{
-  ""contents"": [
-    {{
-      ""parts"": [
-        {{
-          ""text"": ""{escapedPrompt}""
-        }}
-      ]
-    }}
-  ]
-}}";
-        }
+            var parsedMessages = ParsePromptToMessages(prompt);
 
-        private static string InjectImageIntoGeminiJson(string existingJson, string imageBase64)
-        {
-            try
+            // Ensure that at least one "user" role exists
+            if (!parsedMessages.Any(m => m["role"] == "user"))
             {
-                var parsed   = JSON.Parse(existingJson);
-                var contents = parsed["contents"]?.AsArray;
+                if (parsedMessages.Count > 0)
+                    parsedMessages[parsedMessages.Count - 1]["role"] = "user";
+                else
+                    parsedMessages.Add(new Dictionary<string, string> { { "role", "user" }, { "content", prompt } });
+            }
 
-                if (contents != null && contents.Count > 0)
+            var payload = new JSONObject();
+
+            // 1. Extract system instructions if available.
+            var systemMessages = parsedMessages.Where(m => m["role"] == "system").ToList();
+            if (systemMessages.Count > 0)
+            {
+                string combinedSystem = string.Join("\n\n", systemMessages.Select(m => m["content"]));
+                var sysInstruction = new JSONObject();
+                var sysParts = new JSONArray();
+                var sysTextPart = new JSONObject();
+
+                sysTextPart["text"] = combinedSystem;
+                sysParts.Add(sysTextPart);
+                sysInstruction["parts"] = sysParts;
+
+                payload["systemInstruction"] = sysInstruction;
+            }
+
+            // 2. Build conversation history (contents)
+            var contents = new JSONArray();
+            var chatMessages = parsedMessages.Where(m => m["role"] != "system").ToList();
+
+            for (int i = 0; i < chatMessages.Count; i++)
+            {
+                var msg = chatMessages[i];
+                var turnObj = new JSONObject();
+
+                // Gemini uses "model" instead of "assistant"
+                string role = msg["role"] == "assistant" ? "model" : "user";
+                turnObj["role"] = role;
+
+                var parts = new JSONArray();
+                var textPart = new JSONObject();
+                textPart["text"] = msg["content"];
+                parts.Add(textPart);
+
+                // Insert the "Vision" image into the user's latest message, if available
+                bool isLastUser = (role == "user") && !chatMessages.Skip(i + 1).Any(m => m["role"] == "user");
+                if (isLastUser && !string.IsNullOrEmpty(imageBase64))
                 {
-                    JSONNode lastUserNode = null;
-                    for (int i = contents.Count - 1; i >= 0; i--)
-                    {
-                        string role = contents[i]["role"]?.Value ?? "";
-                        if (role == "user" || string.IsNullOrEmpty(role))
-                        {
-                            lastUserNode = contents[i];
-                            break;
-                        }
-                    }
-
-                    if (lastUserNode != null)
-                    {
-                        var parts = lastUserNode["parts"]?.AsArray;
-                        if (parts != null)
-                        {
-                            var inlineDataNode       = new JSONObject();
-                            var innerData            = new JSONObject();
-                            innerData["mimeType"]    = "image/jpeg";
-                            innerData["data"]        = imageBase64;
-                            inlineDataNode["inlineData"] = innerData;
-                            parts.Add(inlineDataNode);
-                            Log.Message("[EchoColony] Vision: Injected inlineData into existing Gemini JSON");
-                            return parsed.ToString();
-                        }
-                    }
+                    var imagePart = new JSONObject();
+                    var inlineData = new JSONObject();
+                    inlineData["mimeType"] = "image/jpeg";
+                    inlineData["data"] = imageBase64;
+                    imagePart["inlineData"] = inlineData;
+                    parts.Add(imagePart);
                 }
+
+                turnObj["parts"] = parts;
+                contents.Add(turnObj);
             }
-            catch (Exception ex)
-            {
-                Log.Warning($"[EchoColony] Vision: Could not inject into Gemini JSON, using fallback: {ex.Message}");
-            }
-            return BuildGeminiVisionBodyFromText(existingJson, imageBase64);
+
+            payload["contents"] = contents;
+            return payload.ToString();
         }
+
+        //*furel - Evrithing integraten into BuildGeminiPayload. One unique funtion to manage vision and text.
+
+//        private static string CreateGeminiRequestJson(string prompt)
+//        {
+//            string escapedPrompt = EscapeJson(prompt);
+//            return $@"{{
+//  ""contents"": [
+//    {{
+//      ""parts"": [
+//        {{
+//          ""text"": ""{escapedPrompt}""
+//        }}
+//      ]
+//    }}
+//  ]
+//}}";
+//        }
+
+//        private static string InjectImageIntoGeminiJson(string existingJson, string imageBase64)
+//        {
+//            try
+//            {
+//                var parsed   = JSON.Parse(existingJson);
+//                var contents = parsed["contents"]?.AsArray;
+
+//                if (contents != null && contents.Count > 0)
+//                {
+//                    JSONNode lastUserNode = null;
+//                    for (int i = contents.Count - 1; i >= 0; i--)
+//                    {
+//                        string role = contents[i]["role"]?.Value ?? "";
+//                        if (role == "user" || string.IsNullOrEmpty(role))
+//                        {
+//                            lastUserNode = contents[i];
+//                            break;
+//                        }
+//                    }
+
+//                    if (lastUserNode != null)
+//                    {
+//                        var parts = lastUserNode["parts"]?.AsArray;
+//                        if (parts != null)
+//                        {
+//                            var inlineDataNode       = new JSONObject();
+//                            var innerData            = new JSONObject();
+//                            innerData["mimeType"]    = "image/jpeg";
+//                            innerData["data"]        = imageBase64;
+//                            inlineDataNode["inlineData"] = innerData;
+//                            parts.Add(inlineDataNode);
+//                            Log.Message("[EchoColony] Vision: Injected inlineData into existing Gemini JSON");
+//                            return parsed.ToString();
+//                        }
+//                    }
+//                }
+//            }
+//            catch (Exception ex)
+//            {
+//                Log.Warning($"[EchoColony] Vision: Could not inject into Gemini JSON, using fallback: {ex.Message}");
+//            }
+//            return BuildGeminiVisionBodyFromText(existingJson, imageBase64);
+//        }
 
         private static string BuildGeminiVisionBodyFromText(string textContent, string imageBase64)
         {
@@ -548,7 +620,7 @@ namespace EchoColony
                 : BuildMessagesJson(messages);
 
             if (MyMod.Settings?.debugMode == true)
-                LogPlayer2Debug("REQUEST", useVision ? "[VISION REQUEST — image payload omitted from log]" : jsonBody);
+                LogPlayer2Debug($"CHAT_{CleanNameForFileName(pawn?.LabelShort)}_","REQUEST", useVision ? "[VISION REQUEST — image payload omitted from log]" : jsonBody); //furel - added name to the txt file name
 
             int   maxRetries = 3;
             float retryDelay = 1f;
@@ -579,13 +651,13 @@ namespace EchoColony
                 if (!hasError)
                 {
                     Log.Message($"[EchoColony] Player2 Web API raw response: {responseText}");
-                    if (MyMod.Settings?.debugMode == true) LogPlayer2Debug("RESPONSE", responseText);
+                    if (MyMod.Settings?.debugMode == true) LogPlayer2Debug($"CHAT_{CleanNameForFileName(pawn?.LabelShort)}","RESPONSE", responseText); //furel - added name to the txt file name
                     string reply = ParseStandardLLMResponse(responseText);
                     reply = TrimTextAfterHashtags(reply);
                     reply = CleanResponse(reply);
                     EchoMemory.AddTurn("user", userMessage);
                     EchoMemory.AddTurn("assistant", reply);
-                    if (MyMod.Settings?.debugMode == true) LogPlayer2Debug("FINAL_REPLY", reply);
+                    if (MyMod.Settings?.debugMode == true) LogPlayer2Debug($"CHAT_{CleanNameForFileName(pawn?.LabelShort)}", "FINAL_REPLY", reply); //furel - added name to the txt file name
                     onResponse?.Invoke(reply);
                     yield break;
                 }
@@ -595,20 +667,21 @@ namespace EchoColony
                     if (attempt < maxRetries - 1)
                     {
                         if (MyMod.Settings?.debugMode == true)
-                            LogPlayer2Debug("RETRY", $"Attempt {attempt + 1}/{maxRetries} failed. Retrying in {retryDelay}s...\n{responseText}");
+                            LogPlayer2Debug($"CHAT_{CleanNameForFileName(pawn?.LabelShort)}_", "RETRY", $"Attempt {attempt + 1}/{maxRetries} failed. Retrying in {retryDelay}s...\n{responseText}");
                         yield return new WaitForSeconds(retryDelay);
                         retryDelay *= 2f;
                         continue;
                     }
                 }
 
-                if (MyMod.Settings?.debugMode == true) LogPlayer2Debug("ERROR_RESPONSE", $"Status: {request.responseCode}\n{responseText}");
+                if (MyMod.Settings?.debugMode == true) LogPlayer2Debug($"CHAT_{CleanNameForFileName(pawn?.LabelShort)}", "ERROR_RESPONSE", $"Status: {request.responseCode}\n{responseText}");
                 onResponse?.Invoke($"⚠ ERROR: Player2 connection failed after {maxRetries} attempts\n\nError: {request.error}");
                 yield break;
             }
         }
 
-        public static IEnumerator SendRequestToPlayer2WithPrompt(string fullPrompt, Action<string> onResponse)
+        //furel - Added a string entry to indicate where comes from.
+        public static IEnumerator SendRequestToPlayer2WithPrompt(string fullPrompt, Action<string> onResponse, string type = null)
         {
             if (!Player2AuthManager.IsAuthenticated)
             {
@@ -618,13 +691,17 @@ namespace EchoColony
 
             string endpoint = Player2AuthManager.WebApiBase + "/chat/completions";
 
-            var messages = new List<Dictionary<string, string>>
+            var messages = ParsePromptToMessages(fullPrompt); 
+
+            // Safety fallback if no blocks were detected
+            if (messages.Count == 0)
             {
-                new Dictionary<string, string> { { "role", "user" }, { "content", fullPrompt } }
-            };
+                messages.Add(new Dictionary<string, string> { { "role", "user" }, { "content", fullPrompt } });
+            }
+
             string jsonBody = BuildMessagesJson(messages);
 
-            if (MyMod.Settings?.debugMode == true) LogPlayer2Debug("PROMPT_REQUEST", jsonBody);
+            if (MyMod.Settings?.debugMode == true) LogPlayer2Debug($"{type}", "REQUEST", jsonBody); //furel - Modified name output to indicate where comes from.
 
             int   maxRetries = 3;
             float retryDelay = 1f;
@@ -654,11 +731,11 @@ namespace EchoColony
 
                 if (!hasError)
                 {
-                    if (MyMod.Settings?.debugMode == true) LogPlayer2Debug("PROMPT_RESPONSE", responseText);
+                    if (MyMod.Settings?.debugMode == true) LogPlayer2Debug($"{type}", "RESPONSE", responseText); //furel - Modified name output to indicate where comes from.
                     string reply = ParseStandardLLMResponse(responseText);
                     reply = TrimTextAfterHashtags(reply);
                     reply = CleanResponse(reply);
-                    if (MyMod.Settings?.debugMode == true) LogPlayer2Debug("PROMPT_FINAL", reply);
+                    if (MyMod.Settings?.debugMode == true) LogPlayer2Debug($"{type}", "FINAL", reply); //furel - Modified name output to indicate where comes from.
                     onResponse?.Invoke(reply);
                     yield break;
                 }
@@ -678,6 +755,83 @@ namespace EchoColony
             }
         }
 
+        /// <summary>
+        /// Parses a prompt as a block by splitting it using internal markers ([SYSTEM], [USER], [ASSISTANT])
+        /// and assigning each fragment to the corresponding role for Chat Completions APIs.
+        /// </summary>
+        public static List<Dictionary<string, string>> ParsePromptToMessages(string prompt)
+        {
+            var messages = new List<Dictionary<string, string>>();
+            if (string.IsNullOrWhiteSpace(prompt)) return messages;
+
+            string currentRole = "user";
+            StringBuilder currentContent = new StringBuilder();
+
+            string[] lines = prompt.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+
+            foreach (var line in lines)
+            {
+                string trimmed = line.Trim();
+
+                if (trimmed.StartsWith("[SYSTEM]"))
+                {
+                    SaveCurrentMessage(messages, currentRole, currentContent);
+                    currentContent.Clear();
+                    currentRole = "system";
+                    AppendRemainingText(currentContent, trimmed, 8); // Extract whatever is behind [SYSTEM]
+                }
+                else if (trimmed.StartsWith("[USER]"))
+                {
+                    SaveCurrentMessage(messages, currentRole, currentContent);
+                    currentContent.Clear();
+                    currentRole = "user";
+                    AppendRemainingText(currentContent, trimmed, 6); // Extract whatever is behind [USER]                 
+                }
+                else if (trimmed.StartsWith("[ASSISTANT]"))
+                {
+                    SaveCurrentMessage(messages, currentRole, currentContent);
+                    currentContent.Clear();
+                    currentRole = "assistant";
+                    AppendRemainingText(currentContent, trimmed, 11); // Extract whatever is behind [ASSISTANT]
+                }
+                else
+                {
+                    currentContent.AppendLine(line);
+                }
+            }
+
+            SaveCurrentMessage(messages, currentRole, currentContent);
+            return messages;
+        }
+
+        private static void SaveCurrentMessage(List<Dictionary<string, string>> messages, string role, StringBuilder content)
+        {
+            string text = content.ToString().Trim();
+            if (string.IsNullOrWhiteSpace(text)) return; // Prevents the insertion of empty shifts
+            // Safety net: If the previous message is from the SAME ROLE, we merge them into a single block
+            if (messages.Count > 0 && messages[messages.Count - 1]["role"] == role)
+            {
+                messages[messages.Count - 1]["content"] += "\n\n" + text;
+            }
+            else
+            {
+                messages.Add(new Dictionary<string, string>
+                {
+                    { "role", role },
+                    { "content", text }
+                });
+                    }
+                }
+
+        private static void AppendRemainingText(StringBuilder sb, string line, int tagLength)
+        {
+            string remaining = line.Substring(tagLength).Trim();
+            if (!string.IsNullOrEmpty(remaining))
+            {
+                sb.AppendLine(remaining);
+            }
+        }
+
         public static IEnumerator SendRequestToPlayer2Storyteller(string jsonPrompt, Action<string> onResponse)
         {
             if (!Player2AuthManager.IsAuthenticated)
@@ -688,7 +842,7 @@ namespace EchoColony
 
             string endpoint = Player2AuthManager.WebApiBase + "/chat/completions";
 
-            if (MyMod.Settings?.debugMode == true) LogPlayer2Debug("STORYTELLER_REQUEST", jsonPrompt);
+            if (MyMod.Settings?.debugMode == true) LogPlayer2Debug("STORYTELLER", "REQUEST", jsonPrompt);
 
             int   maxRetries = 3;
             float retryDelay = 1f;
@@ -718,11 +872,11 @@ namespace EchoColony
 
                 if (!hasError)
                 {
-                    if (MyMod.Settings?.debugMode == true) LogPlayer2Debug("STORYTELLER_RESPONSE", responseText);
+                    if (MyMod.Settings?.debugMode == true) LogPlayer2Debug("STORYTELLER", "RESPONSE", responseText);
                     string reply = ParseStandardLLMResponse(responseText);
                     reply = TrimTextAfterHashtags(reply);
                     reply = CleanResponse(reply);
-                    if (MyMod.Settings?.debugMode == true) LogPlayer2Debug("STORYTELLER_FINAL", reply);
+                    if (MyMod.Settings?.debugMode == true) LogPlayer2Debug("STORYTELLER", "FINAL", reply);
                     onResponse?.Invoke(reply);
                     yield break;
                 }
@@ -755,7 +909,21 @@ namespace EchoColony
             switch (MyMod.Settings.localModelProvider)
             {
                 case LocalModelProvider.LMStudio:
-                    jsonBody = $"{{\"model\": \"{modelName}\", \"messages\": [{{\"role\": \"user\", \"content\": \"{EscapeJson(prompt)}\"}}], \"stream\": false}}";
+                    //*furel - Updated local studio format to match LM Studio's expected JSON structure for chat completions.
+                    // LM Studio requiere mensajes estructurados por rol
+                    var messages = ParsePromptToMessages(prompt);
+
+                    // Garantizamos la presencia del rol 'user' para evitar rechazos de API
+                    if (!messages.Any(m => m["role"] == "user"))
+                    {
+                        if (messages.Count > 0)
+                            messages[messages.Count - 1]["role"] = "user";
+                        else
+                            messages.Add(new Dictionary<string, string> { { "role", "user" }, { "content", prompt } });
+                    }
+
+                    string messagesJson = BuildMessagesJson(messages);
+                    jsonBody = $"{{\"model\": \"{modelName}\", \"messages\": {messagesJson}, \"stream\": false}}";
                     break;
                 case LocalModelProvider.KoboldAI:
                     jsonBody = $"{{\"model\": \"{modelName}\", \"prompt\": \"{EscapeJson(prompt)}\", \"max_length\": 7000, \"stream\": false}}";
@@ -807,11 +975,30 @@ namespace EchoColony
             string apiKey    = MyMod.Settings.openRouterApiKey;
             bool   useVision = !string.IsNullOrEmpty(imageBase64) && MyMod.Settings?.enableVision == true;
 
-            string jsonBody = useVision
-                ? BuildOpenRouterVisionJson(prompt, imageBase64)
-                : $"{{\"model\": \"{EscapeJson(MyMod.Settings.openRouterModel)}\", \"messages\": [{{\"role\": \"user\", \"content\": \"{EscapeJson(prompt)}\"}}], \"stream\": false}}";
+            string jsonBody;
 
-            if (useVision) Log.Message("[EchoColony] Vision: Sending screenshot to OpenRouter");
+            if (useVision)
+            {
+                Log.Message("[EchoColony] Vision: Sending screenshot to OpenRouter");
+                jsonBody = BuildOpenRouterVisionJson(prompt, imageBase64);
+            }
+            else
+            {
+                // Parseamos el prompt para extraer mensajes estructurados por rol
+                var messages = ParsePromptToMessages(prompt);
+
+                // Garantizamos la presencia del rol 'user' para evitar errores 400 Bad Request
+                if (!messages.Any(m => m["role"] == "user"))
+                {
+                    if (messages.Count > 0)
+                        messages[messages.Count - 1]["role"] = "user";
+                    else
+                        messages.Add(new Dictionary<string, string> { { "role", "user" }, { "content", prompt } });
+                }
+
+                string messagesJson = BuildMessagesJson(messages);
+                jsonBody = $"{{\"model\": \"{EscapeJson(MyMod.Settings.openRouterModel)}\", \"messages\": {messagesJson}, \"stream\": false}}";
+            }
 
             var request = new UnityWebRequest(endpoint, "POST")
             {
@@ -898,11 +1085,28 @@ namespace EchoColony
                 payload["model"] = model;
             payload["stream"] = false;
 
-            var messages    = new JSONArray();
-            var userMsg     = new JSONObject();
-            userMsg["role"]    = "user";
-            userMsg["content"] = prompt;
-            messages.Add(userMsg);
+            // Extraemos y filtramos los mensajes por rol
+            var parsedMessages = ParsePromptToMessages(prompt);
+
+            // Garantizamos la presencia de al menos un rol 'user' para evitar rechazos de API
+            if (!parsedMessages.Any(m => m["role"] == "user"))
+            {
+                if (parsedMessages.Count > 0)
+                    parsedMessages[parsedMessages.Count - 1]["role"] = "user";
+                else
+                    parsedMessages.Add(new Dictionary<string, string> { { "role", "user" }, { "content", prompt } });
+            }
+
+            // Convertimos la lista parseada al arreglo de SimpleJSON
+            var messages = new JSONArray();
+            foreach (var msgDict in parsedMessages)
+            {
+                var msgObj = new JSONObject();
+                msgObj["role"] = msgDict["role"];
+                msgObj["content"] = msgDict["content"];
+                messages.Add(msgObj);
+            }
+
             payload["messages"] = messages;
 
             string jsonBody = payload.ToString();
@@ -1006,16 +1210,28 @@ namespace EchoColony
             public static void Clear() { recentTurns.Clear(); }
         }
 
-        public static void RebuildMemoryFromChat(Pawn pawn)
+        //furel - Changed method to build Memory; now using [USER], [ASSISTANCE] as markers to parse the chat log and rebuild memory.
+        public static void RebuildMemoryFromChat(Pawn pawn, int skipLastLines = 2)
         {
             EchoMemory.Clear();
-            var lines = ChatGameComponent.Instance.GetChat(pawn);
-            foreach (var line in lines)
+            var recentLines = ChatGameComponent.Instance.GetRecentLines(pawn, skipLastLines);
+
+            foreach (var line in recentLines)
             {
                 if (line.StartsWith("[USER]"))
                     EchoMemory.AddTurn("user", line.Substring(6).Trim());
-                else if (line.StartsWith(pawn.LabelShort + ":"))
-                    EchoMemory.AddTurn("assistant", line.Substring(pawn.LabelShort.Length + 1).Trim());
+                else if (line.StartsWith("[ASSISTANT]"))
+                {
+                    string content = line.Substring(11).Trim(); // Remove '[ASSISTANT]' (11 chars)
+
+                    // If the line contains "Name: message," we remove the prefix from the name, if it is present
+                    if (pawn != null && !string.IsNullOrEmpty(pawn.LabelShort) && content.StartsWith(pawn.LabelShort + ":"))
+                    {
+                        content = content.Substring(pawn.LabelShort.Length + 1).Trim();
+                    }
+
+                    EchoMemory.AddTurn("assistant", content);
+                }
             }
         }
 
@@ -1290,7 +1506,7 @@ namespace EchoColony
             }
         }
 
-        private static void LogPlayer2Debug(string type, string content)
+        private static void LogPlayer2Debug(string type, string subType, string content)
         {
             if (MyMod.Settings?.debugMode != true) return;
             try
@@ -1298,12 +1514,13 @@ namespace EchoColony
                 string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
                 string folderPath  = Path.Combine(desktopPath, "EchoColony_Debug");
                 if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
-                string latestPath = Path.Combine(folderPath, $"Player2_{type}_LATEST.txt");
+                string latestPath = Path.Combine(folderPath, $"Player2_{subType}_LATEST.txt");
                 string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-                string historyPath = Path.Combine(folderPath, $"Player2_{type}_{timestamp}.txt");
+                string historyPath = Path.Combine(folderPath, $"Player2_{timestamp}_{type}_{subType}.txt");
                 string debugContent = $"=== PLAYER2 {type} DEBUG LOG ===\n" +
                                       $"Last Updated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n" +
                                       $"Type: {type}\n" +
+                                      $"SubType: {subType}\n" +
                                       "".PadRight(50, '=') + "\n\n" + content;
                 File.WriteAllText(latestPath, debugContent);
                 File.WriteAllText(historyPath, debugContent);
@@ -1312,6 +1529,23 @@ namespace EchoColony
             {
                 Log.Error($"[EchoColony] Failed to save Player2 debug log: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Cleans a given name to make it safe for use as a filename by replacing spaces with underscores and removing invalid characters.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public static string CleanNameForFileName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return "Unknown";
+
+            string safe = name.Replace(" ", "_");
+            foreach (char c in System.IO.Path.GetInvalidFileNameChars())
+            {
+                safe = safe.Replace(c.ToString(), "");
+            }
+            return safe;
         }
     }
 }
