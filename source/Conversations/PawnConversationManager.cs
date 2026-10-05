@@ -74,12 +74,21 @@ namespace EchoColony.Conversations
             int linesPerPawn = GetLinesPerPawn();
 
             // Build prompt
-            string prompt = PawnConversationPromptBuilder.Build(initiator, recipient, interactionDef, linesPerPawn);
-            if (string.IsNullOrWhiteSpace(prompt)) { _inProgress.Remove(pairKey); yield break; }
+            var promptResult = PawnConversationPromptBuilder.Build(initiator, recipient, interactionDef, linesPerPawn);
+            if (!promptResult.HasValue) { _inProgress.Remove(pairKey); yield break; }
+
+            ConversationPromptResult promptData = promptResult.Value;
+            string fullPrompt = $"{promptData.SystemPrompt}\n\n{promptData.UserPrompt}";
 
             // Call AI — dispatch to the active backend (mirrors ColonistChatWindow pattern)
             string aiResponse = null;
-            yield return SendConversationRequest(prompt, r => aiResponse = r);
+
+            // Formatear participantes limpiando caracteres no válidos para archivos
+            string safeInitiator = GeminiAPI.CleanNameForFileName(initiator?.LabelShort);
+            string safeRecipient = GeminiAPI.CleanNameForFileName(recipient?.LabelShort);
+            string debugParticipants = $"{safeInitiator}_{safeRecipient}";
+
+            yield return SendConversationRequest(fullPrompt, r => aiResponse = r, debugParticipants);
 
             if (string.IsNullOrWhiteSpace(aiResponse) || aiResponse.StartsWith("⚠") || aiResponse.StartsWith("❌"))
             {
@@ -188,7 +197,7 @@ namespace EchoColony.Conversations
         }
 
         // ── Memory write-back ─────────────────────────────────────────────────────
-
+        //*furel - new memory, Changed the lines to save, now saves the beginning of the conversation, instead of the beginning and the end, giving a better idea of what the conversation was about, and not just the end of it.
         /// <summary>
         /// Saves a one-line summary of this conversation into each pawn's memory,
         /// so future player chats and storyteller entries know it happened.
@@ -204,18 +213,27 @@ namespace EchoColony.Conversations
                 var manager = ColonistMemoryManager.GetOrCreate();
                 if (manager == null) return;
 
-                string firstLine = lines.First().text;
-                string lastLine  = lines.Count > 1 ? lines.Last().text : null;
+                // Unir todo el flujo del diálogo
+                string fullDialogue = string.Join(" ", lines.Select(l => l.text));
 
-                string note = $"[Spoke with {recipient.LabelShort}] \"{firstLine}\"" +
-                              (lastLine != null ? $" ... \"{lastLine}\"" : "");
+                string cleanText;
 
-                string noteForRecipient = $"[Spoke with {initiator.LabelShort}] \"{firstLine}\"" +
-                                          (lastLine != null ? $" ... \"{lastLine}\"" : "");
+                // Si son 2 líneas o menos, se guarda entero sin riesgo de corte
+                if (lines.Count <= 2)
+                {
+                    cleanText = fullDialogue;
+                }
+                else
+                {
+                    // Si son 4+ líneas, limitamos a 220 caracteres para registrar
+                    // el inicio y la deriva temática sin sobrecargar la RAM
+                    cleanText = fullDialogue.Length > 220
+                        ? fullDialogue.Substring(0, 217) + "..."
+                        : fullDialogue;
+                }
 
-                int today = GenDate.DaysPassed;
-                manager.GetTrackerFor(initiator)?.SaveMemoryForDay(today, note);
-                manager.GetTrackerFor(recipient)?.SaveMemoryForDay(today, noteForRecipient);
+                manager.GetTrackerFor(initiator)?.RecordSmallTalkInteraction(cleanText, recipient.LabelShort);
+                manager.GetTrackerFor(recipient)?.RecordSmallTalkInteraction(cleanText, initiator.LabelShort);
             }
             catch (Exception ex)
             {
@@ -231,38 +249,38 @@ namespace EchoColony.Conversations
         /// in the prompt, no pawn-specific Player2 session needed.
         /// Mirrors the dispatch logic in ColonistChatWindow.SendMessage().
         /// </summary>
-        private static IEnumerator SendConversationRequest(string prompt, Action<string> onResponse)
-{
-    if (MyMod.Settings == null)
-    {
-        onResponse?.Invoke("⚠ ERROR: Settings not loaded");
-        yield break;
-    }
+        private static IEnumerator SendConversationRequest(string prompt, Action<string> onResponse, string debugParticipants = "")
+        {
+            if (MyMod.Settings == null)
+            {
+                onResponse?.Invoke("⚠ ERROR: Settings not loaded");
+                yield break;
+            }
 
-    switch (MyMod.Settings.modelSource)
-    {
-        case ModelSource.Player2:
-            yield return GeminiAPI.SendRequestToPlayer2WithPrompt(prompt, onResponse);
-            break;
+            switch (MyMod.Settings.modelSource)
+            {
+                case ModelSource.Player2:
+                    yield return GeminiAPI.SendRequestToPlayer2WithPrompt(prompt, onResponse, $"CONVERSATION_{debugParticipants}");
+                    break;
 
-        case ModelSource.Local:
-            yield return GeminiAPI.SendRequestToLocalModel(prompt, onResponse);
-            break;
+                case ModelSource.Local:
+                    yield return GeminiAPI.SendRequestToLocalModel(prompt, onResponse);
+                    break;
 
-        case ModelSource.OpenRouter:
-            yield return GeminiAPI.SendRequestToOpenRouter(prompt, onResponse);
-            break;
+                case ModelSource.OpenRouter:
+                    yield return GeminiAPI.SendRequestToOpenRouter(prompt, onResponse);
+                    break;
 
-        case ModelSource.Custom:
-            yield return GeminiAPI.SendRequestToCustomProvider(prompt, onResponse);
-            break;
+                case ModelSource.Custom:
+                    yield return GeminiAPI.SendRequestToCustomProvider(prompt, onResponse);
+                    break;
 
-        case ModelSource.Gemini:
-        default:
-            yield return GeminiAPI.SendRequestToGemini(prompt, onResponse);
-            break;
-    }
-}
+                case ModelSource.Gemini:
+                default:
+                    yield return GeminiAPI.SendRequestToGemini(prompt, onResponse);
+                    break;
+            }
+        }
         // ── Settings helpers ──────────────────────────────────────────────────────
 
         private static bool IsConversationEnabled()
@@ -280,5 +298,6 @@ namespace EchoColony.Conversations
         {
             return MyMod.Settings?.conversationBubbleDelay ?? 1.5f;
         }
+
     }
 }

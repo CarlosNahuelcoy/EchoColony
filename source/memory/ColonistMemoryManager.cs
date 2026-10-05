@@ -1,7 +1,12 @@
-using System.Collections.Generic;
-using Verse;
 using RimWorld;
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
+using Unity.Burst.Intrinsics;
+using UnityEngine.PlayerLoop;
+using Verse;
+using Verse.Noise;
 
 namespace EchoColony
 {
@@ -9,6 +14,8 @@ namespace EchoColony
     {
         private Dictionary<string, ColonistMemoryTracker> memoryPerPawn = new Dictionary<string, ColonistMemoryTracker>();
         private DailyGroupMemoryTracker groupMemoryTracker = new DailyGroupMemoryTracker();
+
+        private int lastRecordedDay = -1;
 
         // Flag to control if the system is enabled
         public static bool IsMemorySystemEnabled
@@ -95,6 +102,72 @@ namespace EchoColony
             return groupMemoryTracker;
         }
 
+        //*furel - New Memory system*
+        /// <summary>
+        /// Day tracker. Every time the day changes sends all the memories created for each pawn and stores the summary.
+        /// </summary>
+        public override void GameComponentTick()
+        {
+            base.GameComponentTick();
+
+            if (!IsMemorySystemEnabled) return;
+
+            // It is evaluated every 1,000 ticks (~16 seconds of real time at x1 speed).
+            if (Find.TickManager.TicksGame % 1000 == 0)
+            {
+                int currentDay = GenDate.DaysPassed;
+
+                if (lastRecordedDay == -1)
+                {
+                    lastRecordedDay = currentDay;
+                    return;
+                }
+
+                // Change of day detected
+                if (currentDay > lastRecordedDay)
+                {
+                    Log.Message($"[EchoColony] Day change detected: Day {lastRecordedDay} ended. Advancing to Day {currentDay}. Processing individual daily logs.");
+                    int dayToProcess = lastRecordedDay;
+                    lastRecordedDay = currentDay;
+
+                    foreach (var kvp in memoryPerPawn)
+                    {
+                        Pawn pawn = kvp.Value?.Pawn;
+
+                        if (!IsPawnActiveInColony(pawn))
+                        {
+                            continue;
+                        }
+
+                        // Starts an independent coroutine per colonist.
+                        if (MyStoryModComponent.Instance != null)
+                        {
+                            MyStoryModComponent.Instance.StartCoroutine(ProcessPawnEndOfDaySequence(pawn, kvp.Value, dayToProcess));
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Individual sequence per colonist: waits for its turn queue and then processes its end-of-day.
+        /// </summary>
+        private IEnumerator ProcessPawnEndOfDaySequence(Pawn pawn, ColonistMemoryTracker tracker, int dayToProcess)
+        {
+            // Waits for the API to respond and save the pending turns for the colonist (threshold = 1)
+            yield return ColonistMemoryHelper.CheckAndGenerateMemoryRoutine(pawn, 1);
+
+            // With the turn memory for the day, consolidates the day's summary
+            try
+            {
+                tracker.ProcessEndOfDay(dayToProcess);
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"[EchoColony] Error al procesar fin de día para {pawn?.LabelShort}: {ex.Message}");
+            }
+        }
+
         // FIXED: Proper ExposeData implementation
         public override void ExposeData()
         {
@@ -102,6 +175,8 @@ namespace EchoColony
             
             Scribe_Collections.Look(ref memoryPerPawn, "memoryPerPawn", LookMode.Value, LookMode.Deep);
             Scribe_Deep.Look(ref groupMemoryTracker, "groupMemoryTracker");
+
+            Scribe_Values.Look(ref lastRecordedDay, "lastRecordedDay", -1);
 
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
@@ -141,6 +216,11 @@ namespace EchoColony
                 else
                 {
                     Log.Error("[EchoColony] MyStoryModComponent.Instance is NULL during load");
+                }
+
+                if (lastRecordedDay == -1)
+                {
+                    lastRecordedDay = GenDate.DaysPassed;
                 }
             }
             
@@ -237,7 +317,36 @@ namespace EchoColony
             Messages.Message($"EchoColony: Memories cleaned ({colonistCount} colonists, {groupCount} groups)", 
                            MessageTypeDefOf.TaskCompletion);
         }
+        /// <summary>
+        /// *furel - pawn filtrer* Checks if the pawn is part of your colony.
+        /// </summary>
+        
+        private bool IsPawnActiveInColony(Pawn pawn)
+        {
+            // 1. Si es null, está muerto o completamente destruido por el motor, no está activo.
+            if (pawn == null || pawn.Dead || pawn.Destroyed || pawn.Discarded)
+                return false;
 
+            // 2. Comprobar si pertenece al ecosistema de la colonia (Colono, Esclavo o Prisionero)
+            // RimWorld gestiona IsQuestLodger para refugiados temporales de misiones.
+            bool holdsColonyStatus = pawn.IsColonist ||
+                                     pawn.IsSlaveOfColony ||
+                                     pawn.IsPrisonerOfColony ||
+                                     pawn.IsQuestLodger();
+
+            if (!holdsColonyStatus)
+                return false;
+
+            // 3. Comprobar si está físicamente accesible.
+            // Debe estar "Spawned" (en algún mapa activo) O viajando en una caravana del jugador.
+            bool isPhysicallyPresent = pawn.Spawned || RimWorld.Planet.CaravanUtility.IsCaravanMember(pawn);
+
+            return isPhysicallyPresent;
+        }
+
+        /// <summary>
+        /// Cleans memoryies of dead/deleted pawns.
+        /// </summary>
         public void CleanupOrphanedMemories()
         {
             // Obtenemos todos los IDs de peones que el juego aún reconoce (vivos o muertos en el registro)

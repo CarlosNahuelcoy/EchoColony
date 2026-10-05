@@ -16,6 +16,11 @@
   <EchoColony.GlobalPrompt>Global prompt (applies to all colonists):</EchoColony.GlobalPrompt>
   <EchoColony.MaxResponseLength>Character limit per response: {0}</EchoColony.MaxResponseLength>
   <EchoColony.SaveButton>Save</EchoColony.SaveButton>
+  
+  <EchoColony.ChatSessionTimeoutUnlimited>Unlimited</EchoColony.ChatSessionTimeoutUnlimited>
+  <EchoColony.ChatSessionTimeoutHours>Chat retention</EchoColony.ChatSessionTimeoutHours>
+  <EchoColony.ChatSessionTimeoutHoursTooltip>Time in game hours during which the context of the current conversation will be maintained. After this time, the chat will not be included in the prompt, but the memories will. Set to 0 for unlimited retention.</EchoColony.ChatSessionTimeoutHoursTooltip>
+  
     <!-- ======== Gizmos ========= -->
   <EchoColony.ChatGizmoLabel>Talk</EchoColony.ChatGizmoLabel>
   <EchoColony.ChatGizmoDesc>Start a conversation with this colonist.</EchoColony.ChatGizmoDesc>

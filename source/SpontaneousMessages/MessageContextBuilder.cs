@@ -18,12 +18,43 @@ namespace EchoColony.SpontaneousMessages
         {
             var sb = new StringBuilder();
 
+            //furel - Check if the session has expired for the colonist. If so, reset the session to don't include chat history to the prompt.
+            bool sessionExpired = ChatGameComponent.Instance.ShouldResetSession(request.colonist);
+            var info = ChatGameComponent.Instance.GetInteractionInfo(request.colonist);
+
+            if (sessionExpired)
+            {
+                ChatGameComponent.Instance.UpdateStartTurn(request.colonist, info.CurrentTurn);
+                ChatGameComponent.Instance.UpdateInteractionTick(request.colonist);
+            }
+
+            string groupContext = !sessionExpired ? GroupChatGameComponent.Instance.BuildGroupChatContextString(request.colonist) : "";
+
+            if (!string.IsNullOrEmpty(groupContext))
+            {
+                ChatGameComponent.Instance.ClearGroupHistory(request.colonist);
+            }
+
             // 1. Base colonist context — includes verified tales via TalesCache
             string baseContext = ColonistPromptContextBuilder.Build(request.colonist, "");
             sb.AppendLine(baseContext);
 
+            //furel - User opening message is now included in the base context.
+            // 2. ABRIR EXPLÍCITAMENTE EL NUEVO TURNO DE USUARIO
+            // Esto evita que las instrucciones se peguen al último [ASSISTANT] del historial.
+            sb.AppendLine("[USER]");
             sb.AppendLine();
-            sb.AppendLine("═══════════════════════════════════════════════════");
+
+            // INYECCIÓN DEL CHAT GRUPAL: Se coloca aquí para dar contexto previo a la iniciativa del colono
+            if (!string.IsNullOrEmpty(groupContext))
+            {
+                sb.AppendLine(groupContext);
+                sb.AppendLine();
+            }
+
+            // 3. Inyectar la entrada sintética en 2ª persona que describe la iniciativa del colono
+            string eventLogText = SpontaneousMessageGenerator.TextEventRegistration(request);
+            sb.AppendLine(eventLogText);
             sb.AppendLine();
 
             // 2. Pending response context — inject awareness if a previous message went unanswered
@@ -47,14 +78,15 @@ namespace EchoColony.SpontaneousMessages
                 sb.AppendLine();
             }
 
-            // 4. Who initiates
-            sb.AppendLine("CRITICAL INSTRUCTION:");
-            sb.AppendLine("YOU are initiating this conversation.");
-            sb.AppendLine("No one has said anything yet — YOU are starting this.");
-            sb.AppendLine();
-
-            // 5. Trigger-specific context
+            // 5. Contexto específico del evento/desencadenante
             sb.AppendLine(BuildTriggerContext(request));
+
+            //furel - Nullify the "who initiates" section for now, since the user message is now included in the base context.
+            // 4. Who initiates
+            //sb.AppendLine("CRITICAL INSTRUCTION:");
+            //sb.AppendLine("YOU are initiating this conversation.");
+            //sb.AppendLine("No one has said anything yet — YOU are starting this.");
+            //sb.AppendLine();
 
             // 6. Format requirements
             sb.AppendLine();
@@ -67,9 +99,7 @@ namespace EchoColony.SpontaneousMessages
             sb.AppendLine();
             sb.AppendLine("Example of good opening:");
             sb.AppendLine("\"Hey, I wanted to talk to you about something that's been on my mind...\"");
-            sb.AppendLine();
-            sb.AppendLine("Example of bad opening:");
-            sb.AppendLine("\"*walks over nervously* Um, hello there commander...\"");
+
 
             return sb.ToString();
         }
@@ -81,64 +111,36 @@ namespace EchoColony.SpontaneousMessages
             switch (request.triggerType)
             {
                 case TriggerType.Incident:
-                    sb.AppendLine("SITUATION:");
-                    sb.AppendLine($"An incident just occurred: {request.contextDescription}");
-                    sb.AppendLine();
-                    sb.AppendLine("YOUR TASK:");
-                    sb.AppendLine("Reach out about this situation.");
+                    sb.AppendLine("GUIDANCE FOR THIS INCIDENT:");
                     sb.AppendLine(GetIncidentSpecificGuidance(request.incidentTrigger));
                     sb.AppendLine();
                     sb.AppendLine("If your Verified Personal History contains a related past event,");
-                    sb.AppendLine("you MAY reference it briefly — e.g. 'Last time something like this");
-                    sb.AppendLine("happened, we barely made it.' Only do this if it fits naturally.");
+                    sb.AppendLine("you MAY reference it briefly — e.g. 'Last time something like this happened...'");
                     break;
 
                 case TriggerType.Random:
-                    sb.AppendLine("SITUATION:");
-                    sb.AppendLine("You want to start a casual conversation.");
-                    sb.AppendLine("There's no specific emergency — just something on your mind.");
-                    sb.AppendLine();
                     sb.AppendLine("YOUR TASK:");
                     sb.AppendLine("Start a natural, casual conversation. Choose ONE of these approaches:");
                     sb.AppendLine();
                     sb.AppendLine("APPROACH A — Reference a real past event (PREFERRED when history exists):");
                     sb.AppendLine("  Look at your Verified Personal History above.");
                     sb.AppendLine("  Pick ONE event that still feels meaningful and bring it up naturally.");
-                    sb.AppendLine("  Examples:");
-                    sb.AppendLine("  'Hey, I keep thinking about that hunt... [brief reference to actual event]'");
-                    sb.AppendLine("  'You know, after what happened with [real event], I've been wondering...'");
-                    sb.AppendLine("  'I never really told you how I felt about [real past situation].'");
                     sb.AppendLine("  RULE: ONLY reference events that appear in your Verified Personal History.");
-                    sb.AppendLine("  NEVER invent past events — if the history is empty, use Approach B.");
+                    sb.AppendLine("  NEVER invent past events — if history is empty, use Approach B.");
                     sb.AppendLine();
-                    sb.AppendLine("APPROACH B — Present-focused casual conversation (use when no relevant history):");
+                    sb.AppendLine("APPROACH B — Present-focused casual conversation:");
                     sb.AppendLine("  - How you're feeling about colony life right now");
-                    sb.AppendLine("  - Something you noticed or thought about today");
-                    sb.AppendLine("  - Your current work or the weather");
-                    sb.AppendLine("  - A question for someone in the colony");
-                    sb.AppendLine();
-                    sb.AppendLine("Keep it light and natural — like texting a friend.");
+                    sb.AppendLine("  - Something you noticed today, your current work, or the weather");
                     break;
 
                 case TriggerType.CriticalNeed:
-                    sb.AppendLine("URGENT SITUATION:");
-                    sb.AppendLine($"You urgently need to communicate this: {request.contextDescription}");
-                    sb.AppendLine();
-                    sb.AppendLine("YOUR TASK:");
-                    sb.AppendLine("Inform them directly but don't be overly dramatic.");
-                    sb.AppendLine("Be clear and to the point.");
+                    sb.AppendLine("GUIDANCE FOR THIS NEED:");
+                    sb.AppendLine("Inform them directly about your condition. Be clear, urgent, but avoid theatrical drama.");
                     break;
 
                 case TriggerType.ColonySituation:
-                    sb.AppendLine("COLONY CONCERN:");
-                    sb.AppendLine($"You've noticed: {request.contextDescription}");
-                    sb.AppendLine();
-                    sb.AppendLine("YOUR TASK:");
-                    sb.AppendLine("Alert your colony about this situation.");
-                    sb.AppendLine("Express your concern naturally.");
-                    sb.AppendLine();
-                    sb.AppendLine("If your Verified Personal History contains something relevant,");
-                    sb.AppendLine("you may reference it to add weight — but only if it truly fits.");
+                    sb.AppendLine("GUIDANCE FOR THIS CONCERN:");
+                    sb.AppendLine("Alert the player about this colony situation. Express your concern naturally.");
                     break;
             }
 

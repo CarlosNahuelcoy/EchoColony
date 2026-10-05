@@ -594,7 +594,7 @@ namespace EchoColony.Factions
             switch (MyMod.Settings?.modelSource ?? ModelSource.Gemini)
             {
                 case ModelSource.Player2:
-                    yield return GeminiAPI.SendRequestToPlayer2WithPrompt(prompt, callback);
+                    yield return GeminiAPI.SendRequestToPlayer2WithPrompt(prompt, callback, "FACTION_REQUEST");
                     break;
                 case ModelSource.OpenRouter:
                     yield return GeminiAPI.SendRequestToOpenRouter(prompt, callback);

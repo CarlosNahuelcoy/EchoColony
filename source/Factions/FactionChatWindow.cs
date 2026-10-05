@@ -26,6 +26,7 @@ namespace EchoColony.Factions
         private readonly Pawn    operatorPawn;
         private readonly Faction faction;
         private readonly bool    isPlayerMode;
+        private readonly int sessionStartIndex;
 
         private List<string> chatLog => FactionChatGameComponent.Instance.GetChat(faction, isPlayerMode);
         private List<string> cachedChatLog = null;
@@ -56,6 +57,9 @@ namespace EchoColony.Factions
             this.operatorPawn  = operatorPawn;
             this.faction       = faction;
             this.isPlayerMode  = isPlayerMode;
+
+            var log = FactionChatGameComponent.Instance?.GetChat(faction, isPlayerMode);
+            this.sessionStartIndex = log?.Count ?? 0;
 
             this.closeOnClickedOutside  = true;
             this.doCloseX               = true;
@@ -310,7 +314,7 @@ namespace EchoColony.Factions
         {
             string display = GetDisplayText(msg);
 
-            if (msg.StartsWith("[SYSTEM]"))
+            if (msg.StartsWith("[EVENT]"))
             {
                 GUI.color = ColorSystemMsg;
                 Widgets.Label(rect, $"— {display} —");
@@ -350,9 +354,9 @@ namespace EchoColony.Factions
 
         private string GetDisplayText(string msg)
         {
-            if (msg.StartsWith("[USER] ")) return msg.Substring(7);
-            if (msg.StartsWith("[SYSTEM]")) return msg.Substring(8).Trim();
-            if (msg.StartsWith("You:: ")) return msg.Substring(6);
+            if (msg.StartsWith("[USER]")) return msg.Substring(6);
+            if (msg.StartsWith("[EVENT]")) return msg.Substring(7).Trim();
+            if (msg.StartsWith("[ASSISTANT]")) return msg.Substring(11);
             return msg;
         }
 
@@ -444,7 +448,7 @@ namespace EchoColony.Factions
             forceScrollToBottom = true;
 
             // Build prompt
-            string prompt = FactionPromptContextBuilder.Build(operatorPawn, faction, userMsg, isPlayerMode);
+            string prompt = FactionPromptContextBuilder.Build(operatorPawn, faction, userMsg, sessionStartIndex, isPlayerMode);
 
             // Dispatch to AI
             IEnumerator coroutine;
@@ -465,7 +469,7 @@ namespace EchoColony.Factions
                     break;
 
                 case ModelSource.Player2:
-                    coroutine = GeminiAPI.SendRequestToPlayer2WithPrompt(prompt, OnResponse);
+                    coroutine = GeminiAPI.SendRequestToPlayer2WithPrompt(prompt, OnResponse, "FACTION_CHAT");
                     break;
 
                 case ModelSource.OpenRouter:
@@ -515,17 +519,28 @@ namespace EchoColony.Factions
                 clean = clean.Substring(leaderName.Length + 2).Trim();
 
             FactionChatGameComponent.Instance.AddLine(faction, isPlayerMode,
-                $"{leaderName}: {clean}");
+                $"[ASSISTANT]{leaderName}: {clean}");
 
             cachedChatLog       = null;
             waitingForResponse  = false;
             forceScrollToBottom = true;
 
-            // ── Detect and execute real requests ──────────────────────────────────
-            // Reuse the log already fetched at the top of OnResponse
-            string lastPlayerMsg = log
-                .LastOrDefault(l => l.StartsWith("[USER]"))
-                ?.Substring(7) ?? "";
+            string rawPlayerLine = log.LastOrDefault(l => l.StartsWith("[USER]")) ?? "";
+            string lastPlayerMsg = GetDisplayText(rawPlayerLine);
+
+            // 1. Eliminar el prefijo del emisor ("You: " o "You (Nombre): ")
+            int colonIdx = lastPlayerMsg.IndexOf(": ");
+            if (colonIdx >= 0 && colonIdx < 30)
+            {
+                lastPlayerMsg = lastPlayerMsg.Substring(colonIdx + 2);
+            }
+
+            // 2. Depurar cualquier etiqueta de rol residual ([USER], [SYSTEM], [ASSISTANT])
+            lastPlayerMsg = System.Text.RegularExpressions.Regex.Replace(
+                lastPlayerMsg,
+                @"\[(USER|SYSTEM|ASSISTANT)\]",
+                "",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
 
             // Use AI to classify the request — works in any language
             MyStoryModComponent.Instance.StartCoroutine(
@@ -565,7 +580,7 @@ namespace EchoColony.Factions
                     if (!string.IsNullOrWhiteSpace(outcomeMsg))
                     {
                         FactionChatGameComponent.Instance.AddLine(
-                            faction, isPlayerMode, $"[SYSTEM]{outcomeMsg}");
+                            faction, isPlayerMode, $"[EVENT]{outcomeMsg}");
                         cachedChatLog       = null;
                         forceScrollToBottom = true;
                     }
@@ -591,7 +606,7 @@ namespace EchoColony.Factions
             // Ask AI to evaluate the conversation tone
             // We send a short meta-prompt to get a sentiment score
             string transcript = string.Join("\n", log
-                .Where(l => !l.StartsWith("[SYSTEM]"))
+                .Where(l => !l.StartsWith("[EVENT]"))
                 .Select(l => GetDisplayText(l))
                 .TakeLast(12));
 
@@ -625,7 +640,7 @@ namespace EchoColony.Factions
             switch (source)
             {
                 case ModelSource.Player2:
-                    eval = GeminiAPI.SendRequestToPlayer2WithPrompt(evalPrompt, r => { result = r; done = true; });
+                    eval = GeminiAPI.SendRequestToPlayer2WithPrompt(evalPrompt, r => { result = r; done = true; }, "FACTION_EVALUATION");
                     break;
                 case ModelSource.OpenRouter:
                     eval = GeminiAPI.SendRequestToOpenRouter(evalPrompt, r => { result = r; done = true; });
@@ -659,7 +674,7 @@ namespace EchoColony.Factions
             {
                 FactionActions.ScheduleFutureRaid(faction, operatorPawn);
                 FactionChatGameComponent.Instance.AddLine(faction, isPlayerMode,
-                    "[SYSTEM] The transmission cuts off abruptly.");
+                    "[EVENT] The transmission cuts off abruptly.");
                 cachedChatLog = null;
             }
             else

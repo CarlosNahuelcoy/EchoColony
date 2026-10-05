@@ -93,6 +93,14 @@ namespace EchoColony.Factions
                 chatLogs[k].Clear();
         }
 
+        //furel - Chat session
+        public List<string> GetCurrentSessionChat(Faction faction, bool isPlayerMode, int sessionStartIndex)
+        {
+            var fullLog = GetChat(faction, isPlayerMode);
+            if (sessionStartIndex >= fullLog.Count) return new List<string>();
+            return fullLog.Skip(sessionStartIndex).ToList();
+        }
+
         // ═══════════════════════════════════════════════════════════════
         // CONVERSATION METADATA
         // ═══════════════════════════════════════════════════════════════
