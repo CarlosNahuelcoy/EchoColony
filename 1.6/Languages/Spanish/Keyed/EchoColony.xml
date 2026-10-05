@@ -25,6 +25,10 @@
   <EchoColony.ChatGizmoChatSDes>Tener una conversación con este esclavo.</EchoColony.ChatGizmoChatSDes>
   <EchoColony.GroupChat>Conversación grupal</EchoColony.GroupChat>
   <EchoColony.GroupChatDesc>Iniciar una conversación grupal con los colonos cercanos.</EchoColony.GroupChatDesc>
+  
+  <EchoColony.ChatSessionTimeoutUnlimited>Ilimitado</EchoColony.ChatSessionTimeoutUnlimited>
+  <EchoColony.ChatSessionTimeoutHours>Retención del chat</EchoColony.ChatSessionTimeoutHours>
+  <EchoColony.ChatSessionTimeoutHoursTooltip>Tiempo en horas de juego durante el cual se mantendrá el contexto de la conversación actual. Transcurrido este tiempo, el chat no se incluirá en el prompt, pero las memorias sí. Ponlo en 0 para retención ilimitada.</EchoColony.ChatSessionTimeoutHoursTooltip>
 
   <EchoColony.SendButton>Enviar</EchoColony.SendButton>
   <EchoColony.GeminiTooltip>
@@ -44,7 +48,6 @@
   <EchoColony.LastExchangeDeleted>🗑 Último intercambio eliminado.</EchoColony.LastExchangeDeleted>
   <EchoColony.EditButton>Editar</EchoColony.EditButton>
   <EchoColony.RegenerateButton>Regenerar</EchoColony.RegenerateButton>
-  <EchoColony.SaveButton>Guardar</EchoColony.SaveButton>
   <EchoColony.CancelButton>Cancelar</EchoColony.CancelButton>
   <EchoColony.OpenRouterModel>Modelo de OpenRouter</EchoColony.OpenRouterModel>
   <EchoColony.ChooseVoiceTitle>Elegir voz para {0}:</EchoColony.ChooseVoiceTitle>
@@ -147,30 +150,11 @@ Las memorias se generan automáticamente durante las conversaciones y ayudan al 
   <EchoColony.ForceCleanMemoriesConfirm>Esto eliminará PERMANENTEMENTE TODAS las memorias de TODOS los colonos. Esta acción no se puede deshacer.\n\n¿Estás seguro de que quieres continuar?</EchoColony.ForceCleanMemoriesConfirm>
 
   <!-- Visor de memorias -->
-  <EchoColony.MemoriesLoaded>Se cargaron {0} memorias para {1}</EchoColony.MemoriesLoaded>
-  <EchoColony.MemoriesOf>Memorias de</EchoColony.MemoriesOf>
-  <EchoColony.MemoriesEntries>entradas</EchoColony.MemoriesEntries>
-  <EchoColony.NoMemoriesSaved>Aún no hay memorias guardadas</EchoColony.NoMemoriesSaved>
-  <EchoColony.MemoriesAutoCreated>Las memorias se crearán automáticamente a partir de las conversaciones</EchoColony.MemoriesAutoCreated>
 
-  <EchoColony.CollapseAll>Contraer todo</EchoColony.CollapseAll>
-  <EchoColony.ExpandAll>Expandir todo</EchoColony.ExpandAll>
-  <EchoColony.RefreshButton>Actualizar</EchoColony.RefreshButton>
-  <EchoColony.ClearAllMemories>Borrar todo</EchoColony.ClearAllMemories>
-  <EchoColony.ClearAllMemoriesConfirm>¿Estás seguro de que quieres eliminar todas las memorias de {0}? Esta acción no se puede deshacer.</EchoColony.ClearAllMemoriesConfirm>
-  <EchoColony.CurrentDay>Día actual</EchoColony.CurrentDay>
 
-  <EchoColony.Today>Hoy</EchoColony.Today>
-  <EchoColony.Day>Día</EchoColony.Day>
-  <EchoColony.Yesterday>ayer</EchoColony.Yesterday>
-  <EchoColony.DaysAgo>días atrás</EchoColony.DaysAgo>
 
   <EchoColony.DeleteMemoryTooltip>Eliminar esta memoria</EchoColony.DeleteMemoryTooltip>
-  <EchoColony.DeleteMemoryConfirm>¿Estás seguro de que quieres eliminar la memoria del día {0}?</EchoColony.DeleteMemoryConfirm>
 
-  <EchoColony.MemoryEdited>La memoria de {0} (día {1}) ha sido editada</EchoColony.MemoryEdited>
-  <EchoColony.MemoriesDeleted>Memorias eliminadas para {0}</EchoColony.MemoriesDeleted>
-  <EchoColony.MemoryDeleted>Memoria eliminada</EchoColony.MemoryDeleted>
 
   <!-- ===== SISTEMA DE MENSAJES ESPONTÁNEOS ===== -->
 
@@ -218,6 +202,8 @@ Las memorias se generan automáticamente durante las conversaciones y ayudan al 
   <EchoColony.ApplyToAll>Aplicar a todos</EchoColony.ApplyToAll>
   <EchoColony.ResetDefaults>Restablecer valores predeterminados</EchoColony.ResetDefaults>
   <EchoColony.ConfigureTriggers>Configurar disparadores</EchoColony.ConfigureTriggers>
+  <EchoColony.ConfigWindowTitle>Mensajes espontáneos — Colonos individuales</EchoColony.ConfigWindowTitle>
+  <EchoColony.Hours>h</EchoColony.Hours>
 
   <!-- Configuración de disparadores -->
   <EchoColony.TriggerConfig>Configurar disparadores para {0}</EchoColony.TriggerConfig>
@@ -469,24 +455,14 @@ Las memorias se generan automáticamente durante las conversaciones y ayudan al 
   <EchoColony.ChatLogHint>  También puedes asignar una tecla en Opciones → Controles → EchoColony.</EchoColony.ChatLogHint>
 
   <!-- Botón de alternancia del registro de chat (en ajustes del mod) -->
-  <EchoColony.ChatLogShow>📋 Abrir registro de conversación</EchoColony.ChatLogShow>
-  <EchoColony.ChatLogHide>📋 Cerrar registro de conversación</EchoColony.ChatLogHide>
 
   <!-- Selector de tecla rápida del registro de chat -->
-  <EchoColony.ChatLogHotkeyLabel>Tecla rápida (abrir/cerrar registro):</EchoColony.ChatLogHotkeyLabel>
-  <EchoColony.ChatLogHotkeyNone>[Sin asignar]</EchoColony.ChatLogHotkeyNone>
-  <EchoColony.ChatLogHotkeyPress>Pulsa una tecla... (Esc para cancelar, Supr para borrar)</EchoColony.ChatLogHotkeyPress>
 
   <!-- Opción de tamaño de fuente -->
   <EchoColony.ChatLogLargeFont>Texto más grande en el registro de conversación</EchoColony.ChatLogLargeFont>
-  <EchoColony.ChatLogHotkeyLabel>Tecla rápida (abrir/cerrar registro):</EchoColony.ChatLogHotkeyLabel>
-  <EchoColony.ChatLogHotkeyNone>[Sin asignar]</EchoColony.ChatLogHotkeyNone>
-  <EchoColony.ChatLogHotkeyPress>Pulsa una tecla... (Esc para cancelar, Supr para borrar)</EchoColony.ChatLogHotkeyPress>
 
-  <EchoColony.ChatLogHint>  El registro guarda todos los diálogos de IA a medida que ocurren. Arrastra la barra de título para moverlo.</EchoColony.ChatLogHint>
 
   <!-- Exportar / Importar -->
-  <EchoColony.ExportButton>Exportar</EchoColony.ExportButton>
   <EchoColony.ExportSuccess>Conversación exportada para {0}.</EchoColony.ExportSuccess>
   <EchoColony.ExportFailed>La exportación falló. Consulta el registro para más detalles.</EchoColony.ExportFailed>
 
@@ -494,7 +470,6 @@ Las memorias se generan automáticamente durante las conversaciones y ayudan al 
   <EchoColony.ImportTitle>Importar memorias para {0}</EchoColony.ImportTitle>
   <EchoColony.ImportSubtitle>Archivos desde: {0}</EchoColony.ImportSubtitle>
   <EchoColony.ImportNoFiles>No se encontraron conversaciones exportadas. Exporta una primero usando el botón Exportar en una ventana de chat.</EchoColony.ImportNoFiles>
-  <EchoColony.ImportButton>Cargar</EchoColony.ImportButton>
   <EchoColony.DeleteButton>Eliminar</EchoColony.DeleteButton>
   <EchoColony.DeleteConfirm>¿Eliminar permanentemente la exportación "{0}"? Esta acción no se puede deshacer.</EchoColony.DeleteConfirm>
   <EchoColony.DeleteSuccess>Exportación "{0}" eliminada.</EchoColony.DeleteSuccess>

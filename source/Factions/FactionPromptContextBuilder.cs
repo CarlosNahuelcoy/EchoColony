@@ -17,7 +17,7 @@ namespace EchoColony.Factions
     /// </summary>
     public static class FactionPromptContextBuilder
     {
-        public static string Build(Pawn operatorPawn, Faction targetFaction, string userMessage, bool isPlayerMode = false)
+        public static string Build(Pawn operatorPawn, Faction targetFaction, string userMessage, int sessionStartIndex, bool isPlayerMode = false)
         {
             if (targetFaction == null) return string.Empty;
 
@@ -30,7 +30,7 @@ namespace EchoColony.Factions
             if (!isPlayerMode)
                 sb.AppendLine(BuildOperatorContext(operatorPawn));
             sb.AppendLine(BuildColonyContext(operatorPawn));
-            sb.AppendLine(BuildChatHistory(targetFaction, isPlayerMode));
+            sb.AppendLine(BuildChatHistory(targetFaction, sessionStartIndex, isPlayerMode, operatorPawn));
             sb.AppendLine(BuildPlayerPrompt(operatorPawn, userMessage, isPlayerMode));
 
             return sb.ToString();
@@ -99,6 +99,7 @@ namespace EchoColony.Factions
             }
 
             return
+                "[SYSTEM]"+
                 $"{langLine}" +
                 $"You are {leaderName}, leader of {factionName} — {factionKind}.\n" +
                 $"{callerIdentity}\n" +
@@ -327,15 +328,83 @@ namespace EchoColony.Factions
         // CHAT HISTORY
         // ═══════════════════════════════════════════════════════════════
 
-        private static string BuildChatHistory(Faction faction, bool isPlayerMode)
+        private static string BuildChatHistory(Faction faction, int sessionStartIndex, bool isPlayerMode, Pawn operatorPawn)
         {
             var chatLog = FactionChatGameComponent.Instance?.GetChat(faction, isPlayerMode);
-            if (chatLog == null || !chatLog.Any()) return string.Empty;
+            if (chatLog == null) return string.Empty;
+
+            // 1. Omitimos todo lo grabado en sesiones pasadas
+            var sessionLines = chatLog.Skip(sessionStartIndex).ToList();
+
+            // Si solo está el turno en progreso actual (mensaje de usuario + placeholder "Leader: ..."), no hay historial previo que incluir
+            if (sessionLines.Count <= 2) return string.Empty;
+
+            // Ignoramos los últimos 2 elementos (mensaje actual del jugador + holder de la respuesta)
+            var pastHistory = sessionLines.SkipLast(2).ToList();
 
             var sb = new StringBuilder();
-            sb.AppendLine("# This Comms Session");
-            sb.AppendLine(string.Join("\n", chatLog.TakeLast(20)));
+
+            // 1. Extraemos y mostramos las acciones/eventos completados previamente como contexto
+            var systemEvents = pastHistory
+                .Where(l => l.StartsWith("[SYSTEM]") || l.StartsWith("[EVENT]"))
+                .ToList();
+            if (systemEvents.Any())
+            {
+                sb.AppendLine("# Executed Actions in this Session");
+                foreach (var evt in systemEvents)
+                {
+                    sb.AppendLine($"- Action Status: {CleanEventText(evt)}");
+                }
+                sb.AppendLine();
+            }
+
+            // 2. Mostramos únicamente el diálogo entre User y Assistant
+            sb.AppendLine("# Current Session Dialogue History");
+            var dialogueLines = pastHistory.Where(l => !l.StartsWith("[SYSTEM]") && !l.StartsWith("[EVENT]"));
+
+            foreach (var line in dialogueLines)
+            {
+                if (line.StartsWith("[USER]"))
+                {
+                    // Limpiamos el prefijo "You:" y le damos formato estandarizado
+                    sb.AppendLine(FormatUserLineForLLM(line, operatorPawn, isPlayerMode));
+                }
+                else
+                {
+                    sb.AppendLine(line);
+                }
+            }
+
             return sb.ToString();
+        }
+
+        private static string FormatUserLineForLLM(string rawLine, Pawn operatorPawn, bool isPlayerMode)
+        {
+            // Extraemos el texto quitando la etiqueta "[USER]"
+            string content = rawLine.Substring(6).Trim();
+
+            // Removemos el prefijo de emisor guardado para el UI ("You:" o "You (Nombre):")
+            int colonIdx = content.IndexOf(": ");
+            if (colonIdx >= 0 && colonIdx < 30)
+            {
+                content = content.Substring(colonIdx + 2).Trim();
+            }
+
+            // Definimos el nombre del emisor desde la perspectiva del Líder
+            string speakerName = isPlayerMode
+                ? "Overseer"
+                : (operatorPawn?.LabelShort ?? "Colonist");
+
+            return $"[USER]{speakerName} (via comms): \"{content}\"";
+        }
+
+        private static string CleanEventText(string rawLine)
+        {
+            return rawLine
+                .Replace("[SYSTEM]", "")
+                .Replace("[System]", "")
+                .Replace("[EVENT]", "")
+                .Trim();
         }
 
         private static string BuildPlayerPrompt(Pawn operatorPawn, string userMessage, bool isPlayerMode)
@@ -343,7 +412,7 @@ namespace EchoColony.Factions
             string name = isPlayerMode
                 ? "You (direct)"
                 : operatorPawn?.LabelShort ?? "Colonist";
-            return $"{name} (via comms): \"{userMessage}\"";
+            return $"[USER]{name} (via comms): \"{userMessage}\"";
         }
 
         // ═══════════════════════════════════════════════════════════════

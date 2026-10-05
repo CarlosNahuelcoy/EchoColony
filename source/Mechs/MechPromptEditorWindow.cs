@@ -23,6 +23,7 @@ namespace EchoColony.Mechs
             
             this.doCloseButton = false;
             this.doCloseX = true;
+            this.closeOnAccept = false; // Enter inserts a new line in the prompt
             this.forcePause = true;
             this.absorbInputAroundWindow = true;
         }
@@ -78,7 +79,7 @@ namespace EchoColony.Mechs
             Widgets.BeginScrollView(scrollRect, ref scrollPosition, viewRect);
 
             Rect textRect = new Rect(0f, 0f, viewRect.width, viewRect.height);
-            promptText = Widgets.TextArea(textRect, promptText);
+            promptText = PromptTextArea.Draw(textRect, promptText, "MechPromptArea");
 
             Widgets.EndScrollView();
 
