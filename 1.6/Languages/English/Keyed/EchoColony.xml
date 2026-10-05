@@ -49,7 +49,6 @@
   <EchoColony.LastExchangeDeleted>🗑 Last exchange deleted.</EchoColony.LastExchangeDeleted>
   <EchoColony.EditButton>Edit</EchoColony.EditButton>
   <EchoColony.RegenerateButton>Regenerate</EchoColony.RegenerateButton>
-  <EchoColony.SaveButton>Save</EchoColony.SaveButton>
   <EchoColony.CancelButton>Cancel</EchoColony.CancelButton>
   <EchoColony.OpenRouterModel>OpenRouter Model</EchoColony.OpenRouterModel>
   <EchoColony.ChooseVoiceTitle>Choose voice for {0}:</EchoColony.ChooseVoiceTitle>
@@ -153,30 +152,11 @@ Memories are automatically generated during conversations and help the colonist 
   <EchoColony.ForceCleanMemoriesConfirm>This will permanently delete ALL memories for ALL colonists. This action cannot be undone.\n\nAre you sure you want to continue?</EchoColony.ForceCleanMemoriesConfirm>
   
   <!-- Visor de Memorias -->
-  <EchoColony.MemoriesLoaded>Loaded {0} memories for {1}</EchoColony.MemoriesLoaded>
-  <EchoColony.MemoriesOf>Memories of</EchoColony.MemoriesOf>
-  <EchoColony.MemoriesEntries>entries</EchoColony.MemoriesEntries>
-  <EchoColony.NoMemoriesSaved>No memories saved yet</EchoColony.NoMemoriesSaved>
-  <EchoColony.MemoriesAutoCreated>Memories will be automatically created from conversations</EchoColony.MemoriesAutoCreated>
   
-  <EchoColony.CollapseAll>Collapse All</EchoColony.CollapseAll>
-  <EchoColony.ExpandAll>Expand All</EchoColony.ExpandAll>
-  <EchoColony.RefreshButton>Refresh</EchoColony.RefreshButton>
-  <EchoColony.ClearAllMemories>Clear All</EchoColony.ClearAllMemories>
-  <EchoColony.ClearAllMemoriesConfirm>Are you sure you want to delete all memories for {0}? This action cannot be undone.</EchoColony.ClearAllMemoriesConfirm>
-  <EchoColony.CurrentDay>Current day</EchoColony.CurrentDay>
   
-  <EchoColony.Today>Today</EchoColony.Today>
-  <EchoColony.Day>Day</EchoColony.Day>
-  <EchoColony.Yesterday>yesterday</EchoColony.Yesterday>
-  <EchoColony.DaysAgo>days ago</EchoColony.DaysAgo>
   
   <EchoColony.DeleteMemoryTooltip>Delete this memory</EchoColony.DeleteMemoryTooltip>
-  <EchoColony.DeleteMemoryConfirm>Are you sure you want to delete the memory from day {0}?</EchoColony.DeleteMemoryConfirm>
   
-  <EchoColony.MemoryEdited>Memory for {0} (day {1}) has been edited</EchoColony.MemoryEdited>
-  <EchoColony.MemoriesDeleted>Memories deleted for {0}</EchoColony.MemoriesDeleted>
-  <EchoColony.MemoryDeleted>Memory deleted</EchoColony.MemoryDeleted>
   
   <!-- ===== SPONTANEOUS MESSAGES SYSTEM ===== -->
   
@@ -224,6 +204,8 @@ Memories are automatically generated during conversations and help the colonist 
   <EchoColony.ApplyToAll>Apply to All</EchoColony.ApplyToAll>
   <EchoColony.ResetDefaults>Reset Defaults</EchoColony.ResetDefaults>
   <EchoColony.ConfigureTriggers>Configure Triggers</EchoColony.ConfigureTriggers>
+  <EchoColony.ConfigWindowTitle>Spontaneous Messages — Individual Colonists</EchoColony.ConfigWindowTitle>
+  <EchoColony.Hours>h</EchoColony.Hours>
   
   <!-- Trigger Configuration -->
   <EchoColony.TriggerConfig>Configure Triggers for {0}</EchoColony.TriggerConfig>
@@ -485,24 +467,14 @@ Memories are automatically generated during conversations and help the colonist 
 
 
   <!-- Chat log toggle button (in mod settings) -->
-  <EchoColony.ChatLogShow>📋 Open Conversation Log</EchoColony.ChatLogShow>
-  <EchoColony.ChatLogHide>📋 Close Conversation Log</EchoColony.ChatLogHide>
 
   <!-- Chat log hotkey selector -->
-  <EchoColony.ChatLogHotkeyLabel>Hotkey (open/close log):</EchoColony.ChatLogHotkeyLabel>
-  <EchoColony.ChatLogHotkeyNone>[Not set]</EchoColony.ChatLogHotkeyNone>
-  <EchoColony.ChatLogHotkeyPress>Press a key... (Esc to cancel, Del to clear)</EchoColony.ChatLogHotkeyPress>
 
   <!-- Font size option -->
   <EchoColony.ChatLogLargeFont>Larger text in conversation log</EchoColony.ChatLogLargeFont>
-  <EchoColony.ChatLogHotkeyLabel>Hotkey (open/close log):</EchoColony.ChatLogHotkeyLabel>
-  <EchoColony.ChatLogHotkeyNone>[Not set]</EchoColony.ChatLogHotkeyNone>
-  <EchoColony.ChatLogHotkeyPress>Press a key... (Esc to cancel, Del to clear)</EchoColony.ChatLogHotkeyPress>
 
-  <EchoColony.ChatLogHint>  The log records all AI dialogue as it happens. Drag the title bar to move it.</EchoColony.ChatLogHint>
 
   <!-- Export / Import -->
-  <EchoColony.ExportButton>Export</EchoColony.ExportButton>
   <EchoColony.ExportSuccess>Conversation exported for {0}.</EchoColony.ExportSuccess>
   <EchoColony.ExportFailed>Export failed. Check the log for details.</EchoColony.ExportFailed>
   
@@ -510,7 +482,6 @@ Memories are automatically generated during conversations and help the colonist 
   <EchoColony.ImportTitle>Import memories for {0}</EchoColony.ImportTitle>
   <EchoColony.ImportSubtitle>Files from: {0}</EchoColony.ImportSubtitle>
   <EchoColony.ImportNoFiles>No exported conversations found. Export one first using the Export button in a chat window.</EchoColony.ImportNoFiles>
-  <EchoColony.ImportButton>Load</EchoColony.ImportButton>
   <EchoColony.DeleteButton>Delete</EchoColony.DeleteButton>
   <EchoColony.DeleteConfirm>Permanently delete the export "{0}"? This cannot be undone.</EchoColony.DeleteConfirm>
   <EchoColony.DeleteSuccess>Export "{0}" deleted.</EchoColony.DeleteSuccess>

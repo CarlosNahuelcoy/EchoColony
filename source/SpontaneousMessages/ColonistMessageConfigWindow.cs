@@ -97,7 +97,7 @@ namespace EchoColony.SpontaneousMessages
 
             // Botón "Reset to Defaults"
             Rect resetRect = new Rect(applyAllRect.xMax + spacing, rect.y, buttonWidth, rect.height);
-            if (Widgets.ButtonText(resetRect, "EchoColony.ResetToDefaults".Translate()))
+            if (Widgets.ButtonText(resetRect, "EchoColony.ResetDefaults".Translate()))
             {
                 ResetAllToDefaults();
             }
