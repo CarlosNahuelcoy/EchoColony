@@ -98,6 +98,14 @@ namespace EchoColony.Conversations
         {
             var sb = new StringBuilder();
 
+            string convGlobal = MyMod.Settings?.conversationGlobalPrompt;
+            if (!string.IsNullOrWhiteSpace(convGlobal))
+            {
+                sb.AppendLine("=== PLAYER INSTRUCTIONS (always follow) ===");
+                sb.AppendLine(convGlobal.Trim());
+                sb.AppendLine();
+            }
+
             sb.AppendLine(BuildInteractionTypeSection(interactionDef, logText));
             sb.AppendLine(BuildEnvironmentSection(initiator));
             sb.AppendLine(BuildPawnSection(initiator, "INITIATOR"));
@@ -237,6 +245,10 @@ namespace EchoColony.Conversations
 			var map = pawn.Map;
 			int hour = GenLocalDate.HourOfDay(map);
 			sb.AppendLine($"Time: {hour:D2}:00 ({GetTimeDesc(hour)})");
+			sb.AppendLine($"Season: {GenLocalDate.Season(map).Label()}");
+			float temp = pawn.AmbientTemperature;
+			string tempDesc = temp < 0f ? "freezing" : temp < 15f ? "cold" : temp < 30f ? "comfortable" : "hot";
+			sb.AppendLine($"Temperature: {temp:F0}°C ({tempDesc})");
 			sb.AppendLine($"Location: {GetLocationDesc(pawn)}");
 
 			// Solo destacamos el clima si es un evento extremo real
@@ -269,10 +281,19 @@ namespace EchoColony.Conversations
             sb.AppendLine($"=== {role}: {pawn.LabelShort} ===");
 
             int age = pawn.ageTracker?.AgeBiologicalYears ?? 0;
+            bool ignoreAge = ColonistPromptManager.GetIgnoreAge(pawn);
             sb.AppendLine($"Age: {age}, {pawn.gender}");
-            string ageBehavior = GetAgeBehavior(age);
-            if (!string.IsNullOrEmpty(ageBehavior))
-                sb.AppendLine($"[AGE NOTE: {ageBehavior}]");
+            if (ignoreAge)
+            {
+                sb.AppendLine("[AGE NOTE: Biological age is irrelevant for this character. " +
+                              "Do NOT write them as a child — follow their custom instructions instead.]");
+            }
+            else
+            {
+                string ageBehavior = GetAgeBehavior(age);
+                if (!string.IsNullOrEmpty(ageBehavior))
+                    sb.AppendLine($"[AGE NOTE: {ageBehavior}]");
+            }
 
             sb.AppendLine(GetDetailedStatus(pawn));
 
@@ -351,7 +372,7 @@ namespace EchoColony.Conversations
             if (consciousness < 0.85f)
                 sb.AppendLine($"Consciousness: {consciousness:P0} — groggy, impaired thinking.");
 
-            string mobilityNote = GetMobilityNote(pawn, age);
+            string mobilityNote = GetMobilityNote(pawn, ignoreAge ? 20 : age);
             if (!string.IsNullOrEmpty(mobilityNote))
                 sb.AppendLine(mobilityNote);
 

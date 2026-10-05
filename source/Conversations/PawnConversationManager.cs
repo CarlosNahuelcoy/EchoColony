@@ -135,25 +135,44 @@ namespace EchoColony.Conversations
         private static List<(Pawn speaker, string text)> ParseConversationLines(
             string response, Pawn initiator, Pawn recipient)
         {
+            // Strip possible markdown fences
+            string clean = response.Trim();
+            if (clean.StartsWith("```"))
+            {
+                int first = clean.IndexOf('\n');
+                int last  = clean.LastIndexOf("```");
+                if (first >= 0 && last > first)
+                    clean = clean.Substring(first + 1, last - first - 1).Trim();
+                else if (first >= 0)
+                    clean = clean.Substring(first + 1).Trim(); // unterminated fence
+            }
+
+            var lines = TryParseJsonLines(clean, initiator, recipient);
+            if (lines != null && lines.Count > 0) return lines;
+
+            // Fallback: some local models answer "Name: text" per line instead of JSON
+            lines = ParsePlainTextLines(clean, initiator, recipient);
+            return lines.Count > 0 ? lines : null;
+        }
+
+        private static List<(Pawn speaker, string text)> TryParseJsonLines(
+            string clean, Pawn initiator, Pawn recipient)
+        {
             try
             {
-                // Strip possible markdown fences
-                string clean = response.Trim();
-                if (clean.StartsWith("```")) 
-                {
-                    int first = clean.IndexOf('\n');
-                    int last  = clean.LastIndexOf("```");
-                    if (first >= 0 && last > first)
-                        clean = clean.Substring(first + 1, last - first - 1).Trim();
-                }
-
-                // Find JSON array
                 int arrayStart = clean.IndexOf('[');
-                int arrayEnd   = clean.LastIndexOf(']');
-                if (arrayStart < 0 || arrayEnd <= arrayStart) return null;
-                clean = clean.Substring(arrayStart, arrayEnd - arrayStart + 1);
+                if (arrayStart < 0) return null;
 
-                var parsed = JSON.Parse(clean);
+                int arrayEnd = clean.LastIndexOf(']');
+                string json = arrayEnd > arrayStart
+                    ? clean.Substring(arrayStart, arrayEnd - arrayStart + 1)
+                    : RepairTruncatedArray(clean.Substring(arrayStart));
+                if (json == null) return null;
+
+                // Trailing commas before a closing bracket/brace are a common local-model slip
+                json = System.Text.RegularExpressions.Regex.Replace(json, @",\s*([\]}])", "$1");
+
+                var parsed = JSON.Parse(json);
                 if (parsed == null || parsed.AsArray == null) return null;
 
                 var lines = new List<(Pawn, string)>();
@@ -170,13 +189,46 @@ namespace EchoColony.Conversations
                     lines.Add((speaker, text));
                 }
 
-                return lines.Count > 0 ? lines : null;
+                return lines;
             }
             catch (Exception ex)
             {
-                Log.Warning($"[EchoColony] Conversation parse error: {ex.Message}");
+                Log.Warning($"[EchoColony] Conversation JSON parse error, trying plain-text fallback: {ex.Message}");
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Closes an array the model forgot to terminate: keeps everything up to the
+        /// last complete object ("}") and appends "]".
+        /// </summary>
+        private static string RepairTruncatedArray(string partial)
+        {
+            int lastObjEnd = partial.LastIndexOf('}');
+            if (lastObjEnd < 0) return null;
+            return partial.Substring(0, lastObjEnd + 1) + "]";
+        }
+
+        private static List<(Pawn speaker, string text)> ParsePlainTextLines(
+            string clean, Pawn initiator, Pawn recipient)
+        {
+            var lines = new List<(Pawn, string)>();
+            foreach (string raw in clean.Split('\n'))
+            {
+                string line = raw.Trim().TrimStart('-', '*', '•').Trim();
+                int colon = line.IndexOf(':');
+                if (colon <= 0 || colon > 40) continue;
+
+                string speakerName = line.Substring(0, colon).Trim().Trim('*', '"');
+                string text        = line.Substring(colon + 1).Trim().Trim('"');
+                if (string.IsNullOrWhiteSpace(text)) continue;
+
+                Pawn speaker = MatchSpeaker(speakerName, initiator, recipient);
+                if (speaker == null) continue;
+
+                lines.Add((speaker, text));
+            }
+            return lines;
         }
 
         private static Pawn MatchSpeaker(string name, Pawn a, Pawn b)

@@ -22,6 +22,7 @@ namespace EchoColony
             
             this.closeOnClickedOutside = true;
             this.doCloseX = true;
+            this.closeOnAccept = false; // Enter inserts a new line in the prompt
             this.absorbInputAroundWindow = true;
             this.forcePause = true;
             this.draggable = true;

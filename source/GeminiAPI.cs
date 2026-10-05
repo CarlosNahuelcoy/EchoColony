@@ -30,22 +30,36 @@ namespace EchoColony
         // MODEL SELECTION
         // ═══════════════════════════════════════════════════════════════
 
+        // Google-maintained alias that always points at the current Flash model,
+        // so the default never goes stale when a pinned version is shut down.
+        public const string DefaultModel = "gemini-flash-latest";
+
         public static string GetSelectedModel()
         {
             if (MyMod.Settings == null)
-                return "gemini-2.0-flash-001";
+                return DefaultModel;
 
-            if (!string.IsNullOrEmpty(MyMod.Settings.selectedModel))
+            string selected = MyMod.Settings.selectedModel;
+            if (!string.IsNullOrEmpty(selected) && !IsRetiredModel(selected))
             {
                 if (MyMod.Settings.debugMode)
-                    LogDebugResponse("ModelSelection", $"Using user-selected model: {MyMod.Settings.selectedModel}");
-                return MyMod.Settings.selectedModel;
+                    LogDebugResponse("ModelSelection", $"Using user-selected model: {selected}");
+                return selected;
             }
 
             if (MyMod.Settings.debugMode)
-                LogDebugResponse("ModelSelection", "No model selected, using default: gemini-2.0-flash-001");
+                LogDebugResponse("ModelSelection", $"No usable model selected ('{selected}'), using default: {DefaultModel}");
 
-            return "gemini-2.0-flash-001";
+            return DefaultModel;
+        }
+
+        // Models Google has shut down (404 "model not found"); old saves may still point at them.
+        private static bool IsRetiredModel(string model)
+        {
+            string m = model.ToLowerInvariant();
+            if (m.StartsWith("models/")) m = m.Substring(7);
+            return m.StartsWith("gemini-1.0") || m.StartsWith("gemini-1.5") ||
+                   m.StartsWith("gemini-pro")  || m.StartsWith("gemini-2.0");
         }
 
         public static string GetBestAvailableModel(bool useAdvanced = false) => GetSelectedModel();
@@ -601,7 +615,7 @@ namespace EchoColony
             if (!string.IsNullOrWhiteSpace(systemPrompt))
                 messages.Add(new Dictionary<string, string> { { "role", "system" }, { "content", systemPrompt } });
 
-            foreach (var entry in EchoMemory.GetRecentTurns())
+            foreach (var entry in SanitizeHistoryTurns(EchoMemory.GetRecentTurns()))
                 messages.Add(new Dictionary<string, string> { { "role", entry.Item1 }, { "content", entry.Item2 } });
 
             if (!string.IsNullOrEmpty(imageBase64) && MyMod.Settings?.enableVision == true)
@@ -660,6 +674,17 @@ namespace EchoColony
                     if (MyMod.Settings?.debugMode == true) LogPlayer2Debug($"CHAT_{CleanNameForFileName(pawn?.LabelShort)}", "FINAL_REPLY", reply); //furel - added name to the txt file name
                     onResponse?.Invoke(reply);
                     yield break;
+                }
+
+                // The selected Player2 model may not accept image input — retry as text only
+                if (request.responseCode == 400 && useVision && attempt < maxRetries - 1)
+                {
+                    Log.Warning("[EchoColony] Player2 rejected the vision request (400). Retrying without the screenshot.");
+                    useVision = false;
+                    jsonBody  = BuildMessagesJson(messages);
+                    if (MyMod.Settings?.debugMode == true)
+                        LogPlayer2Debug($"CHAT_{CleanNameForFileName(pawn?.LabelShort)}_", "REQUEST", jsonBody);
+                    continue;
                 }
 
                 if (request.responseCode == 429 || request.responseCode == 500 || request.responseCode == 503)
@@ -1211,6 +1236,42 @@ namespace EchoColony
         }
 
         //furel - Changed method to build Memory; now using [USER], [ASSISTANCE] as markers to parse the chat log and rebuild memory.
+        /// <summary>
+        /// Makes chat history valid for strict OpenAI-compatible backends (e.g. Player2 → Gemini,
+        /// which answers 400 "Invalid argument" otherwise): no empty turns or "..." placeholders,
+        /// no "You:" prefix, history starts with a user turn, roles alternate, and it ends on an
+        /// assistant turn because the caller appends the current user message.
+        /// </summary>
+        private static List<Tuple<string, string>> SanitizeHistoryTurns(List<Tuple<string, string>> turns)
+        {
+            string userPrefix = "EchoColony.UserPrefix".Translate().ToString().Trim();
+            var result = new List<Tuple<string, string>>();
+            foreach (var turn in turns)
+            {
+                string role = turn.Item1 == "assistant" ? "assistant" : "user";
+                string text = turn.Item2?.Trim();
+                if (role == "user" && !string.IsNullOrEmpty(userPrefix) && text != null && text.StartsWith(userPrefix))
+                    text = text.Substring(userPrefix.Length).Trim();
+                if (string.IsNullOrEmpty(text) || text == "...") continue;
+                if (result.Count == 0 && role == "assistant") continue;
+
+                if (result.Count > 0 && result[result.Count - 1].Item1 == role)
+                {
+                    var prev = result[result.Count - 1];
+                    result[result.Count - 1] = Tuple.Create(role, prev.Item2 + "\n" + text);
+                }
+                else
+                {
+                    result.Add(Tuple.Create(role, text));
+                }
+            }
+
+            if (result.Count > 0 && result[result.Count - 1].Item1 == "user")
+                result.RemoveAt(result.Count - 1);
+
+            return result;
+        }
+
         public static void RebuildMemoryFromChat(Pawn pawn, int skipLastLines = 2)
         {
             EchoMemory.Clear();

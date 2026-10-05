@@ -269,7 +269,7 @@ namespace EchoColony
             Rect  scrollOut  = list.GetRect(areaHeight);
             Rect  scrollView = new Rect(0, 0, scrollOut.width - 16f, areaHeight * 2);
             Widgets.BeginScrollView(scrollOut, ref scrollPos, scrollView);
-            Settings.globalPrompt = Widgets.TextArea(scrollView, Settings.globalPrompt);
+            Settings.globalPrompt = PromptTextArea.Draw(scrollView, Settings.globalPrompt, "EchoGlobalPromptArea");
             Widgets.EndScrollView();
 
             list.GapLine();
@@ -718,9 +718,9 @@ namespace EchoColony
                 Widgets.EndScrollView();
 
                 list.Gap();
-                if (list.ButtonText("Use Default (gemini-2.0-flash-001)"))
+                if (list.ButtonText($"Use Default ({GeminiAPI.DefaultModel})"))
                 {
-                    Settings.selectedModel = "gemini-2.0-flash-001";
+                    Settings.selectedModel = GeminiAPI.DefaultModel;
                     Settings.Write();
                     _pendingModelSelection = "";
                     _fetchModelStatus      = "✅ Default model saved";
@@ -738,7 +738,7 @@ namespace EchoColony
         private string GetSavedModelName() =>
             !string.IsNullOrEmpty(Settings.selectedModel)
                 ? Settings.selectedModel
-                : "gemini-2.0-flash-001 (default)";
+                : $"{GeminiAPI.DefaultModel} (default)";
 
         private void ConfirmModelSelection()
         {
@@ -863,7 +863,7 @@ namespace EchoColony
             Rect promptView  = new Rect(0f, 0f, promptOuter.width - 16f,
                 Mathf.Max(promptHeight, Text.CalcHeight(Settings.conversationGlobalPrompt, promptOuter.width - 20f)));
             Widgets.BeginScrollView(promptOuter, ref convPromptScroll, promptView);
-            Settings.conversationGlobalPrompt = Widgets.TextArea(new Rect(0f, 0f, promptView.width, promptView.height), Settings.conversationGlobalPrompt);
+            Settings.conversationGlobalPrompt = PromptTextArea.Draw(new Rect(0f, 0f, promptView.width, promptView.height), Settings.conversationGlobalPrompt, "EchoConvGlobalPromptArea");
             Widgets.EndScrollView();
             list.Gap(8f);
 
