@@ -27,8 +27,8 @@
   <EchoColony.GroupChatDesc>Iniciar una conversación grupal con los colonos cercanos.</EchoColony.GroupChatDesc>
   
   <EchoColony.ChatSessionTimeoutUnlimited>Ilimitado</EchoColony.ChatSessionTimeoutUnlimited>
-  <EchoColony.ChatSessionTimeoutHours>Retención del chat</EchoColony.ChatSessionTimeoutHours>
-  <EchoColony.ChatSessionTimeoutHoursTooltip>Tiempo en horas de juego durante el cual se mantendrá el contexto de la conversación actual. Transcurrido este tiempo, el chat no se incluirá en el prompt, pero las memorias sí. Ponlo en 0 para retención ilimitada.</EchoColony.ChatSessionTimeoutHoursTooltip>
+  <EchoColony.ChatSessionTimeoutHours>Continuidad de la conversación</EchoColony.ChatSessionTimeoutHours>
+  <EchoColony.ChatSessionTimeoutHoursTooltip>Cuánto tiempo (en horas de juego) una conversación se considera en curso. Dentro de ese tiempo, el colono ve tus últimos mensajes y continúa la charla con naturalidad. Pasado ese tiempo, el siguiente chat empieza como una conversación nueva, para que lo hablado antes no se tome como algo que se acaba de decir. Los colonos nunca olvidan: las charlas siempre se resumen en sus memorias, sea cual sea este valor. Ponlo en 0 para mantener siempre los últimos mensajes en el contexto (comportamiento clásico).</EchoColony.ChatSessionTimeoutHoursTooltip>
 
   <EchoColony.SendButton>Enviar</EchoColony.SendButton>
   <EchoColony.GeminiTooltip>
