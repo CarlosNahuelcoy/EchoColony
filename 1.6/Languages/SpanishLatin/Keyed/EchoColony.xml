@@ -28,7 +28,7 @@
   
   <EchoColony.ChatSessionTimeoutUnlimited>Ilimitado</EchoColony.ChatSessionTimeoutUnlimited>
   <EchoColony.ChatSessionTimeoutHours>Continuidad de la conversación</EchoColony.ChatSessionTimeoutHours>
-  <EchoColony.ChatSessionTimeoutHoursTooltip>Cuánto tiempo (en horas de juego) una conversación sigue en curso. Si vuelves a hablar con el colono dentro de ese tiempo, retoma la charla donde la dejaron. Pasado ese tiempo, el siguiente chat empieza de nuevo: el colono no olvida, la conversación anterior queda guardada como memoria. Configúralo en 0 para que las conversaciones nunca se reinicien.</EchoColony.ChatSessionTimeoutHoursTooltip>
+  <EchoColony.ChatSessionTimeoutHoursTooltip>Cuánto tiempo (en horas de juego) una conversación se considera en curso. Dentro de ese tiempo, el colono ve tus últimos mensajes y continúa la charla con naturalidad. Pasado ese tiempo, el siguiente chat empieza como una conversación nueva, para que lo hablado antes no se tome como algo que se acaba de decir. Los colonos nunca olvidan: las charlas siempre se resumen en sus memorias, sea cual sea este valor. Configúralo en 0 para mantener siempre los últimos mensajes en el contexto (comportamiento clásico).</EchoColony.ChatSessionTimeoutHoursTooltip>
 
   <EchoColony.SendButton>Enviar</EchoColony.SendButton>
   <EchoColony.GeminiTooltip>

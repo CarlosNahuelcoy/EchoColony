@@ -19,7 +19,7 @@
   
   <EchoColony.ChatSessionTimeoutUnlimited>Unlimited</EchoColony.ChatSessionTimeoutUnlimited>
   <EchoColony.ChatSessionTimeoutHours>Conversation continuity</EchoColony.ChatSessionTimeoutHours>
-  <EchoColony.ChatSessionTimeoutHoursTooltip>How long (in game hours) a conversation counts as ongoing. If you talk to the colonist again within this time, they pick up right where you left off. After that, the next chat starts fresh: the colonist doesn't forget, the previous conversation is kept as a memory. Set to 0 so conversations never reset.</EchoColony.ChatSessionTimeoutHoursTooltip>
+  <EchoColony.ChatSessionTimeoutHoursTooltip>How long (in game hours) a conversation is treated as ongoing. Within this time, the colonist sees your last messages and continues the chat naturally. After it, the next chat starts as a new conversation, so old messages aren't mistaken for something just said. Colonists never forget: past chats are always summarized into their memories, whatever this value is. Set to 0 to always keep the last messages in context (classic behavior).</EchoColony.ChatSessionTimeoutHoursTooltip>
   
     <!-- ======== Gizmos ========= -->
   <EchoColony.ChatGizmoLabel>Talk</EchoColony.ChatGizmoLabel>
