@@ -71,11 +71,11 @@ namespace EchoColony
                 ? "EchoColony.ChatSessionTimeoutUnlimited".Translate().ToString()
                 : Settings.chatSessionTimeoutHours + "h";
 
-            list.Label("EchoColony.ChatSessionTimeoutHours".Translate() + ": " + Settings.chatSessionTimeoutHours + "h",
+            list.Label("EchoColony.ChatSessionTimeoutHours".Translate() + ": " + timeoutDisplay,
                        tooltip: "EchoColony.ChatSessionTimeoutHoursTooltip".Translate());
 
-            // Slider con rango de 1 a 48 horas (convierte el float del Slider a int)
-            Settings.chatSessionTimeoutHours = Mathf.RoundToInt(list.Slider(Settings.chatSessionTimeoutHours, 1f, 48f));
+            // Slider con rango de 0 a 48 horas (0 = la conversación nunca se reinicia)
+            Settings.chatSessionTimeoutHours = Mathf.RoundToInt(list.Slider(Settings.chatSessionTimeoutHours, 0f, 48f));
 
             list.GapLine();
 
