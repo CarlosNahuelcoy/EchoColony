@@ -283,6 +283,12 @@ Las memorias se generan automáticamente durante las conversaciones y ayudan al 
 <EchoColony.StorytellerCommentOnResearchTooltip>Comentar cuando se completa un proyecto de investigación (usa la probabilidad de comentar incidentes)</EchoColony.StorytellerCommentOnResearchTooltip>
 <EchoColony.StorytellerCommentCooldownTooltip>Segundos reales. Los comentarios aleatorios y de eventos menores se omiten hasta que pase este tiempo. Las amenazas grandes, las muertes y las crisis mentales extremas lo ignoran</EchoColony.StorytellerCommentCooldownTooltip>
 <EchoColony.StorytellerDuplicateBlockTooltip>El mismo evento (por ejemplo otra incursión del mismo tipo) no recibirá un nuevo comentario dentro de este tiempo</EchoColony.StorytellerDuplicateBlockTooltip>
+<EchoColony.StorytellerSectionHeader>Mensajes espontáneos del narrador</EchoColony.StorytellerSectionHeader>
+<EchoColony.StorytellerSystemEnabled>✓ Sistema: Activado</EchoColony.StorytellerSystemEnabled>
+<EchoColony.StorytellerSystemDisabled>Sistema: Desactivado</EchoColony.StorytellerSystemDisabled>
+<EchoColony.StorytellerNeedGame>Primero carga una partida</EchoColony.StorytellerNeedGame>
+<EchoColony.StorytellerDialogChat>Chatear</EchoColony.StorytellerDialogChat>
+<EchoColony.StorytellerDialogClose>Cerrar</EchoColony.StorytellerDialogClose>
 
   <!-- Ventana de chat con animal -->
   <EchoColony.AnimalChatWindowTitle>Chat con {0}</EchoColony.AnimalChatWindowTitle>

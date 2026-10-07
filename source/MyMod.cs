@@ -164,16 +164,16 @@ namespace EchoColony
 
             list.GapLine();
 
-            DrawSectionHeader(list, "Storyteller Spontaneous Messages", new Color(1f, 0.9f, 0.6f));
+            DrawSectionHeader(list, "EchoColony.StorytellerSectionHeader".Translate(), new Color(1f, 0.9f, 0.6f));
 
-            list.Label("Storyteller Message Mode:");
+            list.Label("EchoColony.StorytellerMessagesMode".Translate());
             if (list.ButtonText(GetStorytellerModeLabelTranslated(Settings.storytellerMessageMode)))
                 ShowStorytellerMessageModeMenu();
 
             if (Settings.IsStorytellerMessagesActive())
             {
                 list.Gap();
-                DrawStatusIndicator(list, true, "System");
+                DrawStorytellerStatus(list, true);
 
                 if (Settings.AreStorytellerRandomMessagesEnabled())
                 {
@@ -221,7 +221,7 @@ namespace EchoColony
                 if (list.ButtonText("EchoColony.StorytellerMessageTest".Translate()))
                 {
                     if (Find.Storyteller == null)
-                        Messages.Message("Load a game first", MessageTypeDefOf.RejectInput);
+                        Messages.Message("EchoColony.StorytellerNeedGame".Translate(), MessageTypeDefOf.RejectInput);
                     else
                         StorytellerSpontaneousMessageSystem.GenerateSpontaneousMessage(
                             StorytellerSpontaneousMessageSystem.MessageTriggerType.Random, isTest: true);
@@ -229,7 +229,7 @@ namespace EchoColony
             }
             else
             {
-                DrawStatusIndicator(list, false, "System");
+                DrawStorytellerStatus(list, false);
             }
 
             list.GapLine();
@@ -1001,6 +1001,13 @@ namespace EchoColony
             GUI.color = Color.white;
         }
 
+        private void DrawStorytellerStatus(Listing_Standard list, bool enabled)
+        {
+            GUI.color = enabled ? Color.green : Color.gray;
+            list.Label("  " + (enabled ? "EchoColony.StorytellerSystemEnabled" : "EchoColony.StorytellerSystemDisabled").Translate());
+            GUI.color = Color.white;
+        }
+
         private void DrawBorderRect(Rect rect, Color color, int thickness)
         {
             Widgets.DrawBoxSolid(new Rect(rect.x,                rect.y,              rect.width, thickness), color);
@@ -1208,10 +1215,10 @@ namespace EchoColony
         {
             switch (mode)
             {
-                case StorytellerMessageMode.Disabled:      return "Disabled";
-                case StorytellerMessageMode.RandomOnly:    return "Random Only";
-                case StorytellerMessageMode.IncidentsOnly: return "Incidents Only";
-                case StorytellerMessageMode.Full:          return "Full (Random + Incidents)";
+                case StorytellerMessageMode.Disabled:      return "EchoColony.StorytellerModeDisabled".Translate();
+                case StorytellerMessageMode.RandomOnly:    return "EchoColony.StorytellerModeRandomOnly".Translate();
+                case StorytellerMessageMode.IncidentsOnly: return "EchoColony.StorytellerModeIncidentsOnly".Translate();
+                case StorytellerMessageMode.Full:          return "EchoColony.StorytellerModeFull".Translate();
                 default:                                   return mode.ToString();
             }
         }
@@ -1220,10 +1227,10 @@ namespace EchoColony
         {
             switch (mode)
             {
-                case StorytellerMessageMode.Disabled:      return "No messages";
-                case StorytellerMessageMode.RandomOnly:    return "Random observations";
-                case StorytellerMessageMode.IncidentsOnly: return "React to events";
-                case StorytellerMessageMode.Full:          return "Both random and events";
+                case StorytellerMessageMode.Disabled:      return "EchoColony.StorytellerModeDisabledDesc".Translate();
+                case StorytellerMessageMode.RandomOnly:    return "EchoColony.StorytellerModeRandomOnlyDesc".Translate();
+                case StorytellerMessageMode.IncidentsOnly: return "EchoColony.StorytellerModeIncidentsOnlyDesc".Translate();
+                case StorytellerMessageMode.Full:          return "EchoColony.StorytellerModeFullDesc".Translate();
                 default:                                   return "";
             }
         }
