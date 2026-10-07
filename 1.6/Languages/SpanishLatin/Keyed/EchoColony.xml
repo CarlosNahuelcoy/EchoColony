@@ -284,9 +284,6 @@ Las memorias se generan automáticamente durante las conversaciones y ayudan al 
 <EchoColony.StorytellerCommentCooldownTooltip>Segundos reales. Los comentarios aleatorios y de eventos menores se omiten hasta que pase este tiempo. Las amenazas grandes, las muertes y las crisis mentales extremas lo ignoran</EchoColony.StorytellerCommentCooldownTooltip>
 <EchoColony.StorytellerDuplicateBlockTooltip>El mismo evento (por ejemplo otra incursión del mismo tipo) no recibirá un nuevo comentario dentro de este tiempo</EchoColony.StorytellerDuplicateBlockTooltip>
 <EchoColony.StorytellerSectionHeader>Mensajes espontáneos del narrador</EchoColony.StorytellerSectionHeader>
-<EchoColony.StorytellerSystemEnabled>✓ Sistema: Activado</EchoColony.StorytellerSystemEnabled>
-<EchoColony.StorytellerSystemDisabled>Sistema: Desactivado</EchoColony.StorytellerSystemDisabled>
-<EchoColony.StorytellerNeedGame>Primero carga una partida</EchoColony.StorytellerNeedGame>
 <EchoColony.StorytellerDialogChat>Chatear</EchoColony.StorytellerDialogChat>
 <EchoColony.StorytellerDialogClose>Cerrar</EchoColony.StorytellerDialogClose>
 
@@ -506,4 +503,121 @@ Las memorias se generan automáticamente durante las conversaciones y ayudan al 
   <EchoColony.ConvDailyLimitUnlimited>Límite diario de conversaciones: Sin límite  (hoy: {0})</EchoColony.ConvDailyLimitUnlimited>
   <EchoColony.ConvDailyLimitLabel>Límite diario de conversaciones: {0}  (hoy: {1})</EchoColony.ConvDailyLimitLabel>
   <EchoColony.ConvDailyLimitTooltip>Máximo de conversaciones con IA por día en el juego para toda la colonia. 0 = sin límite. Útil para colonias grandes para controlar el uso de la API.</EchoColony.ConvDailyLimitTooltip>
+  <!-- Mod settings -->
+  <EchoColony.Header_BasicSettings>Ajustes básicos</EchoColony.Header_BasicSettings>
+  <EchoColony.Header_MemorySystem>Sistema de memoria</EchoColony.Header_MemorySystem>
+  <EchoColony.Header_UISettings>Interfaz</EchoColony.Header_UISettings>
+  <EchoColony.Header_AnimalChat>Chat con animales</EchoColony.Header_AnimalChat>
+  <EchoColony.Header_SpontaneousMessages>Mensajes espontáneos de colonos</EchoColony.Header_SpontaneousMessages>
+  <EchoColony.Header_DivineActions>Acciones divinas</EchoColony.Header_DivineActions>
+  <EchoColony.Header_FactionComms>Chat con facciones (consola de comunicaciones)</EchoColony.Header_FactionComms>
+  <EchoColony.Header_GlobalPrompt>Prompt global</EchoColony.Header_GlobalPrompt>
+  <EchoColony.Header_AIModel>Configuración del modelo de IA</EchoColony.Header_AIModel>
+  <EchoColony.Header_General>Ajustes generales</EchoColony.Header_General>
+  <EchoColony.Header_DebugTools>Herramientas de depuración</EchoColony.Header_DebugTools>
+  <EchoColony.Header_Vision>Sistema de visión (captura de pantalla)</EchoColony.Header_Vision>
+  <EchoColony.StatusEnabled>✓ {0}: Activado</EchoColony.StatusEnabled>
+  <EchoColony.StatusDisabled>{0}: Desactivado</EchoColony.StatusDisabled>
+  <EchoColony.StatusName_System>Sistema</EchoColony.StatusName_System>
+  <EchoColony.StatusName_Memory>Sistema de memoria</EchoColony.StatusName_Memory>
+  <EchoColony.ShowStorytellerButton>Mostrar el botón de chat con el narrador</EchoColony.ShowStorytellerButton>
+  <EchoColony.ShowStorytellerButtonTooltip>Muestra u oculta el botón de chat con el narrador en la barra del menú principal</EchoColony.ShowStorytellerButtonTooltip>
+  <EchoColony.AnimalDefaultStyle>Estilo narrativo por defecto para animales:</EchoColony.AnimalDefaultStyle>
+  <EchoColony.AnimalStyleThirdPerson>Tercera persona</EchoColony.AnimalStyleThirdPerson>
+  <EchoColony.AnimalStyleFirstPerson>Primera persona</EchoColony.AnimalStyleFirstPerson>
+  <EchoColony.AnimalStyleThirdPersonExample>Tercera persona (El perro ladra)</EchoColony.AnimalStyleThirdPersonExample>
+  <EchoColony.AnimalStyleFirstPersonExample>Primera persona (Yo ladro)</EchoColony.AnimalStyleFirstPersonExample>
+  <EchoColony.AnimalStyleNote>Nota: puedes cambiarlo para cada animal con su prompt personalizado</EchoColony.AnimalStyleNote>
+  <EchoColony.EnableDivineActions>Activar acciones divinas (la IA puede afectar a los colonos)</EchoColony.EnableDivineActions>
+  <EchoColony.EnableDivineActionsTooltip>Permite que la IA use acciones como curar o cambiar el ánimo durante las conversaciones</EchoColony.EnableDivineActionsTooltip>
+  <EchoColony.AllowNegativeActions>Permitir acciones negativas</EchoColony.AllowNegativeActions>
+  <EchoColony.AllowNegativeActionsTooltip>Permite que la IA use acciones negativas (crisis mentales, heridas, etc.)</EchoColony.AllowNegativeActionsTooltip>
+  <EchoColony.AllowExtremeActions>Permitir acciones extremas</EchoColony.AllowExtremeActions>
+  <EchoColony.AllowExtremeActionsTooltip>Permite que la IA use acciones extremas (amputaciones, resurrecciones, etc.)</EchoColony.AllowExtremeActionsTooltip>
+  <EchoColony.EnableFactionComms>Activar las opciones de chat de EchoColony en la consola de comunicaciones</EchoColony.EnableFactionComms>
+  <EchoColony.EnableFactionCommsTooltip>Agrega las opciones 'habla un colono' y 'hablas tú directamente' al contactar facciones desde la consola de comunicaciones.</EchoColony.EnableFactionCommsTooltip>
+  <EchoColony.FactionGoodwillCooldown>Espera entre cambios de buena voluntad:</EchoColony.FactionGoodwillCooldown>
+  <EchoColony.FactionGoodwillCooldownValue>{0} h entre cambios automáticos de buena voluntad por conversación.</EchoColony.FactionGoodwillCooldownValue>
+  <EchoColony.FactionGoodwillCooldownNote>No impide chatear: solo limita cada cuánto la conversación afecta la buena voluntad.</EchoColony.FactionGoodwillCooldownNote>
+  <EchoColony.Player2Connected>✓ Conectado a la API web de Player2</EchoColony.Player2Connected>
+  <EchoColony.Player2Via>Vía: {0}</EchoColony.Player2Via>
+  <EchoColony.Player2Disconnect>Desconectar de Player2</EchoColony.Player2Disconnect>
+  <EchoColony.Player2NotConnected>Sin conexión: conecta tu cuenta para usar Player2</EchoColony.Player2NotConnected>
+  <EchoColony.Player2WaitingBrowser>Esperando la aprobación en el navegador... Código: {0}</EchoColony.Player2WaitingBrowser>
+  <EchoColony.Player2Connecting>Conectando...</EchoColony.Player2Connecting>
+  <EchoColony.Player2ConnectApp>Conectar con la app de Player2</EchoColony.Player2ConnectApp>
+  <EchoColony.Player2AppNotFound>No se encontró la app de Player2. Asegúrate de que esté abierta y con la sesión iniciada.</EchoColony.Player2AppNotFound>
+  <EchoColony.Player2ConnectBrowser>Conectar con el navegador</EchoColony.Player2ConnectBrowser>
+  <EchoColony.Player2ConnectHelp>'App' = inmediato si Player2 está abierto. 'Navegador' = abre player2.game para iniciar sesión.</EchoColony.Player2ConnectHelp>
+  <EchoColony.Player2Unreachable>No se pudo contactar con los servidores de Player2. Revisa tu conexión a internet e intenta conectar desde los ajustes del mod.</EchoColony.Player2Unreachable>
+  <EchoColony.VisionDescription>Al activarlo, se toma una captura de pantalla al abrir una ventana de chat. El colono puede 'ver' el estado actual del mapa.</EchoColony.VisionDescription>
+  <EchoColony.VisionNotAvailable>⚠ La visión no está disponible para modelos locales o personalizados.</EchoColony.VisionNotAvailable>
+  <EchoColony.EnableVision>Activar visión (captura de pantalla como contexto)</EchoColony.EnableVision>
+  <EchoColony.EnableVisionTooltip>Toma una captura JPEG de 800x450 al abrir el chat con un colono. Compatible con: Gemini Flash/Pro, OpenRouter (modelos con visión), Player2. No disponible para modelos locales o personalizados.</EchoColony.EnableVisionTooltip>
+  <EchoColony.VisionActive>✓ Visión activa ({0})</EchoColony.VisionActive>
+  <EchoColony.VisionUnsupported>Visión desactivada: {0} no admite imágenes</EchoColony.VisionUnsupported>
+  <EchoColony.VisionScreenshotInfo>Captura: 800x450 px · JPEG 75% · se toma al abrir el chat · el juego se pausa</EchoColony.VisionScreenshotInfo>
+  <EchoColony.UseCustomProvider>Proveedor personalizado (compatible con OpenAI)</EchoColony.UseCustomProvider>
+  <EchoColony.LocalModelSettings>Ajustes del modelo local:</EchoColony.LocalModelSettings>
+  <EchoColony.OllamaDisableThinking>Desactivar el modo de razonamiento (Qwen3 y modelos similares)</EchoColony.OllamaDisableThinking>
+  <EchoColony.OllamaDisableThinkingTooltip>Agrega 'think: false' a las peticiones a Ollama. Respuestas más rápidas, pero el razonamiento puede ser peor.</EchoColony.OllamaDisableThinkingTooltip>
+  <EchoColony.OpenRouterSettings>Ajustes de OpenRouter:</EchoColony.OpenRouterSettings>
+  <EchoColony.CustomProviderSettings>Ajustes del proveedor personalizado (compatible con OpenAI):</EchoColony.CustomProviderSettings>
+  <EchoColony.CustomProviderWorksWith>Funciona con: LMStudio (modo servidor), Ollama (compatibilidad OpenAI), Groq, Together AI, Mistral y cualquier endpoint /v1/chat/completions.</EchoColony.CustomProviderWorksWith>
+  <EchoColony.CustomEndpoint>URL del endpoint:</EchoColony.CustomEndpoint>
+  <EchoColony.CustomApiKey>Clave de API (déjala vacía si no hace falta, p. ej. en servidores locales):</EchoColony.CustomApiKey>
+  <EchoColony.CustomModelName>Nombre del modelo (déjalo vacío para usar el del servidor):</EchoColony.CustomModelName>
+  <EchoColony.TestConnection>🧪 Probar conexión</EchoColony.TestConnection>
+  <EchoColony.LoadGameToTest>Primero carga una partida para probar la conexión.</EchoColony.LoadGameToTest>
+  <EchoColony.Examples>Ejemplos:</EchoColony.Examples>
+  <EchoColony.CustomTesting>Probando la conexión con el proveedor personalizado...</EchoColony.CustomTesting>
+  <EchoColony.CustomConnected>✅ ¡Proveedor personalizado conectado!\nRespuesta: {0}</EchoColony.CustomConnected>
+  <EchoColony.CustomFailed>❌ Falló el proveedor personalizado.\n{0}</EchoColony.CustomFailed>
+  <EchoColony.GeminiSettings>Ajustes de Gemini:</EchoColony.GeminiSettings>
+  <EchoColony.GeminiEnterKey>⚠ Ingresa tu clave de API de Gemini para configurar los modelos</EchoColony.GeminiEnterKey>
+  <EchoColony.GeminiActiveModel>✅ Modelo activo: {0}</EchoColony.GeminiActiveModel>
+  <EchoColony.GeminiPendingModel>⏳ Pendiente: {0}</EchoColony.GeminiPendingModel>
+  <EchoColony.GeminiConfirmModel>✔ Confirmar modelo</EchoColony.GeminiConfirmModel>
+  <EchoColony.GeminiCancelPending>✖ Cancelar la selección pendiente</EchoColony.GeminiCancelPending>
+  <EchoColony.GeminiFetchModels>🔄 Buscar modelos disponibles</EchoColony.GeminiFetchModels>
+  <EchoColony.GeminiFetching>Buscando modelos en la API de Gemini...</EchoColony.GeminiFetching>
+  <EchoColony.GeminiFetchFailed>❌ No se pudieron obtener los modelos. Revisa tu clave de API.</EchoColony.GeminiFetchFailed>
+  <EchoColony.GeminiFetchFound>✅ Se encontraron {0} modelos: haz clic en uno para seleccionarlo y luego confirma</EchoColony.GeminiFetchFound>
+  <EchoColony.GeminiFetchingShort>Buscando...</EchoColony.GeminiFetchingShort>
+  <EchoColony.GeminiSearch>Buscar:</EchoColony.GeminiSearch>
+  <EchoColony.GeminiModelsFound>{0} modelos encontrados; haz clic para seleccionar:</EchoColony.GeminiModelsFound>
+  <EchoColony.GeminiActive>✅ Activo</EchoColony.GeminiActive>
+  <EchoColony.GeminiPending>⏳ Pend.</EchoColony.GeminiPending>
+  <EchoColony.GeminiUseDefault>Usar el predeterminado ({0})</EchoColony.GeminiUseDefault>
+  <EchoColony.GeminiDefaultSaved>✅ Modelo predeterminado guardado</EchoColony.GeminiDefaultSaved>
+  <EchoColony.GeminiFetchHint>Presiona 'Buscar modelos disponibles' para cargar la lista actual de modelos de Gemini.</EchoColony.GeminiFetchHint>
+  <EchoColony.GeminiDefaultSuffix>{0} (predeterminado)</EchoColony.GeminiDefaultSuffix>
+  <EchoColony.GeminiModelSaved>✅ Modelo guardado: {0}</EchoColony.GeminiModelSaved>
+  <EchoColony.GeminiModelSet>EchoColony: modelo cambiado a {0}</EchoColony.GeminiModelSet>
+  <EchoColony.DebugMemorySystem>Sistema de memoria:</EchoColony.DebugMemorySystem>
+  <EchoColony.DebugCheckMemory>Revisar el estado de la memoria</EchoColony.DebugCheckMemory>
+  <EchoColony.DebugForceCleanMemories>Forzar limpieza de memorias</EchoColony.DebugForceCleanMemories>
+  <EchoColony.DebugActionsSystem>Sistema de acciones:</EchoColony.DebugActionsSystem>
+  <EchoColony.DebugListActions>Listar acciones registradas</EchoColony.DebugListActions>
+  <EchoColony.DebugSpontaneousSystem>Sistema de mensajes espontáneos:</EchoColony.DebugSpontaneousSystem>
+  <EchoColony.DebugSystemDisabled>⚠ El sistema está DESACTIVADO</EchoColony.DebugSystemDisabled>
+  <EchoColony.DebugCheckStatus>🔍 Revisar el estado del sistema</EchoColony.DebugCheckStatus>
+  <EchoColony.DebugForceTestMessage>✉️ Forzar mensaje de prueba</EchoColony.DebugForceTestMessage>
+  <EchoColony.DebugSimulateRaid>⚔️ Simular una incursión de prueba</EchoColony.DebugSimulateRaid>
+  <EchoColony.DebugListColonists>📋 Listar el estado de los colonos</EchoColony.DebugListColonists>
+  <EchoColony.DebugResetCooldowns>🔄 Reiniciar todas las esperas</EchoColony.DebugResetCooldowns>
+  <EchoColony.DebugResetCooldownsConfirm>¿Reiniciar las esperas de mensajes de todos los colonos? Podrán enviar mensajes de inmediato.</EchoColony.DebugResetCooldownsConfirm>
+  <EchoColony.DebugToolsHint>Usa estas herramientas para diagnosticar problemas</EchoColony.DebugToolsHint>
+  <EchoColony.DebugTalesCache>Caché de historias:</EchoColony.DebugTalesCache>
+  <EchoColony.DebugExportTales>🧪 Exportar historias a TXT</EchoColony.DebugExportTales>
+  <EchoColony.LoadGameFirst>Primero carga una partida</EchoColony.LoadGameFirst>
+  <EchoColony.DebugTalesExported>EchoColony: historias exportadas a {0}</EchoColony.DebugTalesExported>
+  <EchoColony.DebugTalesWriteError>EchoColony: error al escribir el archivo: {0}</EchoColony.DebugTalesWriteError>
+  <EchoColony.MemoryEnabledMessage>EchoColony: sistema de memoria activado; las próximas conversaciones se recordarán</EchoColony.MemoryEnabledMessage>
+  <EchoColony.AllMemoriesDeleted>EchoColony: se borraron las memorias existentes</EchoColony.AllMemoriesDeleted>
+  <EchoColony.MemoryManagerUnavailable>El gestor de memoria no está disponible</EchoColony.MemoryManagerUnavailable>
+  <EchoColony.MemoryCheckOk>EchoColony: el sistema funciona correctamente</EchoColony.MemoryCheckOk>
+  <EchoColony.MemoryCheckProblems>EchoColony: se detectaron problemas</EchoColony.MemoryCheckProblems>
+  <EchoColony.DebugActionsListed>Se listaron {0} acciones en el log</EchoColony.DebugActionsListed>
+
 </LanguageData>
