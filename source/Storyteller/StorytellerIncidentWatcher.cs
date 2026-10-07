@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using HarmonyLib;
 using RimWorld;
 using Verse;
@@ -18,7 +19,7 @@ namespace EchoColony
             try
             {
                 // Solo procesar si el incidente fue exitoso
-                if (!__result || __instance?.def == null)
+                if (!__result || __instance?.def == null || Current.ProgramState != ProgramState.Playing)
                     return;
 
                 // Verificar si el sistema está activo y configurado para incidentes
@@ -41,9 +42,14 @@ namespace EchoColony
                     Log.Message($"[EchoColony] Storyteller incident detected: {__instance.def.defName}");
                 }
 
-                // Generar comentario del storyteller
+                // Las amenazas grandes ignoran el cooldown entre comentarios
+                bool bigThreat = __instance.def.category == IncidentCategoryDefOf.ThreatBig;
+
                 StorytellerSpontaneousMessageSystem.GenerateSpontaneousMessage(
-                    StorytellerSpontaneousMessageSystem.MessageTriggerType.Incident
+                    StorytellerSpontaneousMessageSystem.MessageTriggerType.Incident,
+                    situation: BuildIncidentSituation(__instance.def, parms),
+                    eventKey: "incident:" + __instance.def.defName,
+                    priority: bigThreat
                 );
             }
             catch (Exception ex)
@@ -53,6 +59,35 @@ namespace EchoColony
                     Log.Error($"[EchoColony] Error in StorytellerIncidentWatcher: {ex.Message}");
                 }
             }
+        }
+
+        /// <summary>
+        /// Describe el incidente para el prompt: qué fue, de qué tipo, contra quién y con qué fuerza.
+        /// </summary>
+        private static string BuildIncidentSituation(IncidentDef def, IncidentParms parms)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine($"Event you just triggered: {def.LabelCap}");
+            if (def.category != null)
+                sb.AppendLine($"Category: {def.category.LabelCap}");
+
+            string details = StorytellerEventText.Clean(def.description);
+            if (details.Length == 0)
+                details = StorytellerEventText.Clean(def.letterText);
+            if (details.Length > 0)
+                sb.AppendLine($"Details: {details}");
+
+            if (parms != null)
+            {
+                if (parms.faction != null)
+                    sb.AppendLine($"Faction involved: {parms.faction.Name}");
+                if (parms.points > 0 && def.category?.defName?.Contains("Threat") == true)
+                    sb.AppendLine($"Threat strength: {parms.points:F0} points");
+                if (parms.target is Map map && map != Find.CurrentMap)
+                    sb.AppendLine($"Location: {map.Parent?.LabelCap ?? "another map"}");
+            }
+
+            return sb.ToString();
         }
 
         private static bool ShouldCommentOnIncident()

@@ -59,7 +59,7 @@ namespace EchoColony
             Listing_Standard list = new Listing_Standard();
             list.Begin(viewRect);
 
-            DrawSectionHeader(list, "Basic Settings", new Color(0.7f, 0.9f, 1f));
+            DrawSectionHeader(list, "EchoColony.Header_BasicSettings".Translate(), new Color(0.7f, 0.9f, 1f));
 
             list.CheckboxLabeled("EchoColony.EnableSocialAffectsPersonality".Translate(), ref Settings.enableSocialAffectsPersonality);
             list.CheckboxLabeled("EchoColony.EnableRoleplayResponses".Translate(), ref Settings.enableRoleplayResponses);
@@ -79,41 +79,42 @@ namespace EchoColony
 
             list.GapLine();
 
-            DrawSectionHeader(list, "Memory System", new Color(0.7f, 0.9f, 1f));
+            DrawSectionHeader(list, "EchoColony.Header_MemorySystem".Translate(), new Color(0.7f, 0.9f, 1f));
 
             bool oldMemoryState = Settings.enableMemorySystem;
             list.CheckboxLabeled("EchoColony.EnableMemorySystem".Translate(), ref Settings.enableMemorySystem, "EchoColony.EnableMemorySystemTooltip".Translate());
             if (oldMemoryState != Settings.enableMemorySystem)
                 OnMemorySystemToggled(Settings.enableMemorySystem);
 
-            DrawStatusIndicator(list, Settings.enableMemorySystem, "Memory system");
+            DrawStatusIndicator(list, Settings.enableMemorySystem, "EchoColony.StatusName_Memory".Translate());
 
             list.GapLine();
 
-            DrawSectionHeader(list, "UI Settings", new Color(0.7f, 0.9f, 1f));
+            DrawSectionHeader(list, "EchoColony.Header_UISettings".Translate(), new Color(0.7f, 0.9f, 1f));
 
-            list.CheckboxLabeled("Show Storyteller Chat Button", ref Settings.enableStorytellerButton,
-                "Shows or hides the Storyteller chat button in the main menu bar");
+            list.CheckboxLabeled("EchoColony.ShowStorytellerButton".Translate(), ref Settings.enableStorytellerButton,
+                "EchoColony.ShowStorytellerButtonTooltip".Translate());
 
             list.GapLine();
 
-            DrawSectionHeader(list, "Animal Chat Settings", new Color(0.8f, 1f, 0.6f));
+            DrawSectionHeader(list, "EchoColony.Header_AnimalChat".Translate(), new Color(0.8f, 1f, 0.6f));
 
-            list.Label("Default Narrative Style for Animals:");
-            if (list.ButtonText(Settings.defaultAnimalNarrativeStyle.ToString()))
+            list.Label("EchoColony.AnimalDefaultStyle".Translate());
+            if (list.ButtonText((Settings.defaultAnimalNarrativeStyle == AnimalNarrativeStyle.FirstPerson
+                    ? "EchoColony.AnimalStyleFirstPerson" : "EchoColony.AnimalStyleThirdPerson").Translate()))
             {
                 Find.WindowStack.Add(new FloatMenu(new List<FloatMenuOption>
                 {
-                    new FloatMenuOption("Third Person (The dog barks)", () =>
+                    new FloatMenuOption("EchoColony.AnimalStyleThirdPersonExample".Translate(), () =>
                         Settings.defaultAnimalNarrativeStyle = AnimalNarrativeStyle.ThirdPerson),
-                    new FloatMenuOption("First Person (I bark)", () =>
+                    new FloatMenuOption("EchoColony.AnimalStyleFirstPersonExample".Translate(), () =>
                         Settings.defaultAnimalNarrativeStyle = AnimalNarrativeStyle.FirstPerson)
                 }));
             }
 
             list.Gap();
             GUI.color = Color.gray;
-            list.Label("Note: You can override this per-animal using Custom Prompt");
+            list.Label("EchoColony.AnimalStyleNote".Translate());
             GUI.color = Color.white;
 
             list.GapLine();
@@ -124,7 +125,7 @@ namespace EchoColony
             DrawMonologuesSection(list);
             list.GapLine();
 
-            DrawSectionHeader(list, "Spontaneous Messages System", new Color(0.8f, 1f, 0.8f));
+            DrawSectionHeader(list, "EchoColony.Header_SpontaneousMessages".Translate(), new Color(0.8f, 1f, 0.8f));
 
             list.Label("EchoColony.SpontaneousMessagesMode".Translate());
             if (list.ButtonText(GetSpontaneousModeLabelTranslated(Settings.spontaneousMessageMode)))
@@ -133,7 +134,7 @@ namespace EchoColony
             if (Settings.IsSpontaneousMessagesActive())
             {
                 list.Gap();
-                DrawStatusIndicator(list, true, "System");
+                DrawStatusIndicator(list, true, "EchoColony.StatusName_System".Translate());
                 list.Gap();
                 list.Label("EchoColony.DefaultMaxMessagesPerDay".Translate() + ": " + Settings.defaultMaxMessagesPerColonistPerDay);
                 Settings.defaultMaxMessagesPerColonistPerDay = (int)list.Slider(Settings.defaultMaxMessagesPerColonistPerDay, 1, 3);
@@ -159,52 +160,69 @@ namespace EchoColony
             }
             else
             {
-                DrawStatusIndicator(list, false, "System");
+                DrawStatusIndicator(list, false, "EchoColony.StatusName_System".Translate());
             }
 
             list.GapLine();
 
-            DrawSectionHeader(list, "Storyteller Spontaneous Messages", new Color(1f, 0.9f, 0.6f));
+            DrawSectionHeader(list, "EchoColony.StorytellerSectionHeader".Translate(), new Color(1f, 0.9f, 0.6f));
 
-            list.Label("Storyteller Message Mode:");
+            list.Label("EchoColony.StorytellerMessagesMode".Translate());
             if (list.ButtonText(GetStorytellerModeLabelTranslated(Settings.storytellerMessageMode)))
                 ShowStorytellerMessageModeMenu();
 
             if (Settings.IsStorytellerMessagesActive())
             {
                 list.Gap();
-                DrawStatusIndicator(list, true, "System");
+                DrawStatusIndicator(list, true, "EchoColony.StatusName_System".Translate());
 
                 if (Settings.AreStorytellerRandomMessagesEnabled())
                 {
                     list.Gap();
-                    list.Label("Random Message Interval (minutes): " + Settings.storytellerRandomIntervalMinutes.ToString("F0"));
+                    list.Label("EchoColony.StorytellerRandomInterval".Translate() + ": " + Settings.storytellerRandomIntervalMinutes.ToString("F0"));
                     Settings.storytellerRandomIntervalMinutes = list.Slider(Settings.storytellerRandomIntervalMinutes, 5f, 120f);
                 }
 
                 if (Settings.AreStorytellerIncidentMessagesEnabled())
                 {
                     list.Gap();
-                    list.Label("Incident Comment Chance: " + (Settings.storytellerIncidentChance * 100f).ToString("F0") + "%");
+                    list.Label("EchoColony.StorytellerIncidentChance".Translate() + ": " + (Settings.storytellerIncidentChance * 100f).ToString("F0") + "%");
                     Settings.storytellerIncidentChance = list.Slider(Settings.storytellerIncidentChance, 0f, 1f);
+
+                    list.Gap();
+                    list.Label("EchoColony.StorytellerReactTo".Translate());
+                    list.CheckboxLabeled("  → " + "EchoColony.StorytellerCommentOnDeaths".Translate(), ref Settings.storytellerCommentOnDeaths, "EchoColony.StorytellerCommentOnDeathsTooltip".Translate());
+                    list.CheckboxLabeled("  → " + "EchoColony.StorytellerCommentOnMentalBreaks".Translate(), ref Settings.storytellerCommentOnMentalBreaks, "EchoColony.StorytellerCommentOnMentalBreaksTooltip".Translate());
+                    list.CheckboxLabeled("  → " + "EchoColony.StorytellerCommentOnRelationships".Translate(), ref Settings.storytellerCommentOnRelationships, "EchoColony.StorytellerCommentOnRelationshipsTooltip".Translate());
+                    list.CheckboxLabeled("  → " + "EchoColony.StorytellerCommentOnResearch".Translate(), ref Settings.storytellerCommentOnResearch, "EchoColony.StorytellerCommentOnResearchTooltip".Translate());
                 }
 
                 list.Gap();
-                list.CheckboxLabeled("Auto-close message window", ref Settings.storytellerMessageAutoClose, "Message window will close automatically after a few seconds");
+                list.Label("EchoColony.StorytellerCommentCooldown".Translate() + ": " + Settings.storytellerCommentCooldownSeconds.ToString("F0") + "s",
+                    tooltip: "EchoColony.StorytellerCommentCooldownTooltip".Translate());
+                Settings.storytellerCommentCooldownSeconds = list.Slider(Settings.storytellerCommentCooldownSeconds, 0f, 600f);
+
+                list.Label("EchoColony.StorytellerDuplicateBlock".Translate() + ": " +
+                    (Settings.storytellerDuplicateBlockMinutes < 1f ? "EchoColony.StorytellerDuplicateBlockOff".Translate().ToString() : Settings.storytellerDuplicateBlockMinutes.ToString("F0") + " min"),
+                    tooltip: "EchoColony.StorytellerDuplicateBlockTooltip".Translate());
+                Settings.storytellerDuplicateBlockMinutes = list.Slider(Settings.storytellerDuplicateBlockMinutes, 0f, 60f);
+
+                list.Gap();
+                list.CheckboxLabeled("EchoColony.StorytellerMessageAutoClose".Translate(), ref Settings.storytellerMessageAutoClose, "EchoColony.StorytellerMessageAutoCloseTooltip".Translate());
                 if (Settings.storytellerMessageAutoClose)
                 {
-                    list.Label("Auto-close delay (seconds): " + Settings.storytellerMessageAutoCloseSeconds.ToString("F0"));
+                    list.Label("EchoColony.StorytellerMessageAutoCloseDelay".Translate() + ": " + Settings.storytellerMessageAutoCloseSeconds.ToString("F0"));
                     Settings.storytellerMessageAutoCloseSeconds = list.Slider(Settings.storytellerMessageAutoCloseSeconds, 3f, 30f);
                 }
 
                 list.Gap();
-                list.CheckboxLabeled("Play sound with messages", ref Settings.storytellerMessagePlaySound, "Play a notification sound when the storyteller sends a message");
+                list.CheckboxLabeled("EchoColony.StorytellerMessagePlaySound".Translate(), ref Settings.storytellerMessagePlaySound, "EchoColony.StorytellerMessagePlaySoundTooltip".Translate());
 
                 list.Gap();
-                if (list.ButtonText("🧪 Test Random Message"))
+                if (list.ButtonText("EchoColony.StorytellerMessageTest".Translate()))
                 {
                     if (Find.Storyteller == null)
-                        Messages.Message("Load a game first", MessageTypeDefOf.RejectInput);
+                        Messages.Message("EchoColony.LoadGameFirst".Translate(), MessageTypeDefOf.RejectInput);
                     else
                         StorytellerSpontaneousMessageSystem.GenerateSpontaneousMessage(
                             StorytellerSpontaneousMessageSystem.MessageTriggerType.Random, isTest: true);
@@ -212,21 +230,21 @@ namespace EchoColony
             }
             else
             {
-                DrawStatusIndicator(list, false, "System");
+                DrawStatusIndicator(list, false, "EchoColony.StatusName_System".Translate());
             }
 
             list.GapLine();
 
-            DrawSectionHeader(list, "Divine Actions System", new Color(1f, 0.8f, 0.4f));
+            DrawSectionHeader(list, "EchoColony.Header_DivineActions".Translate(), new Color(1f, 0.8f, 0.4f));
 
-            list.CheckboxLabeled("Enable Divine Actions (AI can affect colonists)", ref Settings.enableDivineActions,
-                "Allows the AI to use actions like healing, mood changes, etc. during conversations");
+            list.CheckboxLabeled("EchoColony.EnableDivineActions".Translate(), ref Settings.enableDivineActions,
+                "EchoColony.EnableDivineActionsTooltip".Translate());
 
             if (Settings.enableDivineActions)
             {
                 list.Gap();
-                list.CheckboxLabeled("  → Allow Negative Actions", ref Settings.allowNegativeActions, "Allows AI to use negative actions (mental breaks, injuries, etc.)");
-                list.CheckboxLabeled("  → Allow Extreme Actions", ref Settings.allowExtremeActions, "Allows AI to use extreme actions (amputations, resurrections, etc.)");
+                list.CheckboxLabeled("  → " + "EchoColony.AllowNegativeActions".Translate(), ref Settings.allowNegativeActions, "EchoColony.AllowNegativeActionsTooltip".Translate());
+                list.CheckboxLabeled("  → " + "EchoColony.AllowExtremeActions".Translate(), ref Settings.allowExtremeActions, "EchoColony.AllowExtremeActionsTooltip".Translate());
             }
 
             list.GapLine();
@@ -237,32 +255,32 @@ namespace EchoColony
             // ═══════════════════════════════════════════════════════════════
             // FACTION COMMS CHAT
             // ═══════════════════════════════════════════════════════════════
-            DrawSectionHeader(list, "Faction Comms Chat", new Color(0.7f, 1f, 0.85f));
+            DrawSectionHeader(list, "EchoColony.Header_FactionComms".Translate(), new Color(0.7f, 1f, 0.85f));
 
             list.CheckboxLabeled(
-                "Enable EchoColony chat options in comms console",
+                "EchoColony.EnableFactionComms".Translate(),
                 ref Settings.enableFactionCommsChat,
-                "Adds 'colonist speaks' and 'you speak directly' options when contacting factions via comms console.");
+                "EchoColony.EnableFactionCommsTooltip".Translate());
 
             if (Settings.enableFactionCommsChat)
             {
                 list.Gap(4f);
                 GUI.color = Color.gray;
-                list.Label("Goodwill changes cooldown:");
+                list.Label("EchoColony.FactionGoodwillCooldown".Translate());
                 GUI.color = Color.white;
-                list.Label($"{Settings.factionChatGoodwillCooldownHours:F0}h between automatic goodwill changes from conversation.");
+                list.Label("EchoColony.FactionGoodwillCooldownValue".Translate(Settings.factionChatGoodwillCooldownHours.ToString("F0")));
                 Settings.factionChatGoodwillCooldownHours = list.Slider(
                     Settings.factionChatGoodwillCooldownHours, 1f, 72f);
 
                 list.Gap(2f);
                 GUI.color = Color.gray;
-                list.Label("Does not block chatting — only limits how often talking affects goodwill.");
+                list.Label("EchoColony.FactionGoodwillCooldownNote".Translate());
                 GUI.color = Color.white;
             }
 
             list.GapLine();
 
-            DrawSectionHeader(list, "Global Prompt", new Color(0.7f, 0.9f, 1f));
+            DrawSectionHeader(list, "EchoColony.Header_GlobalPrompt".Translate(), new Color(0.7f, 0.9f, 1f));
 
             list.Label("EchoColony.GlobalPrompt".Translate());
             float areaHeight = 80f;
@@ -274,7 +292,7 @@ namespace EchoColony
 
             list.GapLine();
 
-            DrawSectionHeader(list, "AI Model Configuration", new Color(0.6f, 1f, 0.6f));
+            DrawSectionHeader(list, "EchoColony.Header_AIModel".Translate(), new Color(0.6f, 1f, 0.6f));
 
             bool isPlayer2     = Settings.modelSource == ModelSource.Player2;
             bool checkboxState = isPlayer2;
@@ -300,7 +318,7 @@ namespace EchoColony
 
             list.GapLine();
 
-            DrawSectionHeader(list, "General Settings", new Color(0.7f, 0.9f, 1f));
+            DrawSectionHeader(list, "EchoColony.Header_General".Translate(), new Color(0.7f, 0.9f, 1f));
 
             if (Settings.modelSource != ModelSource.Player2)
             {
@@ -313,7 +331,7 @@ namespace EchoColony
             if (Settings.debugMode)
             {
                 list.GapLine();
-                DrawSectionHeader(list, "Debug Tools", Color.cyan);
+                DrawSectionHeader(list, "EchoColony.Header_DebugTools".Translate(), Color.cyan);
                 DrawMemoryDebugTools(list);
                 if (Settings.enableDivineActions)           DrawActionsDebugTools(list);
                 if (Settings.IsSpontaneousMessagesActive())  DrawSpontaneousMessagesDebugTools(list);
@@ -337,21 +355,21 @@ namespace EchoColony
             if (authenticated)
             {
                 GUI.color = Color.green;
-                list.Label("  ✓ Connected to Player2 Web API");
+                list.Label("  " + "EchoColony.Player2Connected".Translate());
                 GUI.color = Color.gray;
                 if (!string.IsNullOrEmpty(Player2AuthManager.ConnectionMethod))
-                    list.Label($"  Via: {Player2AuthManager.ConnectionMethod}");
+                    list.Label("  " + "EchoColony.Player2Via".Translate(Player2AuthManager.ConnectionMethod));
                 list.Label("  " + Player2AuthManager.WebApiBase);
                 GUI.color = Color.white;
 
                 list.Gap(4f);
-                if (list.ButtonText("Disconnect from Player2"))
+                if (list.ButtonText("EchoColony.Player2Disconnect".Translate()))
                     Player2AuthManager.Disconnect();
             }
             else
             {
                 GUI.color = Color.yellow;
-                list.Label("  Not connected — connect your account to use Player2");
+                list.Label("  " + "EchoColony.Player2NotConnected".Translate());
                 GUI.color = Color.white;
 
                 list.Gap(4f);
@@ -362,9 +380,9 @@ namespace EchoColony
                 {
                     GUI.color = new Color(1f, 0.9f, 0.3f);
                     if (!string.IsNullOrEmpty(Player2AuthManager.PendingUserCode))
-                        list.Label($"  Waiting for browser approval... Code: {Player2AuthManager.PendingUserCode}");
+                        list.Label("  " + "EchoColony.Player2WaitingBrowser".Translate(Player2AuthManager.PendingUserCode));
                     else
-                        list.Label("  Connecting...");
+                        list.Label("  " + "EchoColony.Player2Connecting".Translate());
                     GUI.color = Color.white;
                 }
                 else
@@ -372,18 +390,18 @@ namespace EchoColony
                     Rect row  = list.GetRect(32f);
                     float half = (row.width - 8f) / 2f;
 
-                    if (Widgets.ButtonText(new Rect(row.x, row.y, half, row.height), "Connect via Player2 App"))
+                    if (Widgets.ButtonText(new Rect(row.x, row.y, half, row.height), "EchoColony.Player2ConnectApp".Translate()))
                     {
                         MyStoryModComponent.Instance.StartCoroutine(
                             Player2AuthManager.AuthenticateViaLocalApp(success =>
                             {
                                 if (!success)
-                                    Messages.Message("Player2 App not found. Make sure it's open and logged in.",
+                                    Messages.Message("EchoColony.Player2AppNotFound".Translate(),
                                         MessageTypeDefOf.RejectInput, false);
                             }));
                     }
 
-                    if (Widgets.ButtonText(new Rect(row.x + half + 8f, row.y, half, row.height), "Connect via Browser"))
+                    if (Widgets.ButtonText(new Rect(row.x + half + 8f, row.y, half, row.height), "EchoColony.Player2ConnectBrowser".Translate()))
                     {
                         MyStoryModComponent.Instance.StartCoroutine(
                             Player2AuthManager.AuthenticateViaBrowser());
@@ -391,7 +409,7 @@ namespace EchoColony
 
                     list.Gap(2f);
                     GUI.color = Color.gray;
-                    list.Label("  'App' = instant if Player2 is running. 'Browser' = opens player2.game to log in.");
+                    list.Label("  " + "EchoColony.Player2ConnectHelp".Translate());
                     GUI.color = Color.white;
                 }
             }
@@ -409,10 +427,10 @@ namespace EchoColony
 
         private void DrawVisionSection(Listing_Standard list)
         {
-            DrawSectionHeader(list, "Vision System (Screenshot Context)", new Color(0.6f, 0.9f, 1f));
+            DrawSectionHeader(list, "EchoColony.Header_Vision".Translate(), new Color(0.6f, 0.9f, 1f));
 
             GUI.color = Color.gray;
-            list.Label("When enabled, captures a screenshot as you open a chat window. The colonist can 'see' the current state of the map.");
+            list.Label("EchoColony.VisionDescription".Translate());
             GUI.color = Color.white;
 
             list.Gap(4f);
@@ -420,32 +438,29 @@ namespace EchoColony
             if (Settings.modelSource == ModelSource.Local || Settings.modelSource == ModelSource.Custom)
             {
                 GUI.color = new Color(1f, 0.75f, 0.3f);
-                list.Label("⚠ Vision is not available for local or custom models.");
+                list.Label("EchoColony.VisionNotAvailable".Translate());
                 GUI.color = Color.white;
                 list.Gap(2f);
             }
 
             list.CheckboxLabeled(
-                "Enable Vision (screenshot context)",
+                "EchoColony.EnableVision".Translate(),
                 ref Settings.enableVision,
-                "Captures a 800x450 JPEG screenshot when opening a colonist chat. " +
-                "Supported by: Gemini Flash/Pro, OpenRouter (vision models), Player2. " +
-                "Not available for local or custom models.");
+                "EchoColony.EnableVisionTooltip".Translate());
 
             if (Settings.enableVision)
             {
                 list.Gap(4f);
                 bool supported = Settings.IsVisionActive();
-                DrawStatusIndicator(list, supported,
-                    supported
-                        ? $"Vision active ({Settings.modelSource})"
-                        : $"Vision disabled — {Settings.modelSource} does not support images");
+                GUI.color = supported ? Color.green : Color.gray;
+                list.Label("  " + (supported ? "EchoColony.VisionActive" : "EchoColony.VisionUnsupported").Translate(Settings.modelSource.ToString()));
+                GUI.color = Color.white;
 
                 if (supported)
                 {
                     list.Gap(2f);
                     GUI.color = Color.gray;
-                    list.Label("Screenshot: 800x450 px · JPEG 75% · captured on chat open · game is paused");
+                    list.Label("EchoColony.VisionScreenshotInfo".Translate());
                     GUI.color = Color.white;
                 }
             }
@@ -466,7 +481,7 @@ namespace EchoColony
                 Settings.modelSource = ModelSource.Local;
             if (Widgets.RadioButtonLabeled(list.GetRect(25f), "EchoColony.UseOpenRouter".Translate(), Settings.modelSource == ModelSource.OpenRouter))
                 Settings.modelSource = ModelSource.OpenRouter;
-            if (Widgets.RadioButtonLabeled(list.GetRect(25f), "Custom Provider (OpenAI-compatible)",  Settings.modelSource == ModelSource.Custom))
+            if (Widgets.RadioButtonLabeled(list.GetRect(25f), "EchoColony.UseCustomProvider".Translate(),  Settings.modelSource == ModelSource.Custom))
                 Settings.modelSource = ModelSource.Custom;
 
             list.Gap();
@@ -483,7 +498,7 @@ namespace EchoColony
         private void DrawLocalModelSettings(Listing_Standard list)
         {
             GUI.color = new Color(1f, 1f, 0.7f);
-            list.Label("Local Model Settings:");
+            list.Label("EchoColony.LocalModelSettings".Translate());
             GUI.color = Color.white;
 
             list.Label("EchoColony.LocalModelProvider".Translate());
@@ -504,16 +519,16 @@ namespace EchoColony
             {
                 list.Gap(4f);
                 list.CheckboxLabeled(
-                    "Disable thinking mode (Qwen3 and similar models)",
+                    "EchoColony.OllamaDisableThinking".Translate(),
                     ref Settings.ollamaDisableThinking,
-                    "Adds 'think: false' to Ollama requests. Faster responses but may reduce reasoning quality.");
+                    "EchoColony.OllamaDisableThinkingTooltip".Translate());
             }
         }
 
         private void DrawOpenRouterSettings(Listing_Standard list)
         {
             GUI.color = new Color(1f, 1f, 0.7f);
-            list.Label("OpenRouter Settings:");
+            list.Label("EchoColony.OpenRouterSettings".Translate());
             GUI.color = Color.white;
 
             list.Label("EchoColony.OpenRouterEndpoint".Translate());
@@ -531,40 +546,40 @@ namespace EchoColony
         private void DrawCustomProviderSettings(Listing_Standard list)
         {
             GUI.color = new Color(1f, 1f, 0.7f);
-            list.Label("Custom Provider Settings (OpenAI-compatible):");
+            list.Label("EchoColony.CustomProviderSettings".Translate());
             GUI.color = Color.white;
 
             list.Gap(2f);
             GUI.color = Color.gray;
-            list.Label("Works with: LMStudio (server mode), Ollama (OpenAI compat), Groq, Together AI, Mistral, and any /v1/chat/completions endpoint.");
+            list.Label("EchoColony.CustomProviderWorksWith".Translate());
             GUI.color = Color.white;
 
             list.Gap(4f);
 
-            list.Label("Endpoint URL:");
+            list.Label("EchoColony.CustomEndpoint".Translate());
             Settings.customEndpoint = list.TextEntry(Settings.customEndpoint);
 
             list.Gap(2f);
-            list.Label("API Key (leave empty if not required — e.g. local servers):");
+            list.Label("EchoColony.CustomApiKey".Translate());
             Settings.customApiKey = list.TextEntry(Settings.customApiKey);
 
             list.Gap(2f);
-            list.Label("Model name (leave empty to use server default):");
+            list.Label("EchoColony.CustomModelName".Translate());
             Settings.customModelName = list.TextEntry(Settings.customModelName);
 
             list.Gap(6f);
 
-            if (list.ButtonText("🧪 Test Connection"))
+            if (list.ButtonText("EchoColony.TestConnection".Translate()))
             {
                 if (MyStoryModComponent.Instance != null)
                     MyStoryModComponent.Instance.StartCoroutine(TestCustomProviderConnection());
                 else
-                    Messages.Message("Load a game first to test the connection.", MessageTypeDefOf.RejectInput);
+                    Messages.Message("EchoColony.LoadGameToTest".Translate(), MessageTypeDefOf.RejectInput);
             }
 
             list.Gap(4f);
             GUI.color = Color.gray;
-            list.Label("Examples:");
+            list.Label("EchoColony.Examples".Translate());
             list.Label("  LMStudio:   http://localhost:1234/v1/chat/completions");
             list.Label("  Ollama:     http://localhost:11434/v1/chat/completions");
             list.Label("  Groq:       https://api.groq.com/openai/v1/chat/completions");
@@ -574,7 +589,7 @@ namespace EchoColony
 
         private System.Collections.IEnumerator TestCustomProviderConnection()
         {
-            Messages.Message("Testing custom provider connection...", MessageTypeDefOf.SilentInput);
+            Messages.Message("EchoColony.CustomTesting".Translate(), MessageTypeDefOf.SilentInput);
 
             bool   done   = false;
             string result = "";
@@ -588,11 +603,11 @@ namespace EchoColony
 
             if (!string.IsNullOrWhiteSpace(result) && !result.StartsWith("⚠"))
                 Messages.Message(
-                    $"✅ Custom provider connected!\nResponse: {result.Substring(0, Math.Min(80, result.Length))}",
+                    "EchoColony.CustomConnected".Translate(result.Substring(0, Math.Min(80, result.Length))),
                     MessageTypeDefOf.PositiveEvent);
             else
                 Messages.Message(
-                    $"❌ Custom provider failed.\n{result}",
+                    "EchoColony.CustomFailed".Translate(result ?? ""),
                     MessageTypeDefOf.RejectInput);
         }
 
@@ -603,7 +618,7 @@ namespace EchoColony
         private void DrawGeminiSettings(Listing_Standard list)
         {
             GUI.color = new Color(1f, 1f, 0.7f);
-            list.Label("Gemini Settings:");
+            list.Label("EchoColony.GeminiSettings".Translate());
             GUI.color = Color.white;
 
             list.Label("EchoColony.GeminiAPIKey".Translate());
@@ -612,7 +627,7 @@ namespace EchoColony
             if (string.IsNullOrEmpty(Settings.apiKey))
             {
                 GUI.color = Color.yellow;
-                list.Label("⚠ Enter your Gemini API key to configure models");
+                list.Label("EchoColony.GeminiEnterKey".Translate());
                 GUI.color = Color.white;
                 return;
             }
@@ -624,7 +639,7 @@ namespace EchoColony
             Widgets.DrawBoxSolid(savedModelRect, new Color(0.1f, 0.3f, 0.1f, 0.8f));
             DrawBorderRect(savedModelRect, new Color(0.3f, 0.8f, 0.3f), 1);
             GUI.color = Color.green;
-            Widgets.Label(new Rect(savedModelRect.x + 8, savedModelRect.y + 9, savedModelRect.width, 24), $"✅ Active model: {savedModel}");
+            Widgets.Label(new Rect(savedModelRect.x + 8, savedModelRect.y + 9, savedModelRect.width, 24), "EchoColony.GeminiActiveModel".Translate(savedModel));
             GUI.color = Color.white;
 
             list.Gap();
@@ -636,34 +651,34 @@ namespace EchoColony
                 Widgets.DrawBoxSolid(pendingRect, new Color(0.3f, 0.2f, 0f, 0.8f));
                 DrawBorderRect(pendingRect, new Color(1f, 0.8f, 0.2f), 1);
                 GUI.color = new Color(1f, 0.9f, 0.3f);
-                Widgets.Label(new Rect(pendingRect.x + 8, pendingRect.y + 9, pendingRect.width - 160f, 24), $"⏳ Pending: {_pendingModelSelection}");
+                Widgets.Label(new Rect(pendingRect.x + 8, pendingRect.y + 9, pendingRect.width - 160f, 24), "EchoColony.GeminiPendingModel".Translate(_pendingModelSelection));
                 GUI.color = Color.white;
                 Rect confirmBtn = new Rect(pendingRect.xMax - 150f, pendingRect.y + 4, 142f, 28f);
                 Widgets.DrawBoxSolid(confirmBtn, new Color(0.2f, 0.6f, 0.2f));
                 Widgets.DrawHighlightIfMouseover(confirmBtn);
                 if (Widgets.ButtonInvisible(confirmBtn)) ConfirmModelSelection();
-                Widgets.Label(new Rect(confirmBtn.x + 8, confirmBtn.y + 6, confirmBtn.width, 24), "✔ Confirm Model");
+                Widgets.Label(new Rect(confirmBtn.x + 8, confirmBtn.y + 6, confirmBtn.width, 24), "EchoColony.GeminiConfirmModel".Translate());
                 list.Gap();
-                if (list.ButtonText("✖ Cancel pending selection")) _pendingModelSelection = "";
+                if (list.ButtonText("EchoColony.GeminiCancelPending".Translate())) _pendingModelSelection = "";
             }
 
             list.Gap();
 
-            if (!_isFetchingModels && list.ButtonText("🔄 Fetch Available Models"))
+            if (!_isFetchingModels && list.ButtonText("EchoColony.GeminiFetchModels".Translate()))
             {
                 _isFetchingModels = true;
-                _fetchModelStatus = "Fetching models from Gemini API...";
+                _fetchModelStatus = "EchoColony.GeminiFetching".Translate();
                 _fetchedGeminiModels.Clear();
                 GeminiModelFetcher.FetchModels(Settings.apiKey, (models) =>
                 {
                     _isFetchingModels = false;
                     _fetchModelStatus = (models == null || models.Count == 0)
-                        ? "❌ Failed to fetch models. Check your API key."
-                        : $"✅ Found {models.Count} models — click one to select, then confirm";
+                        ? "EchoColony.GeminiFetchFailed".Translate().ToString()
+                        : "EchoColony.GeminiFetchFound".Translate(models.Count).ToString();
                     if (models != null) _fetchedGeminiModels = models;
                 });
             }
-            else if (_isFetchingModels) list.Label("Fetching...");
+            else if (_isFetchingModels) list.Label("EchoColony.GeminiFetchingShort".Translate());
 
             if (!string.IsNullOrEmpty(_fetchModelStatus))
             {
@@ -676,14 +691,14 @@ namespace EchoColony
             if (_fetchedGeminiModels.Count > 0)
             {
                 list.Gap();
-                list.Label("Search:");
+                list.Label("EchoColony.GeminiSearch".Translate());
                 _modelSearchText = list.TextEntry(_modelSearchText);
 
                 var filtered = string.IsNullOrEmpty(_modelSearchText)
                     ? _fetchedGeminiModels
                     : _fetchedGeminiModels.Where(m => m.Name.Contains(_modelSearchText, StringComparison.OrdinalIgnoreCase)).ToList();
 
-                list.Label($"{filtered.Count} models found — click to select:");
+                list.Label("EchoColony.GeminiModelsFound".Translate(filtered.Count));
 
                 float rowHeight  = 30f;
                 float listHeight = rowHeight * Math.Min(MAX_VISIBLE_GEMINI_MODELS, filtered.Count);
@@ -709,28 +724,28 @@ namespace EchoColony
                     GUI.color = Color.white;
 
                     if (isSaved)
-                    { GUI.color = Color.green; Widgets.Label(new Rect(rowRect.xMax - 52f, rowRect.y + 7, 50f, rowHeight), "✅ Active"); GUI.color = Color.white; }
+                    { GUI.color = Color.green; Widgets.Label(new Rect(rowRect.xMax - 52f, rowRect.y + 7, 50f, rowHeight), "EchoColony.GeminiActive".Translate()); GUI.color = Color.white; }
                     else if (isPending)
-                    { GUI.color = new Color(1f, 0.9f, 0.3f); Widgets.Label(new Rect(rowRect.xMax - 58f, rowRect.y + 7, 56f, rowHeight), "⏳ Pending"); GUI.color = Color.white; }
+                    { GUI.color = new Color(1f, 0.9f, 0.3f); Widgets.Label(new Rect(rowRect.xMax - 58f, rowRect.y + 7, 56f, rowHeight), "EchoColony.GeminiPending".Translate()); GUI.color = Color.white; }
 
                     if (Widgets.ButtonInvisible(rowRect) && !isSaved) _pendingModelSelection = model.Name;
                 }
                 Widgets.EndScrollView();
 
                 list.Gap();
-                if (list.ButtonText($"Use Default ({GeminiAPI.DefaultModel})"))
+                if (list.ButtonText("EchoColony.GeminiUseDefault".Translate(GeminiAPI.DefaultModel)))
                 {
                     Settings.selectedModel = GeminiAPI.DefaultModel;
                     Settings.Write();
                     _pendingModelSelection = "";
-                    _fetchModelStatus      = "✅ Default model saved";
+                    _fetchModelStatus      = "EchoColony.GeminiDefaultSaved".Translate();
                 }
             }
             else if (!_isFetchingModels)
             {
                 list.Gap();
                 GUI.color = Color.gray;
-                list.Label("Click 'Fetch Available Models' to load the current model list from Gemini.");
+                list.Label("EchoColony.GeminiFetchHint".Translate());
                 GUI.color = Color.white;
             }
         }
@@ -738,16 +753,16 @@ namespace EchoColony
         private string GetSavedModelName() =>
             !string.IsNullOrEmpty(Settings.selectedModel)
                 ? Settings.selectedModel
-                : $"{GeminiAPI.DefaultModel} (default)";
+                : "EchoColony.GeminiDefaultSuffix".Translate(GeminiAPI.DefaultModel).ToString();
 
         private void ConfirmModelSelection()
         {
             if (string.IsNullOrEmpty(_pendingModelSelection)) return;
             Settings.selectedModel = _pendingModelSelection;
             Settings.Write();
-            _fetchModelStatus      = $"✅ Model saved: {_pendingModelSelection}";
+            _fetchModelStatus      = "EchoColony.GeminiModelSaved".Translate(_pendingModelSelection);
             _pendingModelSelection = "";
-            Messages.Message($"EchoColony: Model set to {Settings.selectedModel}", MessageTypeDefOf.PositiveEvent);
+            Messages.Message("EchoColony.GeminiModelSet".Translate(Settings.selectedModel), MessageTypeDefOf.PositiveEvent);
             if (Settings.debugMode) Log.Message($"[EchoColony] Model confirmed: {Settings.selectedModel}");
         }
 
@@ -980,7 +995,7 @@ namespace EchoColony
         private void DrawStatusIndicator(Listing_Standard list, bool enabled, string systemName)
         {
             GUI.color = enabled ? Color.green : Color.gray;
-            list.Label(enabled ? $"  ✓ {systemName}: Enabled" : $"  {systemName}: Disabled");
+            list.Label("  " + (enabled ? "EchoColony.StatusEnabled" : "EchoColony.StatusDisabled").Translate(systemName));
             GUI.color = Color.white;
         }
 
@@ -999,50 +1014,50 @@ namespace EchoColony
         private void DrawMemoryDebugTools(Listing_Standard list)
         {
             GUI.color = new Color(1f, 1f, 0.7f);
-            list.Label("Memory System:");
+            list.Label("EchoColony.DebugMemorySystem".Translate());
             GUI.color = Color.white;
-            if (list.ButtonText("Check Memory State"))   CheckMemorySystemState();
-            if (list.ButtonText("Force Clean Memories")) ForceCleanAllMemories();
+            if (list.ButtonText("EchoColony.DebugCheckMemory".Translate()))   CheckMemorySystemState();
+            if (list.ButtonText("EchoColony.DebugForceCleanMemories".Translate())) ForceCleanAllMemories();
         }
 
         private void DrawActionsDebugTools(Listing_Standard list)
         {
             list.Gap();
             GUI.color = new Color(1f, 1f, 0.7f);
-            list.Label("Actions System:");
+            list.Label("EchoColony.DebugActionsSystem".Translate());
             GUI.color = Color.white;
-            if (list.ButtonText("List Registered Actions")) ListRegisteredActions();
+            if (list.ButtonText("EchoColony.DebugListActions".Translate())) ListRegisteredActions();
         }
 
         private void DrawSpontaneousMessagesDebugTools(Listing_Standard list)
         {
             list.Gap();
             GUI.color = new Color(1f, 1f, 0.7f);
-            list.Label("Spontaneous Messages System:");
+            list.Label("EchoColony.DebugSpontaneousSystem".Translate());
             GUI.color = Color.white;
 
             if (!Settings.IsSpontaneousMessagesActive())
             {
                 GUI.color = Color.yellow;
-                list.Label("⚠ System is DISABLED");
+                list.Label("EchoColony.DebugSystemDisabled".Translate());
                 GUI.color = Color.white;
             }
 
-            if (list.ButtonText("🔍 Check System Status"))  SpontaneousMessages.SpontaneousMessagesDebug.CheckSystemStatus();
-            if (list.ButtonText("✉️ Force Test Message"))   SpontaneousMessages.SpontaneousMessagesDebug.ForceTestMessage();
-            if (list.ButtonText("⚔️ Simulate Test Raid"))   SpontaneousMessages.SpontaneousMessagesDebug.SimulateIncident();
-            if (list.ButtonText("📋 List Colonists Status")) SpontaneousMessages.SpontaneousMessagesDebug.ListColonistsStatus();
+            if (list.ButtonText("EchoColony.DebugCheckStatus".Translate()))  SpontaneousMessages.SpontaneousMessagesDebug.CheckSystemStatus();
+            if (list.ButtonText("EchoColony.DebugForceTestMessage".Translate()))   SpontaneousMessages.SpontaneousMessagesDebug.ForceTestMessage();
+            if (list.ButtonText("EchoColony.DebugSimulateRaid".Translate()))   SpontaneousMessages.SpontaneousMessagesDebug.SimulateIncident();
+            if (list.ButtonText("EchoColony.DebugListColonists".Translate())) SpontaneousMessages.SpontaneousMessagesDebug.ListColonistsStatus();
 
-            if (list.ButtonText("🔄 Reset All Cooldowns"))
+            if (list.ButtonText("EchoColony.DebugResetCooldowns".Translate()))
             {
                 Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
-                    "Reset all colonist message cooldowns? This will allow them to send messages immediately.",
+                    "EchoColony.DebugResetCooldownsConfirm".Translate(),
                     () => SpontaneousMessages.SpontaneousMessagesDebug.ResetAllCooldowns()));
             }
 
             list.Gap();
             GUI.color = Color.gray;
-            list.Label("Use these tools to diagnose issues");
+            list.Label("EchoColony.DebugToolsHint".Translate());
             GUI.color = Color.white;
         }
 
@@ -1050,14 +1065,14 @@ namespace EchoColony
         {
             list.Gap();
             GUI.color = new Color(0.8f, 1f, 0.8f);
-            list.Label("Tales Cache:");
+            list.Label("EchoColony.DebugTalesCache".Translate());
             GUI.color = Color.white;
 
-            if (list.ButtonText("🧪 Export Tales to TXT"))
+            if (list.ButtonText("EchoColony.DebugExportTales".Translate()))
             {
                 if (Current.Game == null)
                 {
-                    Messages.Message("Load a game first", MessageTypeDefOf.RejectInput);
+                    Messages.Message("EchoColony.LoadGameFirst".Translate(), MessageTypeDefOf.RejectInput);
                     return;
                 }
 
@@ -1124,12 +1139,12 @@ namespace EchoColony
                 try
                 {
                     System.IO.File.WriteAllText(path, sb.ToString());
-                    Messages.Message($"EchoColony: Tales exported to {path}", MessageTypeDefOf.PositiveEvent);
+                    Messages.Message("EchoColony.DebugTalesExported".Translate(path), MessageTypeDefOf.PositiveEvent);
                     Log.Message($"[EchoColony] Tales debug written to: {path}");
                 }
                 catch (System.Exception ex)
                 {
-                    Messages.Message($"EchoColony: Error writing file — {ex.Message}", MessageTypeDefOf.RejectInput);
+                    Messages.Message("EchoColony.DebugTalesWriteError".Translate(ex.Message), MessageTypeDefOf.RejectInput);
                     Log.Error($"[EchoColony] Tales debug write error: {ex.Message}");
                 }
             }
@@ -1191,10 +1206,10 @@ namespace EchoColony
         {
             switch (mode)
             {
-                case StorytellerMessageMode.Disabled:      return "Disabled";
-                case StorytellerMessageMode.RandomOnly:    return "Random Only";
-                case StorytellerMessageMode.IncidentsOnly: return "Incidents Only";
-                case StorytellerMessageMode.Full:          return "Full (Random + Incidents)";
+                case StorytellerMessageMode.Disabled:      return "EchoColony.StorytellerModeDisabled".Translate();
+                case StorytellerMessageMode.RandomOnly:    return "EchoColony.StorytellerModeRandomOnly".Translate();
+                case StorytellerMessageMode.IncidentsOnly: return "EchoColony.StorytellerModeIncidentsOnly".Translate();
+                case StorytellerMessageMode.Full:          return "EchoColony.StorytellerModeFull".Translate();
                 default:                                   return mode.ToString();
             }
         }
@@ -1203,10 +1218,10 @@ namespace EchoColony
         {
             switch (mode)
             {
-                case StorytellerMessageMode.Disabled:      return "No messages";
-                case StorytellerMessageMode.RandomOnly:    return "Random observations";
-                case StorytellerMessageMode.IncidentsOnly: return "React to events";
-                case StorytellerMessageMode.Full:          return "Both random and events";
+                case StorytellerMessageMode.Disabled:      return "EchoColony.StorytellerModeDisabledDesc".Translate();
+                case StorytellerMessageMode.RandomOnly:    return "EchoColony.StorytellerModeRandomOnlyDesc".Translate();
+                case StorytellerMessageMode.IncidentsOnly: return "EchoColony.StorytellerModeIncidentsOnlyDesc".Translate();
+                case StorytellerMessageMode.Full:          return "EchoColony.StorytellerModeFullDesc".Translate();
                 default:                                   return "";
             }
         }
@@ -1220,7 +1235,7 @@ namespace EchoColony
             if (newState)
             {
                 Log.Message("[EchoColony] Memory system enabled by user");
-                Messages.Message("EchoColony: Memory system enabled - future conversations will be remembered", MessageTypeDefOf.PositiveEvent);
+                Messages.Message("EchoColony.MemoryEnabledMessage".Translate(), MessageTypeDefOf.PositiveEvent);
             }
             else
             {
@@ -1231,7 +1246,7 @@ namespace EchoColony
                     {
                         var mm = MyStoryModComponent.Instance?.ColonistMemoryManager;
                         if (mm != null) mm.ForceCleanMemories();
-                        Messages.Message("EchoColony: Existing memories deleted", MessageTypeDefOf.TaskCompletion);
+                        Messages.Message("EchoColony.AllMemoriesDeleted".Translate(), MessageTypeDefOf.TaskCompletion);
                     }));
             }
         }
@@ -1239,10 +1254,10 @@ namespace EchoColony
         private void CheckMemorySystemState()
         {
             var mm = MyStoryModComponent.Instance?.ColonistMemoryManager;
-            if (mm == null) { Messages.Message("MemoryManager not available", MessageTypeDefOf.RejectInput); return; }
+            if (mm == null) { Messages.Message("EchoColony.MemoryManagerUnavailable".Translate(), MessageTypeDefOf.RejectInput); return; }
             mm.DebugPrintMemoryState();
             bool ok = mm.ValidateMemoryIntegrity();
-            Messages.Message($"EchoColony: {(ok ? "System working correctly" : "Problems detected")}",
+            Messages.Message((ok ? "EchoColony.MemoryCheckOk" : "EchoColony.MemoryCheckProblems").Translate(),
                 ok ? MessageTypeDefOf.PositiveEvent : MessageTypeDefOf.CautionInput);
         }
 
@@ -1254,7 +1269,7 @@ namespace EchoColony
                 {
                     var mm = MyStoryModComponent.Instance?.ColonistMemoryManager;
                     if (mm != null) mm.ForceCleanMemories();
-                    else Messages.Message("MemoryManager not available", MessageTypeDefOf.RejectInput);
+                    else Messages.Message("EchoColony.MemoryManagerUnavailable".Translate(), MessageTypeDefOf.RejectInput);
                 }));
         }
 
@@ -1271,7 +1286,7 @@ namespace EchoColony
                 foreach (var action in group) sb.AppendLine($"    - {action.ActionId}");
             }
             Log.Message(sb.ToString());
-            Messages.Message($"Listed {actions.Count} actions in log", MessageTypeDefOf.TaskCompletion);
+            Messages.Message("EchoColony.DebugActionsListed".Translate(actions.Count), MessageTypeDefOf.TaskCompletion);
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -1300,7 +1315,7 @@ namespace EchoColony
 #endif
                 {
                     Messages.Message(
-                        "Could not reach Player2 servers. Check your internet connection and try connecting in Mod Settings.",
+                        "EchoColony.Player2Unreachable".Translate(),
                         MessageTypeDefOf.RejectInput, false);
                 }
             };

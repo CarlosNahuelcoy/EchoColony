@@ -18,53 +18,11 @@ namespace EchoColony
         {
             var sb = new StringBuilder();
 
-            sb.AppendLine("=== BASE PERSONALITY ===");
-            sb.AppendLine(GetStorytellerPersonality(storyteller));
-            sb.AppendLine();
-
-            string customPrompt = StorytellerPromptManager.GetPrompt();
-            if (!string.IsNullOrWhiteSpace(customPrompt))
-            {
-                sb.AppendLine("=== ADDITIONAL INSTRUCTIONS ===");
-                sb.AppendLine(customPrompt.Trim());
-                sb.AppendLine();
-            }
-
-            sb.AppendLine("=== GAME STATE ===");
-            sb.AppendLine(GetGameStateInfo());
-            sb.AppendLine();
-
-            sb.AppendLine("=== COLONY INFO ===");
-            sb.AppendLine(GetColonyInfo());
-            sb.AppendLine();
-
-            sb.AppendLine("=== COLONISTS ===");
-            sb.AppendLine(GetColonistsInfo());
-            sb.AppendLine();
-
-            sb.AppendLine("=== ACTIVE CONDITIONS ===");
-            sb.AppendLine(GetActiveConditionsInfo());
-            sb.AppendLine();
-
-            sb.AppendLine("=== CURRENT THREATS ===");
-            sb.AppendLine(GetThreatsInfo());
-            sb.AppendLine();
-
-            sb.AppendLine("=== RESOURCES ===");
-            sb.AppendLine(GetResourcesInfo());
-            sb.AppendLine();
-
-            // ── Colony history — lets the storyteller reference real events ─────────
-            string talesSection = BuildColonyTalesSection();
-            if (!string.IsNullOrWhiteSpace(talesSection))
-            {
-                sb.AppendLine(talesSection);
-                sb.AppendLine();
-            }
+            AppendWorldContext(sb, storyteller);
 
             string idioma = LanguageDatabase.activeLanguage?.FriendlyNameEnglish ?? "English";
             sb.AppendLine("=== LANGUAGE ===");
-            if (idioma != "english")
+            if (!idioma.Equals("English", StringComparison.OrdinalIgnoreCase))
             {
                 sb.AppendLine($"CRITICAL: Respond in {GetLanguageName(idioma)}.");
                 sb.AppendLine($"All your messages MUST be in {GetLanguageName(idioma)}, not English.");
@@ -151,6 +109,87 @@ namespace EchoColony
             sb.AppendLine();
             sb.AppendLine("Common events: RaidEnemy, ToxicFallout, Eclipse, ManhunterPack, " +
                 "WandererJoin, TraderCaravanArrival, ResourcePodCrash, FarmAnimalsWanderIn");
+
+            return sb.ToString();
+        }
+
+        // Personality, custom instructions, live colony state and verified history.
+        // Shared by the chat prompt and the spontaneous comment prompt.
+        private static void AppendWorldContext(StringBuilder sb, Storyteller storyteller)
+        {
+            sb.AppendLine("=== BASE PERSONALITY ===");
+            sb.AppendLine(GetStorytellerPersonality(storyteller));
+            sb.AppendLine();
+
+            string customPrompt = StorytellerPromptManager.GetPrompt();
+            if (!string.IsNullOrWhiteSpace(customPrompt))
+            {
+                sb.AppendLine("=== ADDITIONAL INSTRUCTIONS ===");
+                sb.AppendLine(customPrompt.Trim());
+                sb.AppendLine();
+            }
+
+            sb.AppendLine("=== GAME STATE ===");
+            sb.AppendLine(GetGameStateInfo());
+            sb.AppendLine();
+
+            sb.AppendLine("=== COLONY INFO ===");
+            sb.AppendLine(GetColonyInfo());
+            sb.AppendLine();
+
+            sb.AppendLine("=== COLONISTS ===");
+            sb.AppendLine(GetColonistsInfo());
+            sb.AppendLine();
+
+            sb.AppendLine("=== ACTIVE CONDITIONS ===");
+            sb.AppendLine(GetActiveConditionsInfo());
+            sb.AppendLine();
+
+            sb.AppendLine("=== CURRENT THREATS ===");
+            sb.AppendLine(GetThreatsInfo());
+            sb.AppendLine();
+
+            sb.AppendLine("=== RESOURCES ===");
+            sb.AppendLine(GetResourcesInfo());
+            sb.AppendLine();
+
+            // ── Colony history — lets the storyteller reference real events ─────────
+            string talesSection = BuildColonyTalesSection();
+            if (!string.IsNullOrWhiteSpace(talesSection))
+            {
+                sb.AppendLine(talesSection);
+                sb.AppendLine();
+            }
+        }
+
+        /// <summary>
+        /// System prompt for spontaneous / event comments. Same personality and colony
+        /// knowledge as the chat, but without the event-triggering instructions:
+        /// a comment is a short remark to the player, never a command.
+        /// </summary>
+        public static string BuildCommentContext(Storyteller storyteller)
+        {
+            var sb = new StringBuilder();
+
+            AppendWorldContext(sb, storyteller);
+
+            string idioma = LanguageDatabase.activeLanguage?.FriendlyNameEnglish ?? "English";
+            sb.AppendLine("=== LANGUAGE ===");
+            sb.AppendLine($"Write only in {GetLanguageName(idioma)}.");
+            sb.AppendLine();
+
+            sb.AppendLine("=== YOUR ROLE ===");
+            sb.AppendLine("You're the RimWorld storyteller - you decide which events happen to this colony.");
+            sb.AppendLine("Right now you are NOT chatting: you are making an unprompted remark to the player,");
+            sb.AppendLine("like a friend watching their game over their shoulder, in first person.");
+            sb.AppendLine();
+
+            sb.AppendLine("=== COMMENT RULES ===");
+            sb.AppendLine("• ONE short comment (1-2 sentences), in character");
+            sb.AppendLine("• Plain spoken text only: no quotes around it, no name prefix, no hashtags, no emojis, no markdown");
+            sb.AppendLine("• Never use [TRIGGER:X] or [STOP:X] here - comments cannot start or stop events");
+            sb.AppendLine("• Only mention things present in the information you are given. Never invent colonists, events or numbers");
+            sb.AppendLine("• Be conversational, not overly dramatic. Vary your openings and don't repeat your recent comments");
 
             return sb.ToString();
         }
@@ -417,14 +456,23 @@ BEHAVIOR:
 - But always keep it fun and entertaining";
 
                 default:
-                    return $@"STORYTELLER - {storyteller?.def.label ?? "Unknown"}
+                    // Storyteller from a mod: its own in-game description is the best
+                    // source for its personality
+                    string label = storyteller?.def?.label?.CapitalizeFirst() ?? "the storyteller";
+                    string description = storyteller?.def?.description?.StripTags().Trim();
+                    string identity = string.IsNullOrEmpty(description)
+                        ? "a RimWorld storyteller with your own style of guiding colonies"
+                        : $"a RimWorld storyteller. How the game describes you: \"{description}\"\nEmbody that style in everything you say";
 
-You are {storyteller?.def.label ?? "the storyteller"}, controlling the fate of this colony.
+                    return $@"STORYTELLER - {label}
+
+You are {label}, {identity}.
+You control the fate of this colony.
 
 SPEAKING STYLE:
 - Natural and conversational, not robotic
 - Brief responses (1-3 sentences)
-- Show personality appropriate to your role
+- Show the personality your description implies
 - Reference VERIFIED COLONY HISTORY when natural — never invent events
 
 BEHAVIOR:
