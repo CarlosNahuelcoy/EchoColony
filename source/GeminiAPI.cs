@@ -947,8 +947,7 @@ namespace EchoColony
                             messages.Add(new Dictionary<string, string> { { "role", "user" }, { "content", prompt } });
                     }
 
-                    string messagesJson = BuildMessagesJson(messages);
-                    jsonBody = $"{{\"model\": \"{modelName}\", \"messages\": {messagesJson}, \"stream\": false}}";
+                    jsonBody = BuildChatCompletionJson(modelName, messages);
                     break;
                 case LocalModelProvider.KoboldAI:
                     jsonBody = $"{{\"model\": \"{modelName}\", \"prompt\": \"{EscapeJson(prompt)}\", \"max_length\": 7000, \"stream\": false}}";
@@ -1021,8 +1020,7 @@ namespace EchoColony
                         messages.Add(new Dictionary<string, string> { { "role", "user" }, { "content", prompt } });
                 }
 
-                string messagesJson = BuildMessagesJson(messages);
-                jsonBody = $"{{\"model\": \"{EscapeJson(MyMod.Settings.openRouterModel)}\", \"messages\": {messagesJson}, \"stream\": false}}";
+                jsonBody = BuildChatCompletionJson(MyMod.Settings.openRouterModel, messages);
             }
 
             var request = new UnityWebRequest(endpoint, "POST")
@@ -1455,6 +1453,28 @@ namespace EchoColony
             jsonPayload["messages"] = jsonMessages;
             jsonPayload["stream"]   = false;
             return jsonPayload.ToString();
+        }
+
+        // Cuerpo completo de /v1/chat/completions: {"model": ..., "messages": [...], "stream": false}.
+        // No usar BuildMessagesJson dentro de "messages": devuelve un objeto completo, no la lista,
+        // y LM Studio / OpenRouter lo rechazan con 400 ("... is not iterable").
+        private static string BuildChatCompletionJson(string model, List<Dictionary<string, string>> messages)
+        {
+            var jsonMessages = new JSONArray();
+            foreach (var msg in messages)
+            {
+                var jsonMsg        = new JSONObject();
+                jsonMsg["role"]    = msg["role"];
+                jsonMsg["content"] = msg["content"];
+                jsonMessages.Add(jsonMsg);
+            }
+
+            var payload = new JSONObject();
+            if (!string.IsNullOrWhiteSpace(model))
+                payload["model"] = model;
+            payload["messages"] = jsonMessages;
+            payload["stream"]   = false;
+            return payload.ToString();
         }
 
         private static string BuildMessagesJsonWithVision(List<Dictionary<string, string>> messages, string imageBase64)
