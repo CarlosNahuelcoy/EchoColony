@@ -13,10 +13,11 @@ namespace EchoColony.SpontaneousMessages
     [StaticConstructorOnStartup]
     public static class IncidentTriggers
     {
+        // Los parches de esta clase los aplica el PatchAll() de Start (Main.cs).
+        // No llamar PatchAll() de nuevo aquí: con otro ID de Harmony, cada parche
+        // del mod quedaría aplicado dos veces y se ejecutaría dos veces.
         static IncidentTriggers()
         {
-            var harmony = new Harmony("rimworld.echocolony.spontaneousmessages");
-            harmony.PatchAll();
             Log.Message("[EchoColony] SpontaneousMessages: Incident triggers patched");
         }
 
