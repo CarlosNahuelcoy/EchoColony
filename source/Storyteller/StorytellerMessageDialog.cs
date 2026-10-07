@@ -2,6 +2,7 @@ using UnityEngine;
 using Verse;
 using RimWorld;
 using Verse.Sound;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace EchoColony
@@ -16,7 +17,7 @@ namespace EchoColony
         private string storytellerDefName;
         private Texture2D storytellerPortrait;
         private float creationTime;
-        private bool isTest;
+        private StorytellerCommentKind kind;
         private bool textureLoaded = false;
         
         private Vector2 scrollPosition = Vector2.zero;
@@ -24,11 +25,11 @@ namespace EchoColony
         private const float NOTIFICATION_HEIGHT = 200f;
         private const float MARGIN = 10f;
 
-        public StorytellerMessageDialog(string message, string storytellerDefName, bool isTest = false)
+        public StorytellerMessageDialog(string message, string storytellerDefName, StorytellerCommentKind kind = StorytellerCommentKind.Random)
         {
             this.message = message;
             this.storytellerDefName = storytellerDefName;
-            this.isTest = isTest;
+            this.kind = kind;
             this.creationTime = Time.time;
             
             // ✅ Configuración para notificación NO invasiva
@@ -50,33 +51,58 @@ namespace EchoColony
 
         private void LoadStorytellerPortrait()
         {
+            storytellerPortrait = GetPortrait(storytellerDefName);
+            textureLoaded = true;
+        }
+
+        private static readonly Dictionary<string, Texture2D> portraitCache = new Dictionary<string, Texture2D>();
+
+        /// <summary>
+        /// Retrato propio del StorytellerDef (funciona con storytellers de mods); si no tiene,
+        /// prueba Textures/UI/Storyteller/{defName o label} del mod. Devuelve null si no hay
+        /// ninguno: nunca usa la cara de otro storyteller. Nunca lanza.
+        /// </summary>
+        public static Texture2D GetPortrait(string defName)
+        {
+            if (string.IsNullOrEmpty(defName)) return null;
+            if (portraitCache.TryGetValue(defName, out var cached)) return cached;
+
+            Texture2D tex = null;
             try
             {
-                string texturePath = $"UI/Storyteller/{storytellerDefName}";
-                storytellerPortrait = ContentFinder<Texture2D>.Get(texturePath, false);
-                
-                if (storytellerPortrait == null)
+                var def = DefDatabase<StorytellerDef>.GetNamedSilentFail(defName);
+                if (def != null)
                 {
-                    storytellerPortrait = ContentFinder<Texture2D>.Get("UI/Storyteller/Cassandra", false);
+                    tex = Usable(def.portraitLargeTex) ? def.portraitLargeTex :
+                          Usable(def.portraitTinyTex) ? def.portraitTinyTex : null;
                 }
-                
-                if (storytellerPortrait == null)
+
+                if (tex == null)
                 {
-                    storytellerPortrait = BaseContent.BadTex;
+                    var own = ContentFinder<Texture2D>.Get("UI/Storyteller/" + defName, false);
+                    if (Usable(own)) tex = own;
                 }
-                
-                textureLoaded = true;
+
+                if (tex == null && !string.IsNullOrEmpty(def?.label))
+                {
+                    string name = def.label.Replace(" ", "").Replace("'", "");
+                    var own = ContentFinder<Texture2D>.Get("UI/Storyteller/" + name, false);
+                    if (Usable(own)) tex = own;
+                }
             }
             catch (System.Exception ex)
             {
                 if (MyMod.Settings?.debugMode == true)
                 {
-                    Log.Warning($"[EchoColony] Could not load storyteller portrait: {ex.Message}");
+                    Log.Warning($"[EchoColony] Could not load storyteller portrait for {defName}: {ex.Message}");
                 }
-                storytellerPortrait = BaseContent.BadTex;
-                textureLoaded = true;
             }
+
+            portraitCache[defName] = tex;
+            return tex;
         }
+
+        private static bool Usable(Texture2D tex) => tex != null && tex != BaseContent.BadTex;
 
         private void PlayNotificationSound()
         {
@@ -123,24 +149,33 @@ namespace EchoColony
             Rect headerRect = new Rect(inRect.x + 5f, curY, inRect.width - 10f, 40f);
 
             // Icono pequeño del storyteller
-            if (storytellerPortrait != null && storytellerPortrait != BaseContent.BadTex)
+            string storytellerName = GetStorytellerDisplayName();
+            Rect iconRect = new Rect(headerRect.x, headerRect.y, 35f, 35f);
+            if (storytellerPortrait != null)
             {
-                Rect iconRect = new Rect(headerRect.x, headerRect.y, 35f, 35f);
                 Widgets.DrawTextureFitted(iconRect, storytellerPortrait, 1f);
+            }
+            else
+            {
+                // Sin retrato: inicial del nombre en un recuadro neutro
+                Widgets.DrawBoxSolid(iconRect, new Color(0.25f, 0.25f, 0.3f, 1f));
+                Text.Font = GameFont.Medium;
+                Text.Anchor = TextAnchor.MiddleCenter;
+                Widgets.Label(iconRect, string.IsNullOrEmpty(storytellerName) ? "?" : storytellerName.Substring(0, 1).ToUpper());
+                Text.Anchor = TextAnchor.UpperLeft;
             }
 
             // Nombre del storyteller
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
             Rect nameRect = new Rect(headerRect.x + 40f, headerRect.y, headerRect.width - 40f, 20f);
-            string storytellerName = GetStorytellerDisplayName();
             Widgets.Label(nameRect, storytellerName);
 
             // Subtítulo
             Text.Font = GameFont.Tiny;
             GUI.color = Color.gray;
             Rect subtitleRect = new Rect(headerRect.x + 40f, headerRect.y + 20f, headerRect.width - 40f, 15f);
-            string subtitle = isTest ? "Test Message" : "Spontaneous Comment";
+            string subtitle = ("EchoColony.StorytellerCommentKind_" + kind).Translate();
             Widgets.Label(subtitleRect, subtitle);
             GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
@@ -163,7 +198,7 @@ namespace EchoColony
 
             // Botón "Chat" compacto
             Rect openChatRect = new Rect(inRect.x + 5f, buttonY, buttonWidth, 25f);
-            if (Widgets.ButtonText(openChatRect, "Chat"))
+            if (Widgets.ButtonText(openChatRect, "EchoColony.StorytellerDialogChat".Translate()))
             {
                 OpenStorytellerChat();
                 Close();
@@ -171,7 +206,7 @@ namespace EchoColony
 
             // Botón "X" pequeño
             Rect closeRect = new Rect(inRect.x + buttonWidth + spacing + 5f, buttonY, 60f, 25f);
-            if (Widgets.ButtonText(closeRect, "Close"))
+            if (Widgets.ButtonText(closeRect, "EchoColony.StorytellerDialogClose".Translate()))
             {
                 Close();
             }
