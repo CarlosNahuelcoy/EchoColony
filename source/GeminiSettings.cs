@@ -139,6 +139,12 @@ namespace EchoColony
         public bool  storytellerMessageAutoClose                       = true;
         public float storytellerMessageAutoCloseSeconds                = 8f;
         public bool  storytellerMessagePlaySound                       = true;
+        public float storytellerCommentCooldownSeconds                 = 120f;
+        public float storytellerDuplicateBlockMinutes                  = 10f;
+        public bool  storytellerCommentOnDeaths                        = true;
+        public bool  storytellerCommentOnMentalBreaks                  = true;
+        public bool  storytellerCommentOnRelationships                 = true;
+        public bool  storytellerCommentOnResearch                      = true;
 
         public enum StorytellerMessageMode
         {
@@ -266,6 +272,12 @@ namespace EchoColony
             Scribe_Values.Look(ref storytellerMessageAutoClose,      "storytellerMessageAutoClose",      true);
             Scribe_Values.Look(ref storytellerMessageAutoCloseSeconds,"storytellerMessageAutoCloseSeconds",8f);
             Scribe_Values.Look(ref storytellerMessagePlaySound,      "storytellerMessagePlaySound",      true);
+            Scribe_Values.Look(ref storytellerCommentCooldownSeconds, "storytellerCommentCooldownSeconds", 120f);
+            Scribe_Values.Look(ref storytellerDuplicateBlockMinutes,  "storytellerDuplicateBlockMinutes",  10f);
+            Scribe_Values.Look(ref storytellerCommentOnDeaths,        "storytellerCommentOnDeaths",        true);
+            Scribe_Values.Look(ref storytellerCommentOnMentalBreaks,  "storytellerCommentOnMentalBreaks",  true);
+            Scribe_Values.Look(ref storytellerCommentOnRelationships, "storytellerCommentOnRelationships", true);
+            Scribe_Values.Look(ref storytellerCommentOnResearch,      "storytellerCommentOnResearch",      true);
 
             Scribe_Values.Look(ref defaultAnimalNarrativeStyle, "defaultAnimalNarrativeStyle", AnimalNarrativeStyle.ThirdPerson);
 

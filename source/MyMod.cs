@@ -178,30 +178,47 @@ namespace EchoColony
                 if (Settings.AreStorytellerRandomMessagesEnabled())
                 {
                     list.Gap();
-                    list.Label("Random Message Interval (minutes): " + Settings.storytellerRandomIntervalMinutes.ToString("F0"));
+                    list.Label("EchoColony.StorytellerRandomInterval".Translate() + ": " + Settings.storytellerRandomIntervalMinutes.ToString("F0"));
                     Settings.storytellerRandomIntervalMinutes = list.Slider(Settings.storytellerRandomIntervalMinutes, 5f, 120f);
                 }
 
                 if (Settings.AreStorytellerIncidentMessagesEnabled())
                 {
                     list.Gap();
-                    list.Label("Incident Comment Chance: " + (Settings.storytellerIncidentChance * 100f).ToString("F0") + "%");
+                    list.Label("EchoColony.StorytellerIncidentChance".Translate() + ": " + (Settings.storytellerIncidentChance * 100f).ToString("F0") + "%");
                     Settings.storytellerIncidentChance = list.Slider(Settings.storytellerIncidentChance, 0f, 1f);
+
+                    list.Gap();
+                    list.Label("EchoColony.StorytellerReactTo".Translate());
+                    list.CheckboxLabeled("  → " + "EchoColony.StorytellerCommentOnDeaths".Translate(), ref Settings.storytellerCommentOnDeaths, "EchoColony.StorytellerCommentOnDeathsTooltip".Translate());
+                    list.CheckboxLabeled("  → " + "EchoColony.StorytellerCommentOnMentalBreaks".Translate(), ref Settings.storytellerCommentOnMentalBreaks, "EchoColony.StorytellerCommentOnMentalBreaksTooltip".Translate());
+                    list.CheckboxLabeled("  → " + "EchoColony.StorytellerCommentOnRelationships".Translate(), ref Settings.storytellerCommentOnRelationships, "EchoColony.StorytellerCommentOnRelationshipsTooltip".Translate());
+                    list.CheckboxLabeled("  → " + "EchoColony.StorytellerCommentOnResearch".Translate(), ref Settings.storytellerCommentOnResearch, "EchoColony.StorytellerCommentOnResearchTooltip".Translate());
                 }
 
                 list.Gap();
-                list.CheckboxLabeled("Auto-close message window", ref Settings.storytellerMessageAutoClose, "Message window will close automatically after a few seconds");
+                list.Label("EchoColony.StorytellerCommentCooldown".Translate() + ": " + Settings.storytellerCommentCooldownSeconds.ToString("F0") + "s",
+                    tooltip: "EchoColony.StorytellerCommentCooldownTooltip".Translate());
+                Settings.storytellerCommentCooldownSeconds = list.Slider(Settings.storytellerCommentCooldownSeconds, 0f, 600f);
+
+                list.Label("EchoColony.StorytellerDuplicateBlock".Translate() + ": " +
+                    (Settings.storytellerDuplicateBlockMinutes < 1f ? "EchoColony.StorytellerDuplicateBlockOff".Translate().ToString() : Settings.storytellerDuplicateBlockMinutes.ToString("F0") + " min"),
+                    tooltip: "EchoColony.StorytellerDuplicateBlockTooltip".Translate());
+                Settings.storytellerDuplicateBlockMinutes = list.Slider(Settings.storytellerDuplicateBlockMinutes, 0f, 60f);
+
+                list.Gap();
+                list.CheckboxLabeled("EchoColony.StorytellerMessageAutoClose".Translate(), ref Settings.storytellerMessageAutoClose, "EchoColony.StorytellerMessageAutoCloseTooltip".Translate());
                 if (Settings.storytellerMessageAutoClose)
                 {
-                    list.Label("Auto-close delay (seconds): " + Settings.storytellerMessageAutoCloseSeconds.ToString("F0"));
+                    list.Label("EchoColony.StorytellerMessageAutoCloseDelay".Translate() + ": " + Settings.storytellerMessageAutoCloseSeconds.ToString("F0"));
                     Settings.storytellerMessageAutoCloseSeconds = list.Slider(Settings.storytellerMessageAutoCloseSeconds, 3f, 30f);
                 }
 
                 list.Gap();
-                list.CheckboxLabeled("Play sound with messages", ref Settings.storytellerMessagePlaySound, "Play a notification sound when the storyteller sends a message");
+                list.CheckboxLabeled("EchoColony.StorytellerMessagePlaySound".Translate(), ref Settings.storytellerMessagePlaySound, "EchoColony.StorytellerMessagePlaySoundTooltip".Translate());
 
                 list.Gap();
-                if (list.ButtonText("🧪 Test Random Message"))
+                if (list.ButtonText("EchoColony.StorytellerMessageTest".Translate()))
                 {
                     if (Find.Storyteller == null)
                         Messages.Message("Load a game first", MessageTypeDefOf.RejectInput);

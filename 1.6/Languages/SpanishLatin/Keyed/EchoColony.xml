@@ -265,6 +265,24 @@ Las memorias se generan automáticamente durante las conversaciones y ayudan al 
 <!-- Tooltips -->
 <EchoColony.StorytellerMessageAutoCloseTooltip>La ventana de mensajes se cerrará automáticamente después de unos segundos</EchoColony.StorytellerMessageAutoCloseTooltip>
 <EchoColony.StorytellerMessagePlaySoundTooltip>Reproducir un sonido de notificación cuando el narrador envíe un mensaje</EchoColony.StorytellerMessagePlaySoundTooltip>
+<EchoColony.StorytellerReactTo>Reaccionar también a:</EchoColony.StorytellerReactTo>
+<EchoColony.StorytellerCommentOnDeaths>Muertes de colonos</EchoColony.StorytellerCommentOnDeaths>
+<EchoColony.StorytellerCommentOnMentalBreaks>Crisis mentales extremas</EchoColony.StorytellerCommentOnMentalBreaks>
+<EchoColony.StorytellerCommentOnRelationships>Nuevas parejas, compromisos y bodas</EchoColony.StorytellerCommentOnRelationships>
+<EchoColony.StorytellerCommentOnResearch>Investigaciones completadas</EchoColony.StorytellerCommentOnResearch>
+<EchoColony.StorytellerCommentCooldown>Tiempo mínimo entre comentarios</EchoColony.StorytellerCommentCooldown>
+<EchoColony.StorytellerDuplicateBlock>Ignorar eventos repetidos durante</EchoColony.StorytellerDuplicateBlock>
+<EchoColony.StorytellerDuplicateBlockOff>Desactivado</EchoColony.StorytellerDuplicateBlockOff>
+<EchoColony.StorytellerCommentFailed>Falló el comentario del narrador: {0}</EchoColony.StorytellerCommentFailed>
+<EchoColony.StorytellerCommentKind_Random>Comentario espontáneo</EchoColony.StorytellerCommentKind_Random>
+<EchoColony.StorytellerCommentKind_Event>Reacción a un evento</EchoColony.StorytellerCommentKind_Event>
+<EchoColony.StorytellerCommentKind_Test>Mensaje de prueba</EchoColony.StorytellerCommentKind_Test>
+<EchoColony.StorytellerCommentOnDeathsTooltip>El narrador siempre comenta cuando muere un colono (ignora la probabilidad y el tiempo mínimo)</EchoColony.StorytellerCommentOnDeathsTooltip>
+<EchoColony.StorytellerCommentOnMentalBreaksTooltip>Furia asesina, berserk, rendirse y abandonar la colonia... Las crisis leves se ignoran. Ignora la probabilidad y el tiempo mínimo</EchoColony.StorytellerCommentOnMentalBreaksTooltip>
+<EchoColony.StorytellerCommentOnRelationshipsTooltip>Comentar cuando dos colonos se vuelven pareja, se comprometen o se casan (usa la probabilidad de comentar incidentes)</EchoColony.StorytellerCommentOnRelationshipsTooltip>
+<EchoColony.StorytellerCommentOnResearchTooltip>Comentar cuando se completa un proyecto de investigación (usa la probabilidad de comentar incidentes)</EchoColony.StorytellerCommentOnResearchTooltip>
+<EchoColony.StorytellerCommentCooldownTooltip>Segundos reales. Los comentarios aleatorios y de eventos menores se omiten hasta que pase este tiempo. Las amenazas grandes, las muertes y las crisis mentales extremas lo ignoran</EchoColony.StorytellerCommentCooldownTooltip>
+<EchoColony.StorytellerDuplicateBlockTooltip>El mismo evento (por ejemplo otra incursión del mismo tipo) no recibirá un nuevo comentario dentro de este tiempo</EchoColony.StorytellerDuplicateBlockTooltip>
 
   <!-- Ventana de chat con animal -->
   <EchoColony.AnimalChatWindowTitle>Chat con {0}</EchoColony.AnimalChatWindowTitle>
