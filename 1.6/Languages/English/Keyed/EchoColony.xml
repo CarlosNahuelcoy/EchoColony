@@ -285,6 +285,12 @@ Memories are automatically generated during conversations and help the colonist 
 <EchoColony.StorytellerCommentOnResearchTooltip>Comment when a research project is finished (uses the incident comment chance)</EchoColony.StorytellerCommentOnResearchTooltip>
 <EchoColony.StorytellerCommentCooldownTooltip>Real-time seconds. Random and minor event comments are skipped until this time has passed. Big threats, deaths and extreme mental breaks ignore it</EchoColony.StorytellerCommentCooldownTooltip>
 <EchoColony.StorytellerDuplicateBlockTooltip>The same event (for example another raid of the same type) won't get a new comment within this time</EchoColony.StorytellerDuplicateBlockTooltip>
+<EchoColony.StorytellerSectionHeader>Storyteller Spontaneous Messages</EchoColony.StorytellerSectionHeader>
+<EchoColony.StorytellerSystemEnabled>✓ System: Enabled</EchoColony.StorytellerSystemEnabled>
+<EchoColony.StorytellerSystemDisabled>System: Disabled</EchoColony.StorytellerSystemDisabled>
+<EchoColony.StorytellerNeedGame>Load a game first</EchoColony.StorytellerNeedGame>
+<EchoColony.StorytellerDialogChat>Chat</EchoColony.StorytellerDialogChat>
+<EchoColony.StorytellerDialogClose>Close</EchoColony.StorytellerDialogClose>
 
   <!-- Animal Chat Window -->
   <EchoColony.AnimalChatWindowTitle>Chat with {0}</EchoColony.AnimalChatWindowTitle>

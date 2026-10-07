@@ -198,7 +198,7 @@ namespace EchoColony
 
             // Botón "Chat" compacto
             Rect openChatRect = new Rect(inRect.x + 5f, buttonY, buttonWidth, 25f);
-            if (Widgets.ButtonText(openChatRect, "Chat"))
+            if (Widgets.ButtonText(openChatRect, "EchoColony.StorytellerDialogChat".Translate()))
             {
                 OpenStorytellerChat();
                 Close();
@@ -206,7 +206,7 @@ namespace EchoColony
 
             // Botón "X" pequeño
             Rect closeRect = new Rect(inRect.x + buttonWidth + spacing + 5f, buttonY, 60f, 25f);
-            if (Widgets.ButtonText(closeRect, "Close"))
+            if (Widgets.ButtonText(closeRect, "EchoColony.StorytellerDialogClose".Translate()))
             {
                 Close();
             }
