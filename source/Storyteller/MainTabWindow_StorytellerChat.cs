@@ -484,6 +484,11 @@ namespace EchoColony
                 Log.Message("[EchoColony-Storyteller] Using Local Model");
                 coroutine = GeminiAPI.SendRequestToLocalModel(prompt, OnAIResponse);
             }
+            else if (MyMod.Settings.modelSource == ModelSource.Custom)
+            {
+                Log.Message("[EchoColony-Storyteller] Using Custom Provider");
+                coroutine = GeminiAPI.SendRequestToCustomProvider(prompt, OnAIResponse);
+            }
             
             if (coroutine == null)
             {
@@ -550,6 +555,25 @@ namespace EchoColony
                 return result;
             }
             
+            // Custom provider (OpenAI-compatible): its request builder splits the prompt
+            // into real chat roles using the [SYSTEM]/[USER]/[ASSISTANT] markers
+            if (MyMod.Settings.modelSource == ModelSource.Custom)
+            {
+                var roleSb = new System.Text.StringBuilder();
+                roleSb.AppendLine("[SYSTEM]");
+                roleSb.AppendLine(context.Trim());
+
+                foreach (var msg in history.TakeLast(20))
+                {
+                    roleSb.AppendLine(msg.role == "model" ? "[ASSISTANT]" : "[USER]");
+                    roleSb.AppendLine(msg.content?.Trim() ?? "");
+                }
+
+                string rolePrompt = roleSb.ToString();
+                Log.Message($"[EchoColony-Storyteller] Built role-marked prompt: {rolePrompt.Length} chars");
+                return rolePrompt;
+            }
+
             // For Gemini and others, use contents format
             var sb = new System.Text.StringBuilder();
             sb.Append("{\"contents\": [");

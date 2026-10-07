@@ -228,7 +228,9 @@ namespace EchoColony
             EnsurePlayer2HeartbeatExists();
 
             // ── Periodic cleanup ──────────────────────────────────────────────────
-            if (Find.TickManager != null && MyMod.Settings != null)
+            // Find.TickManager es Current.Game.tickManager: en el menú principal no hay
+            // partida y lanzaría NullReferenceException en cada fotograma
+            if (Current.Game != null && Find.TickManager != null && MyMod.Settings != null)
             {
                 int currentTick = Find.TickManager.TicksGame;
 
