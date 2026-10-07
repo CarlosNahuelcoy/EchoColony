@@ -22,7 +22,7 @@ namespace EchoColony
 
             string idioma = LanguageDatabase.activeLanguage?.FriendlyNameEnglish ?? "English";
             sb.AppendLine("=== LANGUAGE ===");
-            if (idioma != "english")
+            if (!idioma.Equals("English", StringComparison.OrdinalIgnoreCase))
             {
                 sb.AppendLine($"CRITICAL: Respond in {GetLanguageName(idioma)}.");
                 sb.AppendLine($"All your messages MUST be in {GetLanguageName(idioma)}, not English.");
