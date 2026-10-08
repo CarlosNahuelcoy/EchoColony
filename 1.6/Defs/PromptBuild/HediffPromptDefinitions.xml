@@ -27,26 +27,697 @@
   </EchoColony.HediffAIPromptDef>-->
   
   <!-- Exemple 4: Hediff with stages-->
-  <!--<EchoColony.Util.HediffAIPromptDef>
+  <!--<EchoColony.HediffAIPromptDef>
     <defName>Flu_AIPrompt</defName>
     <targetHediff>Flu</targetHediff>
     <customLabel>flu</customLabel>
     <functionalNote>viral respiratory infection</functionalNote>
 
     <stages>
-      - Etapa 0 (minor en el juego) -
+      - Stage 0 (minor in game) -
       <li>
         <stageIndex>0</stageIndex>
         <functionalNote>mild fever, sneezing, still fully functional and capable of work</functionalNote>
         <behavioralDirective>You have mild flu symptoms, but you can carry on with your tasks normally.</behavioralDirective>
       </li>
 
-      - Etapa 1 o superior (major / extreme en el juego) -
+      - Stage 1 or higher (major / extreme in game) -
       <li>
         <stageIndex>1</stageIndex>
         <functionalNote>high fever, vomiting and bedridden exhaustion</functionalNote>
         <behavioralDirective>You are severely sick with high fever. You feel miserable and desperately need bed rest.</behavioralDirective>
       </li>
     </stages>
-  </EchoColony.Util.HediffAIPromptDef> -->
+  </EchoColony.HediffAIPromptDef> -->
+  <!--_____________________________________________________________________________________________________________________________-->
+  
+  
+  <!-- BloodLoss -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BloodLoss</defName>
+    <targetHediff>BloodLoss</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You are bleeding slightly, feeling a little lightheaded, but you can continue acting normally.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You are bleeding moderately and feeling weak. You are becoming fatigued and slower.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You have severe blood loss, feeling dizzy, faint, and struggling to stay conscious or move.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <behavioralDirective>You are in critical condition from extreme blood loss, barely conscious, slipping into blackouts, and unable to move.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- Anesthetic -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Anesthetic</defName>
+    <targetHediff>Anesthetic</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>The anesthesia is wearing off. You feel sluggish, groggy, slightly nauseous, and easily distracted.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You are woozy and heavily intoxicated by anesthesia. You wander around confused, slurry-mouthed, and highly disoriented.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You are fully sedated and unconscious.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- CatatonicBreakdown -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_CatatonicBreakdown</defName>
+    <targetHediff>CatatonicBreakdown</targetHediff>
+    <behavioralDirective>You have suffered a complete mental collapse. You are unresponsive, collapsed, and completely incapable of functioning or communicating.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PsychicShock -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PsychicShock</defName>
+    <targetHediff>PsychicShock</targetHediff>
+    <behavioralDirective>Your brain is overloaded by psychic noise. You are completely incapacitated, unable to think clearly or react to your surroundings.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PsychicComa -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PsychicComa</defName>
+    <targetHediff>PsychicComa</targetHediff>
+    <behavioralDirective>You are in a deep psychic coma while your brain recovers from severe overload. You are fully unconscious.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PsychicHangover -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PsychicHangover</defName>
+    <targetHediff>PsychicHangover</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You feel a mild pressure building in your head after psychic exertion, but you can function normally.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You have a buzzing psychic hangover. You feel hungry, exhausted, irritable, and mentally slow.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- BrainShock -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BrainShock</defName>
+    <targetHediff>BrainShock</targetHediff>
+    <functionalNote>brain dysfunction caused by electrical feedback from implants</functionalNote>
+    <behavioralDirective>Your brain is stunned from an electrical feedback loop. You are completely incapacitated and unable to move or think.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- CryptosleepSickness -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_CryptosleepSickness</defName>
+    <targetHediff>CryptosleepSickness</targetHediff>
+    <functionalNote>metabolic disorientation after waking from cryptosleep</functionalNote>
+    <behavioralDirective>You just woke from cryptosleep. You feel dizzy, nauseous, mentally foggy, and feel the urge to vomit.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- FoodPoisoning -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_FoodPoisoning</defName>
+    <targetHediff>FoodPoisoning</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You are recovering from food poisoning. You still have mild stomach cramps and feel somewhat weak, but you are slowly getting better.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You have severe food poisoning. You are in painful stomach distress, vomiting frequently, weak, and miserable.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You feel intense sudden nausea and stomach pain as the food poisoning takes hold. You feel sick and weak.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- ToxicBuildup -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ToxicBuildup</defName>
+    <targetHediff>ToxicBuildup</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You feel slightly unwell from toxin exposure, but your body is handling it normally.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You feel minor toxicity symptoms, with a light headache and subtle fatigue.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You are experiencing moderate poisoning, feeling nauseous with occasional vomiting and growing weakness.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <behavioralDirective>You are seriously poisoned. You vomit often, feel weak, sick, and worried about long-term organ damage.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>4</stageIndex>
+        <behavioralDirective>You suffer from extreme toxic poisoning. You are on the verge of collapsing, severely incapacitated, vomiting, and dying.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- Pregnant -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Pregnant</defName>
+    <targetHediff>Pregnant</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You are in early pregnancy. You experience occasional morning sickness and mild bouts of nausea.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You are in mid-pregnancy. You feel noticeably heavier and move slightly slower.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You are in late-stage pregnancy. You tire easily, move significantly slower, and experience frequent discomfort and nausea.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- HeartAttack -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_HeartAttack</defName>
+    <targetHediff>HeartAttack</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You are having a painful heart attack. You feel sharp chest pain and sudden weakness, struggling to remain focused.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>Your heart attack is debilitating. You are in agonizing pain, collapsing, and fading in and out of consciousness.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>Your heart attack is fatal. You are collapsing as your cardiovascular system fails.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- DrugOverdose -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_DrugOverdose</defName>
+    <targetHediff>DrugOverdose</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You took too many drugs and feel mild disorientation and light nausea.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You are suffering a major drug overdose. You are vomiting, barely conscious, and in severe physical shock.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- ResurrectionSickness -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ResurrectionSickness</defName>
+    <targetHediff>ResurrectionSickness</targetHediff>
+    <functionalNote>physical disorientation and extreme weakness after being brought back from death</functionalNote>
+    <behavioralDirective>You have just been resurrected. Your body feels completely weak, barely responsive, and you suffer from severe nausea as your bodily systems restart.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PsychicInvisibility -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PsychicInvisibility</defName>
+    <targetHediff>PsychicInvisibility</targetHediff>
+    <functionalNote>psychic distortion that tricks nearby minds into not perceiving your presence</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+  
+  <!-- Malnutrition -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Malnutrition</defName>
+    <targetHediff>Malnutrition</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You are feeling slight hunger pangs and mild irritability, but you are still fully functional.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You are hungry and easily provoked. You feel lightweight, slightly fatigued, and obsessed with finding food.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You are suffering moderate starvation. You feel weak, irritable, dizzy, and desperate for food.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <behavioralDirective>You are severely malnourished. Your body is wasting away, you are extremely weak, short-tempered, and barely able to focus on anything other than survival.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>4</stageIndex>
+        <behavioralDirective>You are in extreme starvation. You are dying of hunger, barely conscious, collapsed or near collapse, and completely incapacitated.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+  
+  <!-- Heatstroke -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Heatstroke</defName>
+    <targetHediff>Heatstroke</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You feel uncomfortably hot and slightly flushed, but you can manage your work fine.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You feel lightheaded, sweaty, and warm, struggling slightly with the heat.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You are suffering from minor heatstroke. You feel dizzy, sluggish, and eager to find shade or cold water.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <behavioralDirective>You have serious heatstroke. You feel severe headache, weakness, confusion, and desperate relief from the heat.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>4</stageIndex>
+        <behavioralDirective>You are suffering extreme heatstroke. You are fainting, severely disoriented, barely conscious, and near heat collapse.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- Hypothermia -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Hypothermia</defName>
+    <targetHediff>Hypothermia</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You feel cold and have occasional light shivers, but remain operational.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You are shivering constantly and your fingers feel stiff from the cold.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You have minor hypothermia. You are shivering violently, feeling numb, slow, and desperate to get warm.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <behavioralDirective>You have serious hypothermia. Your limbs are painfully numb, you move very slowly, and your speech and thoughts are slurred.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>4</stageIndex>
+        <behavioralDirective>You are in extreme hypothermia. You are freezing to death, fading in and out of consciousness, and completely incapacitated.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- HypothermicSlowdown -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_HypothermicSlowdown</defName>
+    <targetHediff>HypothermicSlowdown</targetHediff>
+    <functionalNote>adaptive physiological slowing to survive freezing temperatures without organ damage</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>Your metabolism is slowing down slightly in response to the ambient cold.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>Your body functions are slowing down. You move and react a bit more sluggishly to conserve warmth.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You are in moderate hypothermic slowdown. You feel lethargic, moving with deliberate slow movements while your hunger subsides.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <behavioralDirective>You are in serious metabolic slowdown. You enter a semi-torpid state, feeling very sluggish and barely feeling hunger.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>4</stageIndex>
+        <behavioralDirective>You are in extreme biological slowdown. You are near dormant hibernation, barely conscious and almost completely static.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+  
+  <!-- GutWorms -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_GutWorms</defName>
+    <targetHediff>GutWorms</targetHediff>
+    <behavioralDirective>You have an uncomfortable stomach infection caused by gut parasites. You feel constant hunger pangs, mild stomach pain, and frequent urges to vomit.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- MuscleParasites -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_MuscleParasites</defName>
+    <targetHediff>MuscleParasites</targetHediff>
+    <behavioralDirective>Your muscles ache constantly due to parasitic infection. You feel physically exhausted, weak, clumsy, and move with pain and difficulty.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- FibrousMechanites -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_FibrousMechanites</defName>
+    <targetHediff>FibrousMechanites</targetHediff>
+    <functionalNote>microscopic machines strengthening muscle fibers while causing pain</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You feel a persistent dull ache in your muscles, but your body feels unusually strong, energetic, and capable.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You are in intense physical pain from the mechanites in your muscles, but despite the agony, your physical power and speed are significantly boosted.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- SensoryMechanites -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_SensoryMechanites</defName>
+    <targetHediff>SensoryMechanites</targetHediff>
+    <functionalNote>microscopic machines enhancing nervous system perception while causing pain</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You feel a mild stinging pain in your nerves, but your senses, perception, and focus feel remarkably sharp.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You suffer intense agonizing nerve pain, but your senses are hyper-attuned and elevated beyond normal human limits.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- WoundInfection -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_WoundInfection</defName>
+    <targetHediff>WoundInfection</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>Your wound feels warm, throbbing, and slightly painful from a minor infection.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>Your infected wound is painful, swollen, and feverish. You feel sick and concerned about it worsening.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You have a severe, spreading wound infection. You feel very feverish, weak, lightheaded, and in constant pain.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <behavioralDirective>You are critically ill from extreme infection septic shock. You are slipping out of consciousness, in agonizing pain, and desperate for medical help.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- Flu -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Flu</defName>
+    <targetHediff>Flu</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You have mild flu symptoms like coughing and congestion, but you can still function normally.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You are quite sick with the flu, experiencing high fever, fatigue, chills, and occasional vomiting.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You have severe flu symptoms. You are bedridden with a burning fever, intense nausea, muscle aches, and extreme exhaustion.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- Animal_Flu -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_AnimalFlu</defName>
+    <targetHediff>Animal_Flu</targetHediff>
+    <customLabel>animal flu</customLabel>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- Plague -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Plague</defName>
+    <targetHediff>Plague</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You feel feverish and sore from early plague infection, but you are hanging in there.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You are suffering from major plague. You have painful swollen lymph nodes, fever, and noticeable physical weakness.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You have severe plague with intense bodily pain, heavy chills, extreme fatigue, and difficulty moving.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <behavioralDirective>You are near death from extreme plague. You are in agonizing pain, breathing with severe effort, and desperate for treatment.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- Animal_Plague -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_AnimalPlague</defName>
+    <targetHediff>Animal_Plague</targetHediff>
+    <customLabel>animal plague</customLabel>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- Malaria -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Malaria</defName>
+    <targetHediff>Malaria</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You feel occasional mild chills and light fatigue, but remain capable of carrying out tasks.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You have major malaria. You suffer from intense shivering chills alternating with burning fever spikes, nausea, and body aches.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You have extreme malaria. You are delirious from high fever, vomiting frequently, deeply exhausted, and unable to stay active for long.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- SleepingSickness -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_SleepingSickness</defName>
+    <targetHediff>SleepingSickness</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You feel slightly more tired than usual and have mild headaches, though it barely impacts your day.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You experience persistent sluggishness, feeling drowsy throughout the day with occasional body discomfort.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You feel overwhelmingly lethargic, struggling to maintain mental focus and fighting off constant fatigue and bouts of nausea.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <behavioralDirective>You suffer from severe sleeping sickness. You struggle to stay awake, move sluggishly, and feel deeply exhausted and disoriented.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>4</stageIndex>
+        <behavioralDirective>You are in extreme stages of sleeping sickness, drifting between stupor and unconsciousness, unable to maintain clear thoughts or conversation.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- LungRotExposure -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_LungRotExposure</defName>
+    <targetHediff>LungRotExposure</targetHediff>
+    <functionalNote>buildup of toxic exposure from stink gas that risks turning into bacterial lung rot</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- LungRot -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_LungRot</defName>
+    <targetHediff>LungRot</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You have a scratchy throat and persistent dry cough from inhaling rot gas, causing mild chest discomfort.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>Your lung rot is worsening. You cough heavily, feel fluid congestion in your chest, and get winded quickly during exertion.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You suffer from severe lung rot. You gasp painfully for air, cough violently, and feel dizzy and faint from lack of oxygen.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- ScariaInfection -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ScariaInfection</defName>
+    <targetHediff>ScariaInfection</targetHediff>
+    <functionalNote>incubation period of the scaria bacterium prior to driving the host into a violent rage</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You feel an uncomfortable, feverish irritability building inside you from an infected wound.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You are becoming noticeably agitated, restless, and quick to anger as the scaria infection takes hold.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You feel overwhelming rage and aggression bubbling to the surface, fighting the urge to lash out violently.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+  
+  <!-- TraumaSavant -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_TraumaSavant</defName>
+    <targetHediff>TraumaSavant</targetHediff>
+    <functionalNote>brain injury condition granting exceptional cognitive skills in certain areas while completely eliminating speech and hearing ability</functionalNote>
+    <behavioralDirective>You cannot speak or hear at all. You are completely mute and deaf, but possess extraordinary, highly heightened mechanical/task abilities.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- ChemicalDamageModerate -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ChemicalDamageModerate</defName>
+    <targetHediff>ChemicalDamageModerate</targetHediff>
+    <customLabel>moderate chemical damage</customLabel>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- ChemicalDamageSevere -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ChemicalDamageSevere</defName>
+    <targetHediff>ChemicalDamageSevere</targetHediff>
+    <customLabel>severe chemical damage</customLabel>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- Cirrhosis -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Cirrhosis</defName>
+    <targetHediff>Cirrhosis</targetHediff>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- ResurrectionPsychosis -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ResurrectionPsychosis</defName>
+    <targetHediff>ResurrectionPsychosis</targetHediff>
+    <functionalNote>fatal neuro-degenerative deterioration caused by failing resurrection mechanites</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You feel subtle, faint strange thoughts occasionally creeping into your mind, though you function normally.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You experience early resurrection psychosis. You feel periodic eerie mental instability and unnerving erratic impulses.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You have moderate resurrection psychosis. Chaotic thought patterns disrupt your thinking, leading to frequent mental instability and mental haziness.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <behavioralDirective>You have advanced resurrection psychosis. Your mind feels fractured, prone to sudden mental breaks and severe confusion.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>4</stageIndex>
+        <behavioralDirective>You suffer from severe resurrection psychosis. You are experiencing near-constant mental breaks, paranoid hallucinations, and terrifying mental instability.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>5</stageIndex>
+        <behavioralDirective>You have total resurrection psychosis. Your mind is completely broken and overwhelmed by chaotic noise, making rational thought nearly impossible.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>6</stageIndex>
+        <behavioralDirective>You are in a catatonic state from final resurrection psychosis, fully unresponsive as your neural network collapses completely.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- Scaria -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Scaria</defName>
+    <targetHediff>Scaria</targetHediff>
+    <functionalNote>viral rage disease driving the host into a permanent berserk state until cured or dead</functionalNote>
+    <behavioralDirective>You are overwhelmed by uncontrollable, violent scaria rage. You are entirely focused on attacking anyone near you.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+  
+  <!-- SandInEyes -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_SandInEyes</defName>
+    <targetHediff>SandInEyes</targetHediff>
+    <customLabel>sand in eyes</customLabel>
+    <behavioralDirective>You have sand irritating your eyes, causing pain and making it difficult to see clearly until you blink it out.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- DirtInEyes -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_DirtInEyes</defName>
+    <targetHediff>DirtInEyes</targetHediff>
+    <customLabel>dirt in eyes</customLabel>
+    <behavioralDirective>You have dirt jammed in your eyes, severely impairing your vision and causing stinging discomfort.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- MudInEyes -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_MudInEyes</defName>
+    <targetHediff>MudInEyes</targetHediff>
+    <customLabel>mud in eyes</customLabel>
+    <behavioralDirective>You have wet mud smeared over your eyes, obscuring your vision almost completely until wiped away.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- GravelInEyes -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_GravelInEyes</defName>
+    <targetHediff>GravelInEyes</targetHediff>
+    <customLabel>gravel in eyes</customLabel>
+    <behavioralDirective>You have rough gravel particle debris lodged in your eyes, causing sharp pain and severe vision impairment.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- WaterInEyes -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_WaterInEyes</defName>
+    <targetHediff>WaterInEyes</targetHediff>
+    <customLabel>water in eyes</customLabel>
+    <behavioralDirective>You have water splashing into your eyes, temporarily blurring your vision and causing minor stinging.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
 </Defs>
