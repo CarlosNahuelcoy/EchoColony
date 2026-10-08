@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <EchoColony.HediffAIPromptDef>
+  
+  <!-- VolcanicAsh -->
+    <defName>Prompt_VolcanicAsh</defName>
+    <targetHediff>VolcanicAsh</targetHediff>
+    <behavioralDirective>You are coughing and choking slightly from inhaling airborne volcanic ash.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+  
+    <!-- VacuumExposure -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_VacuumExposure</defName>
+    <targetHediff>VacuumExposure</targetHediff>
+    <functionalNote>acute decompression sickness and hypoxia from exposure to open space vacuum</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You feel minor chest tightness, breathlessness, and slight skin discomfort from depressurization.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You are suffering mild vacuum exposure, gasping for air, and feeling sharp discomfort across your body.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You suffer moderate vacuum decompression. You are dizzy, experiencing severe hypoxia, and struggling to stay focused.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <behavioralDirective>You are in extreme vacuum shock. You are suffocating, experiencing excruciating pressure pain, and on the verge of collapsing unconscious.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+  
+    <!-- GravNausea -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_GravNausea</defName>
+    <targetHediff>GravNausea</targetHediff>
+    <customLabel>grav-ship nausea</customLabel>
+    <behavioralDirective>You feel dizzy and intensely nauseous from sudden gravity shift changes, with a frequent urge to vomit.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+  
+    <!-- WarTrumpet -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_WarTrumpet</defName>
+    <targetHediff>WarTrumpet</targetHediff>
+    <functionalNote>temporary hearing loss and physical disorientation caused by a deafening beast trumpet</functionalNote>
+    <behavioralDirective>Your ears are ringing violently from a deafening war trumpet, making you feel dazed, unsteady, and hard of hearing.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+  
+   <!-- ThrumboRoar -->
+    <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ThrumboRoar</defName>
+    <targetHediff>ThrumboRoar</targetHediff>
+    <functionalNote>acute concussion-like shock and ear damage caused by a thrumbo's acoustic roar</functionalNote>
+    <behavioralDirective>You are severely shaken and stunned by a thrumbo's roaring blast, experiencing heavy ear ringing, sluggishness, and blurred perception.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+  
+</Defs>

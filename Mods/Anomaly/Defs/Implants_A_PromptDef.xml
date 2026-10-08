@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <!-- FleshmassStomach -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_FleshmassStomach</defName>
+    <targetHediff>FleshmassStomach</targetHediff>
+    <customLabel>fleshmass stomach</customLabel>
+    <functionalNote>cancerous semi-sentient organic stomach producing harsh acid that prevents food poisoning and gut worms at the cost of constant pain</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- FleshmassLung -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_FleshmassLung</defName>
+    <targetHediff>FleshmassLung</targetHediff>
+    <customLabel>fleshmass lung</customLabel>
+    <functionalNote>cancerous semi-sentient organ that continuously regenerates, rendering the user immune to lung rot and asthma</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- Tentacle -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Tentacle</defName>
+    <targetHediff>Tentacle</targetHediff>
+    <customLabel>flesh tentacle</customLabel>
+    <functionalNote>spasming muscled fleshy tentacle replacing an arm, providing superior manipulation efficiency at the cost of physical appearance</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- FleshWhip -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_FleshWhip</defName>
+    <targetHediff>FleshWhip</targetHediff>
+    <customLabel>flesh whip</customLabel>
+    <functionalNote>blade-tipped muscled fleshy tentacle functioning as an organic melee weapon</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- GhoulPlating -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_GhoulPlating</defName>
+    <targetHediff>GhoulPlating</targetHediff>
+    <customLabel>ghoul plating</customLabel>
+    <functionalNote>heavy bioferrite armor plates bolted onto a ghoul, heavily reducing incoming damage at the cost of movement speed</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- GhoulBarbs -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_GhoulBarbs</defName>
+    <targetHediff>GhoulBarbs</targetHediff>
+    <customLabel>ghoul barbs</customLabel>
+    <functionalNote>spiked bioferrite barbs surgically attached to a ghoul, increasing melee damage while slightly reducing mobility</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- AdrenalHeart -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_AdrenalHeart</defName>
+    <targetHediff>AdrenalHeart</targetHediff>
+    <customLabel>adrenal heart</customLabel>
+    <functionalNote>modified bioferrite heart releasing bursts of stress hormones and liquid energy to grant extreme speed bursts</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- CorrosiveHeart -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_CorrosiveHeart</defName>
+    <targetHediff>CorrosiveHeart</targetHediff>
+    <customLabel>corrosive heart</customLabel>
+    <functionalNote>modified bioferrite heart repurposing a chamber to generate acid projected as a corrosive spray</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- MetalbloodHeart -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_MetalbloodHeart</defName>
+    <targetHediff>MetalbloodHeart</targetHediff>
+    <customLabel>metalblood heart</customLabel>
+    <functionalNote>modified bioferrite heart pumping protective metalblood compounds into the bloodstream to resist damage, increasing flammability</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- RevenantVertebrae -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_RevenantVertebrae</defName>
+    <targetHediff>RevenantVertebrae</targetHediff>
+    <customLabel>revenant vertebrae</customLabel>
+    <functionalNote>prosthetic spine crafted from a captive revenant enabling temporary active optical invisibility</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+  
+  </Defs>

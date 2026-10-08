@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+<!-- TortureCrown -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_TortureCrown</defName>
+    <targetHediff>TortureCrown</targetHediff>
+    <functionalNote>headpiece with internal spikes causing constant physical pain</functionalNote>
+    <behavioralDirective>You are experiencing persistent, uncomfortable pain from spikes poking into your scalp.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- Blindfold -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Blindfold</defName>
+    <targetHediff>Blindfold</targetHediff>
+    <customLabel>blindfolded</customLabel>
+    <functionalNote>fabric worn over the eyes heavily restricting vision</functionalNote>
+    <behavioralDirective>Your vision is severely obstructed by a blindfold, forcing you to navigate blindly and rely on touch or sound.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- NeuralSupercharge -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_NeuralSupercharge</defName>
+    <targetHediff>NeuralSupercharge</targetHediff>
+    <functionalNote>externally boosted neuron activity increasing consciousness and learning speed at the cost of higher hunger</functionalNote>
+    <behavioralDirective>You feel hyper-energetic, mentally sharp, and quick to learn, but you burn through energy much faster and feel hungrier.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- BiosculptingSickness -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BiosculptingSickness</defName>
+    <targetHediff>BiosculptingSickness</targetHediff>
+    <customLabel>biosculpting sickness</customLabel>
+    <functionalNote>after-effects of an interrupted biosculpter cycle causing nausea, dizziness, and mental fogginess</functionalNote>
+    <behavioralDirective>You feel dizzy, nauseous, and foggy-headed after exiting a biosculpter pod prematurely, occasionally needing to vomit.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- WorkFocus -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_WorkFocus</defName>
+    <targetHediff>WorkFocus</targetHediff>
+    <functionalNote>temporary boost to overall work efficiency granted by a ritual or leader speech</functionalNote>
+    <behavioralDirective>You feel highly motivated and energized from a recent ritual, driven to work faster and more productively.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+  
+  <!-- WorkDrive -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_WorkDrive</defName>
+    <targetHediff>WorkDrive</targetHediff>
+    <functionalNote>encouragement from a leader boosting global work speed</functionalNote>
+    <behavioralDirective>You feel motivated and energized by a leader's call to action, driving you to work harder and faster.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- CombatCommand -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_CombatCommand</defName>
+    <targetHediff>CombatCommand</targetHediff>
+    <functionalNote>active aura emitted by a leader boosting nearby allies' combat focus</functionalNote>
+    <behavioralDirective>You are actively commanding and encouraging nearby allies, keeping them focused and effective in battle.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- CombatCommandBuff -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_CombatCommandBuff</defName>
+    <targetHediff>CombatCommandBuff</targetHediff>
+    <customLabel>combat command focus</customLabel>
+    <functionalNote>combat focus boost received from a nearby leader's command</functionalNote>
+    <behavioralDirective>You feel focused and sharp in combat thanks to the encouraging commands of a nearby leader.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PreachHealth -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PreachHealth</defName>
+    <targetHediff>PreachHealth</targetHediff>
+    <functionalNote>moral reinforcement from a spiritual guide boosting healing and immunity gain</functionalNote>
+    <behavioralDirective>Your will to live and recover has been reinforced by spiritual counsel, making you feel mentally resilient.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- MarksmanCommand -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_MarksmanCommand</defName>
+    <targetHediff>MarksmanCommand</targetHediff>
+    <functionalNote>active aura emitted by a shooting specialist calling out targets</functionalNote>
+    <behavioralDirective>You are actively calling out targets and tactical guidance to boost nearby allies' marksmanship.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- MarksmanCommandBuff -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_MarksmanCommandBuff</defName>
+    <targetHediff>MarksmanCommandBuff</targetHediff>
+    <customLabel>marksman command focus</customLabel>
+    <functionalNote>ranged accuracy and aiming speed boost received from a nearby shooting specialist</functionalNote>
+    <behavioralDirective>Your aiming is faster and more precise thanks to the tactical target calls of a nearby specialist.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- BerserkTrance -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BerserkTrance</defName>
+    <targetHediff>BerserkTrance</targetHediff>
+    <functionalNote>ideological trance inducing a violent melee rage and extreme pain resistance</functionalNote>
+    <behavioralDirective>You are in a violent, furious trance. You ignore physical pain and are driven by pure rage in melee combat.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- ResearchCommand -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ResearchCommand</defName>
+    <targetHediff>ResearchCommand</targetHediff>
+    <functionalNote>active aura emitted by a research specialist boosting nearby research speed</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- ResearchCommandBuff -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ResearchCommandBuff</defName>
+    <targetHediff>ResearchCommandBuff</targetHediff>
+    <customLabel>research guidance</customLabel>
+    <functionalNote>research speed boost received from a nearby research specialist</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- FarmingCommand -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_FarmingCommand</defName>
+    <targetHediff>FarmingCommand</targetHediff>
+    <functionalNote>active aura emitted by a farming specialist boosting nearby plant work speed</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- FarmingCommandBuff -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_FarmingCommandBuff</defName>
+    <targetHediff>FarmingCommandBuff</targetHediff>
+    <customLabel>farming guidance</customLabel>
+    <functionalNote>farming speed boost received from a nearby farming specialist</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- ProductionCommand -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ProductionCommand</defName>
+    <targetHediff>ProductionCommand</targetHediff>
+    <functionalNote>active aura emitted by a production specialist boosting nearby construction and labor speed</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- ProductionCommandBuff -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ProductionCommandBuff</defName>
+    <targetHediff>ProductionCommandBuff</targetHediff>
+    <customLabel>production guidance</customLabel>
+    <functionalNote>construction and crafting speed boost received from a nearby production specialist</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- MiningCommand -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_MiningCommand</defName>
+    <targetHediff>MiningCommand</targetHediff>
+    <functionalNote>active aura emitted by a mining specialist boosting nearby mining speed</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- MiningCommandBuff -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_MiningCommandBuff</defName>
+    <targetHediff>MiningCommandBuff</targetHediff>
+    <customLabel>mining guidance</customLabel>
+    <functionalNote>mining speed boost received from a nearby mining specialist</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- ImmunityDrive -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ImmunityDrive</defName>
+    <targetHediff>ImmunityDrive</targetHediff>
+    <functionalNote>ideological support significantly boosting immune system response</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+</Defs>

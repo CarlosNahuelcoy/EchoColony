@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_DetoxifierLung</defName>
+    <targetHediff>DetoxifierLung</targetHediff>
+    <customLabel>detoxifier lung</customLabel>
+    <functionalNote>bionic artificial lung with microfilters preventing lung rot and mitigating acidic smog irritation</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- DetoxifierKidney -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_DetoxifierKidney</defName>
+    <targetHediff>DetoxifierKidney</targetHediff>
+    <customLabel>detoxifier kidney</customLabel>
+    <functionalNote>bionic artificial kidney with nanofilters that rapidly filter out toxins, venoms, and environmental poisons</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+  
+  <!-- MechlinkImplant -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_MechlinkImplant</defName>
+    <targetHediff>MechlinkImplant</targetHediff>
+    <customLabel>mechlink</customLabel>
+    <functionalNote>brain implant connecting the user psychically and electromagnetically to command mechanoids</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- BandNode -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BandNode</defName>
+    <targetHediff>BandNode</targetHediff>
+    <customLabel>band node link</customLabel>
+    <functionalNote>external signal link tuned to a band node structure boosting mechanitor bandwidth</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- ControlSublinkImplant -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ControlSublinkImplant</defName>
+    <targetHediff>ControlSublinkImplant</targetHediff>
+    <customLabel>control sublink</customLabel>
+    <functionalNote>neural implant expanding mechanitor control groups and boosting controlled mechs' work speed</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- RemoteRepairerImplant -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_RemoteRepairerImplant</defName>
+    <targetHediff>RemoteRepairerImplant</targetHediff>
+    <customLabel>remote repairer</customLabel>
+    <functionalNote>mechlink upgrade enabling the user to psychically guide mech self-repair mechanites from a distance</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- MechFormfeederImplant -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_MechFormfeederImplant</defName>
+    <targetHediff>MechFormfeederImplant</targetHediff>
+    <customLabel>mech gestation processor</customLabel>
+    <functionalNote>implant optimizing gestator tank mechanite behavior to accelerate mech gestation</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- RemoteShielderImplant -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_RemoteShielderImplant</defName>
+    <targetHediff>RemoteShielderImplant</targetHediff>
+    <customLabel>remote shielder</customLabel>
+    <functionalNote>implant allowing the mechanitor to project and maintain a focused defense shield over a distant mech</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- RepairProbeImplant -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_RepairProbeImplant</defName>
+    <targetHediff>RepairProbeImplant</targetHediff>
+    <customLabel>repair probe</customLabel>
+    <functionalNote>direct-plug interface allowing rapid diagnosis and accelerated manual repair of mechanoids</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+  
+  </Defs>
