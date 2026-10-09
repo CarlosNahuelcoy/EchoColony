@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+<!-- HoraxianInvisibility -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_HoraxianInvisibility</defName>
+    <targetHediff>HoraxianInvisibility</targetHediff>
+    <customLabel>dark psychic invisibility</customLabel>
+    <functionalNote>dark psychic distortion preventing surrounding minds from perceiving presence</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- RevenantHypnosis -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_RevenantHypnosis</defName>
+    <targetHediff>RevenantHypnosis</targetHediff>
+    <functionalNote>deep hypnotic trance induced by a revenant linking the victim's mind to it</functionalNote>
+    <behavioralDirective>You are in a hypnotic trance, unblinking, rambling about horrific nightmarish creatures and staring at invisible horrors.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- DeathRefusal -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_DeathRefusal</defName>
+    <targetHediff>DeathRefusal</targetHediff>
+    <functionalNote>archite-infused seed allowing rapid body reconstruction and revival upon death</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- DeathRefusalSickness -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_DeathRefusalSickness</defName>
+    <targetHediff>DeathRefusalSickness</targetHediff>
+    <functionalNote>after-effects of returning from death through archite reconstruction</functionalNote>
+    <behavioralDirective>You have recently come back from the dead. You feel physically shaken, slightly sore, and mentally disoriented.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- Regeneration -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Regeneration</defName>
+    <targetHediff>Regeneration</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <functionalNote>unnatural archotech-supported wound healing</functionalNote>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <functionalNote>impossibly rapid archotech wound regeneration</functionalNote>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PainField -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PainField</defName>
+    <targetHediff>PainField</targetHediff>
+    <functionalNote>searing agony induced by proximity to an active psychic entity</functionalNote>
+    <behavioralDirective>You are suffering from intense, searing mental pain radiating from a psychically active entity nearby.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- AgonyPulse -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_AgonyPulse</defName>
+    <targetHediff>AgonyPulse</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You are struck by an acute, overwhelming wave of projected mental agony, leaving you in severe pain.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You feel lingering, dull mental pain as the shock pulse gradually wears off.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- MetalhorrorImplant -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_MetalhorrorImplant</defName>
+    <targetHediff>MetalhorrorImplant</targetHediff>
+    <functionalNote>gestating metallic parasite taking over the host's nervous system</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- MetalhorrorSpeedBoost -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_MetalhorrorSpeedBoost</defName>
+    <targetHediff>MetalhorrorSpeedBoost</targetHediff>
+    <customLabel>machine speed</customLabel>
+    <functionalNote>burst of unnatural archotechnological strength and movement speed</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- DarkPsychicShock -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_DarkPsychicShock</defName>
+    <targetHediff>DarkPsychicShock</targetHediff>
+    <functionalNote>comatose state caused by a dark psychic neural disruption</functionalNote>
+    <behavioralDirective>You are in a dark psychic coma due to neural disruption and remain completely unconscious.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PsychicTrance -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PsychicTrance</defName>
+    <targetHediff>PsychicTrance</targetHediff>
+    <functionalNote>trance state linked to an ambient psychic field reducing needs for rest and food</functionalNote>
+    <behavioralDirective>You are in a calm, distant psychic trance, feeling unnaturally sustained without needing food or rest.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- DuplicateSickness -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_DuplicateSickness</defName>
+    <targetHediff>DuplicateSickness</targetHediff>
+    <functionalNote>mental deterioration caused by psychic interference with a living duplicate</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You experience light, occasional mental haziness from subtle duplicate interference.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You feel moderate mental deterioration and confusion, feeling increasingly irritable and unfocused due to your duplicate's presence.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You suffer severe mental decay, struggling heavily with focus, severe headaches, and high mental instability.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <behavioralDirective>You are in a debilitating mental state, barely able to think rationally as psychic duplicate interference collapses your consciousness.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- CrumblingMindUndiagnosedDuplication -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_CrumblingMindUndiagnosedDuplication</defName>
+    <targetHediff>CrumblingMindUndiagnosedDuplication</targetHediff>
+    <customLabel>undiagnosed crumbling mind</customLabel>
+    <functionalNote>early undiagnosed stage of rapid cognitive decay following duplication</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- CrumblingMindUndiagnosedCreepjoiner -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_CrumblingMindUndiagnosedCreepjoiner</defName>
+    <targetHediff>CrumblingMindUndiagnosedCreepjoiner</targetHediff>
+    <customLabel>undiagnosed crumbling mind</customLabel>
+    <functionalNote>early undiagnosed stage of rapid mental decay in a creepjoiner</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- CrumblingMind -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_CrumblingMind</defName>
+    <targetHediff>CrumblingMind</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You suffer from mild pounding headaches and occasional trouble expressing thoughts cleanly.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>Your mind is crumbling. You feel significant cognitive decay, severe headaches, and difficulty concentrating on complex tasks.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>Your mind is in extreme decay. You struggle to stay lucid, feeling your mental capacities slip away rapidly.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- CrumbledMind -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_CrumbledMind</defName>
+    <targetHediff>CrumbledMind</targetHediff>
+    <functionalNote>permanent loss of higher cognitive function preventing complex or skilled tasks</functionalNote>
+    <behavioralDirective>You have lost most higher cognitive function. You act as a simple husk of your former self, unable to perform skilled or intellectual tasks.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- BlissLobotomy -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BlissLobotomy</defName>
+    <targetHediff>BlissLobotomy</targetHediff>
+    <functionalNote>psychic lobotomy placing the mind in permanent, simple bliss at the cost of cognitive capacity</functionalNote>
+    <behavioralDirective>You are in a state of continuous, simple bliss. You feel perfectly content, but lack complex intellectual or skilled focus.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- DisruptorFlash -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_DisruptorFlash</defName>
+    <targetHediff>DisruptorFlash</targetHediff>
+    <behavioralDirective>You are dazed and disoriented from the sudden flash of a disruptor flare.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PleasurePulse -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PleasurePulse</defName>
+    <targetHediff>PleasurePulse</targetHediff>
+    <functionalNote>psychic pulse inducing pleasurable sensations that distract from work</functionalNote>
+    <behavioralDirective>You feel unnaturally happy and distracted by pleasant, soothing psychic sensations, making you work a bit slower.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- NeurosisPulse -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_NeurosisPulse</defName>
+    <targetHediff>NeurosisPulse</targetHediff>
+    <functionalNote>psychic pulse inducing motivated, neurotic urgency</functionalNote>
+    <behavioralDirective>You feel irritable, anxious, and motivated by a sudden burst of neurotic energy, driving you to work much faster.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- Voidsight -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Voidsight</defName>
+    <targetHediff>Voidsight</targetHediff>
+    <functionalNote>drug-induced enhancement of dark psychic perception and sensitivity</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- Metalblood -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Metalblood</defName>
+    <targetHediff>Metalblood</targetHediff>
+    <functionalNote>bioferrite compound hardening flesh against damage while making the body hyper-flammable</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- MindNumbSerum -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_MindNumbSerum</defName>
+    <targetHediff>MindNumbSerum</targetHediff>
+    <functionalNote>exotic serum dampening emotional highs and lows to prevent mental breaks and inspirations</functionalNote>
+    <behavioralDirective>Your emotions are completely flat and moderated. You feel neither joy nor despair, immune to mental breaks or inspiration.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- JuggernautSerum -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_JuggernautSerum</defName>
+    <targetHediff>JuggernautSerum</targetHediff>
+    <functionalNote>muscle-supercharging serum granting strength and speed at the cost of physical discomfort</functionalNote>
+    <behavioralDirective>You feel physically supercharged, faster and stronger, but the intense muscular strain causes constant discomfort.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- BloodRage -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BloodRage</defName>
+    <targetHediff>BloodRage</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You feel a subtle, irritating agitation building up from exposure to blood rain.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You feel noticeably angry and hostile as blood rain continues to soak into your skin.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You feel severe, violent rage, fighting the urge to lash out physically at anyone nearby.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <behavioralDirective>You are in an extreme blood rage, overwhelmed by violent urges and near a complete violent breakdown.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- FrenzyField -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_FrenzyField</defName>
+    <targetHediff>FrenzyField</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You feel a slight nervous edge and energy boost from an ambient frenzy field.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You feel restless and tense, channeling angry nervous energy into moving and working faster.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You are in an extreme frenzy, moving and working at high speed while feeling highly volatile and quick to snap.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- CubeInterest -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_CubeInterest</defName>
+    <targetHediff>CubeInterest</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You feel curiously drawn to the golden cube, thinking about it occasionally.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You are deeply fascinated by the golden cube, frequently daydreaming about its perfection.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You are completely obsessed with the golden cube, fixated on it above almost all other concerns.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- CubeWithdrawal -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_CubeWithdrawal</defName>
+    <targetHediff>CubeWithdrawal</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You feel an uncomfortable itching and desire to hold or play with the golden cube.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You suffer moderate cube withdrawal. Your mind races and your skin itches, desperately wanting to be near the cube.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You are in extreme cube withdrawal. You feel severe distress, head pain, and obsessive desperation to touch the golden cube.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- CubeComa -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_CubeComa</defName>
+    <targetHediff>CubeComa</targetHediff>
+    <functionalNote>comatose state induced by abruptly severing a psychic link to the golden cube</functionalNote>
+    <behavioralDirective>You are in a deep coma caused by the traumatic psychic disconnection from the golden cube.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- CubeRage -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_CubeRage</defName>
+    <targetHediff>CubeRage</targetHediff>
+    <customLabel>cube anger</customLabel>
+    <behavioralDirective>You are furious because your precious cube sculptures were destroyed, teetering on a violent rage.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- VoidShock -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_VoidShock</defName>
+    <targetHediff>VoidShock</targetHediff>
+    <functionalNote>mental shock coma after witnessing horrific visions of the void</functionalNote>
+    <behavioralDirective>You are in a shock-induced coma after witnessing visions of the terrifying void, remaining unresponsive.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- BrainwipeComa -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BrainwipeComa</defName>
+    <targetHediff>BrainwipeComa</targetHediff>
+    <functionalNote>coma resulting from violent psychic memory erasure</functionalNote>
+    <behavioralDirective>You are in a deep coma following the violent erasure of your memories.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- VoidTouched -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_VoidTouched</defName>
+    <targetHediff>VoidTouched</targetHediff>
+    <functionalNote>permanent dark transformation granting regeneration and eliminating rest/comfort needs</functionalNote>
+    <behavioralDirective>Your mind and flesh are guided by the void. Your hair has turned white and you feel no need for sleep or physical comfort.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- CorpseTorment -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_CorpseTorment</defName>
+    <targetHediff>CorpseTorment</targetHediff>
+    <functionalNote>unconscious coma caused by angering a psychically linked duplicate corpse</functionalNote>
+    <behavioralDirective>You are unconscious from excruciating pain caused by a psychic backlash from your duplicate corpse.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PsychicallyDead -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PsychicallyDead</defName>
+    <targetHediff>PsychicallyDead</targetHediff>
+    <functionalNote>total consumption and destruction of psychic presence</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- Psychophage -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Psychophage</defName>
+    <targetHediff>Psychophage</targetHediff>
+    <functionalNote>temporary boost in psychic sensitivity from devouring another's psychic presence</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- SleepSuppression -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_SleepSuppression</defName>
+    <targetHediff>SleepSuppression</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>Your body feels slightly less tired than usual due to psychic sleep suppression.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>Your need for sleep is heavily suppressed by psychic pulsations, keeping you awake and active.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>Your fatigue is completely suppressed by psychic force; you feel fully energized without needing sleep.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- RageSpeed -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_RageSpeed</defName>
+    <targetHediff>RageSpeed</targetHediff>
+    <customLabel>rage speed</customLabel>
+    <functionalNote>adrenalin-fueled burst of speed and pain immunity triggered by injury</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- Inhumanized -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Inhumanized</defName>
+    <targetHediff>Inhumanized</targetHediff>
+    <customLabel>inhumanization</customLabel>
+    <functionalNote>complete psychic severance from human emotional concerns, family, and social ties</functionalNote>
+    <behavioralDirective>Your mind is dominated by the void. You are cold, distant, completely unbothered by social relationships, physical pain, or human ties.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- LightExposure -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_LightExposure</defName>
+    <targetHediff>LightExposure</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>Light causes you mild discomfort, making your movements slightly sluggish.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>Light causes you painful stinging, slowing your movement and combat reactions noticeably.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You are in severe agony from light exposure, heavily slowed and struggling in bright areas.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- BioferriteExtracted -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BioferriteExtracted</defName>
+    <targetHediff>BioferriteExtracted</targetHediff>
+    <functionalNote>soreness and tissue recovery following surgical bioferrite extraction</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+  
+</Defs>

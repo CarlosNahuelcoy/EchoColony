@@ -18,6 +18,13 @@ namespace EchoColony
             var hediffs = pawn.health.hediffSet.hediffs.Where(h => h.Visible).ToList();
             return hediffs;
         }
+
+        /// <summary>
+        /// Appends a summary of critical health conditions and capacities to the healthStatus list, including pregnancy, health percentage, bleeding, pain, and functional impairments.
+        /// </summary>
+        /// <param name="pawn"></param>
+        /// <param name="hediffs"></param>
+        /// <param name="healthStatus"></param>
         public static void AppendCriticalAndCapacities(Pawn pawn, List<Hediff> hediffs, List<string> healthStatus)
         {
             var details = new List<string>();
@@ -65,6 +72,11 @@ namespace EchoColony
             }
         }
 
+        /// <summary>
+        /// Appends a summary of injuries and scars to the healthStatus list, including severity and affected body parts.
+        /// </summary>
+        /// <param name="hediffs"></param>
+        /// <param name="healthStatus"></param>
         public static void AppendInjuries(List<Hediff> hediffs, List<string> healthStatus)
         {
             var injuries = hediffs.OfType<Hediff_Injury>()
@@ -73,23 +85,30 @@ namespace EchoColony
 
             if (!injuries.Any()) return;
 
-            // Separar heridas abiertas/recientes de cicatrices permanentes
+            // Distinguish between open or recent wounds and permanent scars.
             var freshInjuries = injuries.Where(i => !i.IsPermanent()).ToList();
             var scars = injuries.Where(i => i.IsPermanent()).ToList();
 
-            // Procesar heridas abiertas
+            // Processing open wounds
             if (freshInjuries.Any())
             {
                 ProcessInjuryGroup(freshInjuries, healthStatus, "Wounds", isScar: false);
             }
 
-            // Procesar cicatrices permanentes
+            // Processing permanent scars
             if (scars.Any())
             {
                 ProcessInjuryGroup(scars, healthStatus, "Scars", isScar: true);
             }
         }
 
+        /// <summary>
+        /// Processes a group of injuries or scars, summarizing the most severe ones and providing a count of additional injuries/scars.
+        /// </summary>
+        /// <param name="injuryList"></param>
+        /// <param name="healthStatus"></param>
+        /// <param name="categoryName"></param>
+        /// <param name="isScar"></param>
         private static void ProcessInjuryGroup(List<Hediff_Injury> injuryList, List<string> healthStatus, string categoryName, bool isScar)
         {
             var sorted = injuryList.OrderByDescending(i => i.Severity).ToList();
@@ -124,7 +143,7 @@ namespace EchoColony
 
             string topText = string.Join(", ", topDetails);
 
-            // 3. Evaluar las heridas/cicatrices restantes (de la 4ª en adelante)
+            // 3. Evaluate the remaining wounds/scars (from the 4th onwards)
             var remaining = sorted.Skip(3).ToList();
 
             if (remaining.Any())
@@ -151,13 +170,19 @@ namespace EchoColony
             }
         }
 
+        /// <summary>
+        /// Appends a summary of prosthetics and missing body parts to the healthStatus list, including any functional notes.
+        /// </summary>
+        /// <param name="pawn"></param>
+        /// <param name="hediffs"></param>
+        /// <param name="healthStatus"></param>
         public static void AppendProstheticsAndMissingParts(Pawn pawn, List<Hediff> hediffs, List<string> healthStatus)
         {
-            // 1. Obtener todas las partes sustituidas por una prótesis
+            // 1. Obtain all parts replaced by a prosthetic
             var prosthetics = hediffs.Where(h => h.def.addedPartProps != null && h.Part != null && HediffClassifier.IsRealImplantOrProsthetic(h)).ToList();
             var prostheticParts = new HashSet<BodyPartRecord>(prosthetics.Select(h => h.Part));
 
-            // 2. Obtener partes faltantes reales (que no tengan una prótesis encima)
+            // 2. Obtain actual missing parts (that don't have a prosthetic on top)
             var missingParts = pawn.health.hediffSet.GetMissingPartsCommonAncestors()
                     .Where(h => h.Part != null && !IsPartCoveredByProsthetic(h.Part, prostheticParts))
                     .Select(h => h.Part.Label)
@@ -169,7 +194,7 @@ namespace EchoColony
             var formattedItems = new List<string>();
             bool hasDetailedNotes = false;
 
-            // 3. Procesar las prótesis agrupando por (Label, Note) para unificar partes pares
+            // 3. Process prosthetics by grouping them by (Label, Note) to unify pairs of parts
             if (prosthetics.Any())
             {
                 var grouped = prosthetics
@@ -198,13 +223,13 @@ namespace EchoColony
                 }
             }
 
-            // 4. Agregar partes faltantes
+            // 4. Add missing parts
             if (missingParts.Any())
             {
                 formattedItems.Add($"missing ({string.Join(" and ", missingParts)})");
             }
 
-            // 5. Salida condicional: Viñetas si hay explicaciones complejas, línea única si es simple
+            // 5. Conditional output: Bullets if there are complex explanations, single line if simple
             if (hasDetailedNotes)
             {
                 healthStatus.Add("Prosthetics & Body Modifications:\n" + string.Join("\n", formattedItems.Select(item => $"- {item.TrimEnd('.')}.")));
@@ -215,6 +240,11 @@ namespace EchoColony
             }
         }
 
+        /// <summary>
+        /// Appends a summary of implants to the healthStatus list, including any functional notes. 
+        /// </summary>
+        /// <param name="hediffs"></param>
+        /// <param name="healthStatus"></param>
         public static void AppendImplants(List<Hediff> hediffs, List<string> healthStatus)
         {
             var implantHediffs = hediffs.Where(h =>
@@ -229,7 +259,7 @@ namespace EchoColony
             var formattedItems = new List<string>();
             bool hasDetailedNotes = false;
 
-            // Agrupamos por (Label, Note)
+            // We group by (Label, Note)
             var grouped = implantHediffs
                 .Select(h => {
                     var (label, note, _) = HediffClassifier.GetResolvedPrompt(h);
@@ -265,6 +295,11 @@ namespace EchoColony
             }
         }
 
+        /// <summary>
+        /// Appends a summary of addictions and withdrawals to the healthStatus list, including severity and stage information.
+        /// </summary>
+        /// <param name="hediffs"></param>
+        /// <param name="healthStatus"></param>
         public static void AppendAddictionsAndWithdrawals(List<Hediff> hediffs, List<string> healthStatus)
         {
             var addictions = hediffs.Where(h => h.def?.defName != null && h.def.defName.EndsWith("Addiction")).ToList();
@@ -274,13 +309,13 @@ namespace EchoColony
 
             string GetCleanDrugName(Hediff h)
             {
-                // A) Si es un Hediff_Addiction nativo, la sustancia química nos da el nombre exacto
+                // A) If it is a native Hediff_Addiction, the chemical substance gives us the exact name.
                 if (h is Hediff_Addiction addComp && addComp.Chemical != null)
                 {
                     return addComp.Chemical.label;
                 }
 
-                // B) Si no, recortamos el defName de la definición XML (ej: "AlcoholAddiction" -> "alcohol")
+                // B) Otherwise, we trim the defName from the XML definition (e.g., "AlcoholAddiction" -> "alcohol").
                 string defName = h.def.defName;
                 if (defName.EndsWith("Addiction"))
                     return defName.Substring(0, defName.Length - "Addiction".Length).ToLower();
@@ -293,13 +328,13 @@ namespace EchoColony
             var details = new List<string>();
             var processedDrugs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            // 1. Procesar Adicciones
+            // 1. Process Addictions
             foreach (var add in addictions)
             {
                 string drugName = GetCleanDrugName(add);
                 processedDrugs.Add(drugName);
 
-                // Buscar si existe una abstinencia activa comparando directamente los nombres limpios
+                // Check for active withdrawal by directly comparing the clean names.
                 var withdrawal = withdrawals.FirstOrDefault(w =>
                     GetCleanDrugName(w).Equals(drugName, StringComparison.OrdinalIgnoreCase));
 
@@ -319,7 +354,7 @@ namespace EchoColony
                 }
             }
 
-            // 2. Procesar Abstinencias huérfanas (sin el hediff de adicción principal)
+            // 2. Process orphaned withdrawals (without the main addiction hediff)
             foreach (var wit in withdrawals)
             {
                 string drugName = GetCleanDrugName(wit);
@@ -344,12 +379,17 @@ namespace EchoColony
             }
         }
 
+        /// <summary>
+        /// Appends a summary of acute illnesses, infections, and chronic conditions to the healthStatus list.
+        /// </summary>
+        /// <param name="hediffs"></param>
+        /// <param name="healthStatus"></param>
         public static void AppendDiseasesAndInfections(List<Hediff> hediffs, List<string> healthStatus)
         {
             if (hediffs == null || !hediffs.Any())
                 return;
 
-            // --- A. ENFERMEDADES AGUDAS E INFECCIONES ---
+            // --- A. ACUTE ILLNESSES AND INFECTIONS ---
             var activeDiseases = hediffs
                 .Where(h => h.Visible && IsAcuteDisease(h))
                 .ToList();
@@ -363,7 +403,7 @@ namespace EchoColony
                     var (label, note, _) = HediffClassifier.GetResolvedPrompt(disease);
                     string stage = HediffClassifier.GetStageSuffix(disease, label);
 
-                    // Si es una infección local de herida
+                    // If it's a local wound infection
                     if (disease.def.defName == "WoundInfection")
                     {
                         string partLabel = disease.Part != null ? disease.Part.Label : "body";
@@ -371,7 +411,7 @@ namespace EchoColony
                         continue;
                     }
 
-                    // Enfermedad aguda normal
+                    // Typical acute illness
                     if (!string.IsNullOrEmpty(note))
                     {
                         formattedAcute.Add($"{label}{stage}: {note.TrimEnd('.')}");
@@ -382,7 +422,7 @@ namespace EchoColony
                     }
                 }
 
-                // Si alguna enfermedad aguda tiene nota explicativa, usaremos viñetas
+                // If an acute illness has an explanatory note, we will use bullet points.
                 bool hasDetailedNotes = activeDiseases.Any(h => !string.IsNullOrEmpty(HediffClassifier.GetResolvedPrompt(h).note));
 
                 if (hasDetailedNotes)
@@ -395,7 +435,7 @@ namespace EchoColony
                 }
             }
 
-            // --- B. ENFERMEDADES CRÓNICAS ---
+            // --- B. CHRONIC DISEASES ---
             var chronicDiseases = hediffs
                 .Where(h => h.Visible && IsChronicDisease(h))
                 .GroupBy(h => HediffClassifier.GetResolvedPrompt(h).label, StringComparer.OrdinalIgnoreCase)
@@ -449,6 +489,11 @@ namespace EchoColony
             return false;
         }
 
+        /// <summary>
+        /// Determines if a given Hediff represents an acute disease or infection.
+        /// </summary>
+        /// <param name="hediff"></param>
+        /// <returns></returns>
         public static bool IsAcuteDisease(Hediff hediff)
         {
             if (hediff == null || hediff.def == null)
@@ -456,25 +501,25 @@ namespace EchoColony
 
             HediffDef def = hediff.def;
 
-            // 1. Descartar si no es algo negativo o si es una herida/parte faltante
+            // 1. Rule out if it is not something negative or if it is a wound/missing part.
             if (!def.isBad || def.chronic)
                 return false;
 
             if (hediff is Hediff_Injury || hediff is Hediff_MissingPart)
                 return false;
 
-            // 2. Filtro directo por infección o pensamiento de enfermedad
+            // 2. Direct filter based on infection or thoughts of illness
             if (def.isInfection || def.makesSickThought)
                 return true;
 
-            // 3. Filtro por componentes típicos de enfermedades (Inmunizables / Tratable por tiempo)
+            // 3. Direct filter based on typical disease components (Immunizable / Treatable by time)
             bool hasImmunizable = def.HasComp(typeof(HediffComp_Immunizable));
             bool hasTendDuration = def.HasComp(typeof(HediffComp_TendDuration));
 
             if (hasImmunizable || (def.tendable && hasTendDuration))
                 return true;
 
-            // 4. Casos específicos de afecciones agudas o bloqueos mentales (Catatonic, HeartAttack, etc.)
+            // 4. Specific cases of acute conditions or mental blocks (Catatonic, HeartAttack, etc.)
             if (def.defName == "HeartAttack" || def.defName == "CatatonicBreakdown" || def.defName == "FoodPoisoning")
                 return true;
 
@@ -486,12 +531,11 @@ namespace EchoColony
             if (hediff == null || hediff.def == null)
                 return false;
 
-            // Afección negativa marcada explícitamente como crónica en el XML
             return hediff.def.isBad && hediff.def.chronic && !(hediff is Hediff_Injury);
         }
 
         /// <summary>
-        /// Recopila todas las directivas de comportamiento (behavioralDirective) asociadas a los hediffs del colono.
+        /// Collects all behavioral directives associated with the colonist's hediffs.
         /// </summary>
         public static void AppendBehavioralDirectives(List<Hediff> hediffs, List<string> healthStatus)
         {
@@ -506,7 +550,7 @@ namespace EchoColony
                 string directive = HediffClassifier.GetResolvedPrompt(h).directive;
                 if (!string.IsNullOrEmpty(directive))
                 {
-                    directives.Add($"- {directive}");
+                    directives.Add($"  * {directive.Trim()}");
                 }
             }
 
@@ -520,31 +564,55 @@ namespace EchoColony
     [StaticConstructorOnStartup]
     public static class HediffClassifier
     {
-        private static readonly Dictionary<string, HediffAIPromptDef> PromptDefs = new Dictionary<string, HediffAIPromptDef>();
+        private static readonly Dictionary<string, HediffAIPromptDef> PromptDefs =
+            new Dictionary<string, HediffAIPromptDef>(StringComparer.OrdinalIgnoreCase);
+
+        private static int lastKnownDefCount = -1;
+
         static HediffClassifier()
         {
-            // Cargar automáticamente todos los XMLs de tipo HediffAIPromptDef al iniciar el juego
-            LoadXMLDefinitions();
+            EnsureDefinitionsLoaded();
         }
 
-        private static void LoadXMLDefinitions()
+        /// <summary>
+        /// Comprueba si la base de datos de RimWorld ha cambiado o si necesita cargar/recargar los XML.
+        /// </summary>
+        public static void EnsureDefinitionsLoaded()
         {
-            foreach (var promptDef in DefDatabase<HediffAIPromptDef>.AllDefs)
+            int currentDefCount = DefDatabase<HediffAIPromptDef>.DefCount;
+
+            // Si el recuento de Defs en RimWorld difiere del que tenemos en caché, recargamos el diccionario
+            if (currentDefCount != lastKnownDefCount)
             {
-                if (!string.IsNullOrEmpty(promptDef.targetHediff))
+                PromptDefs.Clear();
+                var defs = DefDatabase<HediffAIPromptDef>.AllDefsListForReading;
+
+                if (defs != null)
                 {
-                    PromptDefs[promptDef.targetHediff] = promptDef;
+                    foreach (var promptDef in defs)
+                    {
+                        if (!string.IsNullOrEmpty(promptDef.targetHediff))
+                        {
+                            PromptDefs[promptDef.targetHediff] = promptDef;
+                        }
+                    }
                 }
+
+                lastKnownDefCount = currentDefCount;
+                Log.Message($"[EchoColony] Dynamic XML Definitions Synced -> {PromptDefs.Count} active prompt definitions mapped.");
             }
         }
 
         /// <summary>
-        /// Devuelve los textos (customLabel, functionalNote, behavioralDirective)
-        /// resolviendo la etapa actual según la severidad del hediff.
+        /// Returns the texts (customLabel, functionalNote, behavioralDirective), 
+        /// resolving the current stage based on the hediff's severity.
         /// </summary>
         public static (string label, string note, string directive) GetResolvedPrompt(Hediff hediff)
         {
             if (hediff?.def == null) return (null, null, null);
+
+            // Check if RimWorld's DefDatabase has fully loaded/updated.
+            EnsureDefinitionsLoaded();
 
             if (!PromptDefs.TryGetValue(hediff.def.defName, out var promptDef))
             {
@@ -564,8 +632,6 @@ namespace EchoColony
                 HediffStagePrompt matched = null;
                 HediffStagePrompt fallback = null;
 
-                // Una sola pasada: busca coincidencia exacta y, en paralelo,
-                // el mejor fallback (mayor stageIndex <= actual).
                 for (int i = 0; i < stages.Count; i++)
                 {
                     var s = stages[i];
@@ -604,15 +670,15 @@ namespace EchoColony
         }
 
         /// <summary>
-        /// Devuelve el sufijo de etapa nativa entre paréntesis si la etiqueta del label
-        /// no la incluye ya (porque el XML la habría puesto vía customLabel).
+        /// Returns the native stage suffix in parentheses if the label tag does not 
+        /// already include it (because the XML would have added it via customLabel).
         /// </summary>
         public static string GetStageSuffix(Hediff h, string resolvedLabel)
         {
             string stageLabel = h.CurStage?.label;
             if (string.IsNullOrEmpty(stageLabel)) return string.Empty;
 
-            // Si el label resuelto ya contiene la etapa, no la dupliques.
+            // If the resolved label already contains the stage, it does not duplicate it.
             if (resolvedLabel != null &&
                 resolvedLabel.IndexOf(stageLabel, StringComparison.OrdinalIgnoreCase) >= 0)
                 return string.Empty;
@@ -621,67 +687,25 @@ namespace EchoColony
         }
 
         /// <summary>
-        /// Obtiene el nombre de la prótesis o implante y, si existe, añade su aclaración técnica.
+        /// Determines if a given Hediff represents a real implant or prosthetic.
         /// </summary>
-        /// <param name="hediff">El Hediff del colono.</param>
-        /// <param name="includeDescription">Si es true, buscará si hay una nota aclaratoria registrada y la adjuntará.</param>
-        /// <param name="customDescription">Permite pasar una nota ad-hoc directamente en la llamada si fuera necesario.</param>
-        public static string FormatBodyModification(Hediff hediff, bool includeDescription = true, string customDescription = null)
-        {
-            if (hediff?.def == null) return "prosthetic";
-
-            var (label, note, _) = GetResolvedPrompt(hediff);
-
-            if (!includeDescription) return label;
-            if (!string.IsNullOrEmpty(customDescription)) return $"{label} ({customDescription})";
-            return string.IsNullOrEmpty(note) ? label : $"{label} ({note})";       
-        }
-
-
-        private static string GetFirstSentence(string text)
-        {
-            if (string.IsNullOrWhiteSpace(text)) return "";
-
-            int periodIndex = text.IndexOf('.');
-            if (periodIndex > 0)
-            {
-                return text.Substring(0, periodIndex).Trim().ToLower();
-            }
-            return text.Trim().ToLowerInvariant();
-        }
-
+        /// <param name="hediff"></param>
+        /// <returns></returns>
         public static bool IsRealImplantOrProsthetic(Hediff hediff)
         {
             if (hediff == null || hediff.def == null) return false;
 
             HediffDef def = hediff.def;
 
-            // 1. RimWorld expone este booleano directamente en HediffDef.
-            // RJW marca sus partes naturales explícitamente con <countsAsAddedPartOrImplant>false</countsAsAddedPartOrImplant>
             if (!def.countsAsAddedPartOrImplant)
             {
                 return false;
             }
 
-            // 2. Verificación estándar de RimWorld:
-            // Comprueba si hereda de la clase base de implantes/partes añadidas o si tiene propiedades de prótesis
+            // Check whether it inherits from the base class for implants/add-on parts or has prosthetic properties.
             return hediff is Hediff_AddedPart ||
                    hediff is Hediff_Implant ||
                    def.addedPartProps != null;
-        }
-
-        public static string ExtractShortDescription(HediffDef hediffDef)
-        {
-            if(!string.IsNullOrEmpty(hediffDef.description))
-            {
-                string shortDesc = GetFirstSentence(hediffDef.description);
-                // Solo si es una frase corta y útil (menos de 65 caracteres)
-                if (!string.IsNullOrEmpty(shortDesc) && shortDesc.Length < 65)
-                {
-                    return shortDesc;
-                }
-            }
-            return string.Empty;
         }
     }
 }

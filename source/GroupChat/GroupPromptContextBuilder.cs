@@ -104,13 +104,14 @@ namespace EchoColony
 
             sb.AppendLine(BuildBackstory(speaker));
 
-            var traits = speaker.story?.traits?.allTraits?.Select(t => t.LabelCap).ToList();
-            if (traits?.Any() == true)
-                sb.AppendLine($"Traits: {string.Join(", ", traits.Take(5))}");
+            sb.AppendLine(UtilsPromptHelpers.BuildTraits(speaker));
 
-            float health = speaker.health?.summaryHealth?.SummaryHealthPercent ?? 1f;
+            string healthInfo = BuildOptimizedHealthDetails(speaker);
+            if (!string.IsNullOrWhiteSpace(healthInfo))
+                sb.AppendLine(healthInfo);
+
             float mood   = speaker.needs?.mood?.CurInstantLevel ?? 1f;
-            sb.AppendLine($"Health: {GetHealthLabel(health)}, Mood: {GetMoodLabel(mood)}");
+            sb.AppendLine($"Mood: {GetMoodLabel(mood)}");
 
             var thoughts = GetSignificantThoughts(speaker);
             if (thoughts.Any())
@@ -531,6 +532,39 @@ namespace EchoColony
                 string clean = System.Text.RegularExpressions.Regex.Replace(rawText, @"\((\*|\/).*?\)", "");
                 return System.Text.RegularExpressions.Regex.Replace(clean, "<.*?>", "").Trim();
             }
+        }
+
+        private static string BuildOptimizedHealthDetails(Pawn pawn)
+        {
+            if (pawn.health?.hediffSet?.hediffs == null) return "";
+
+            var healthStatus = new List<string>();
+            var hediffs = pawn.health.hediffSet.hediffs.Where(h => h.Visible).ToList();
+
+            // 1. Critical Status and Capabilities (High Priority)
+            HealthPromptClassifier.AppendCriticalAndCapacities(pawn, hediffs, healthStatus);
+
+            // 2. Injuries and Wounds (Visible and impactful)
+            HealthPromptClassifier.AppendInjuries(hediffs, healthStatus);
+
+            // 3. Prosthetics and Missing Parts (Physical modifications)
+            HealthPromptClassifier.AppendProstheticsAndMissingParts(pawn, hediffs, healthStatus);
+
+            // 4. Behavioral and organic implants (Add-ons)
+            HealthPromptClassifier.AppendImplants(hediffs, healthStatus);
+
+            // 5. Addictions and Withdrawals
+            HealthPromptClassifier.AppendAddictionsAndWithdrawals(hediffs, healthStatus);
+
+            // 6. Wounds / Diseases / Infections (Treatable Conditions)
+            HealthPromptClassifier.AppendDiseasesAndInfections(hediffs, healthStatus);
+
+            // 7. Behavioral Directives (Health Instructions)
+            HealthPromptClassifier.AppendBehavioralDirectives(hediffs, healthStatus);
+
+            return healthStatus.Any()
+                ? "*Health status:*\n- " + string.Join("\n- ", healthStatus)
+                : "";
         }
 
         //*furel - New memory cration prompt - just taking the minimum necesary to a more personified a memory.
