@@ -1,0 +1,878 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <!-- Example 1: Joywire (Requires functional note AND conduct directive)-->
+  <!--<EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Joywire</defName>
+    <targetHediff>Joywire</targetHediff>
+    <customLabel>joywire neural chip</customLabel>
+    - Short inline text replacing the game's base lore. -
+    <functionalNote>brain implant that forces continuous dopamine release</functionalNote>
+    -Interpretation instruction-
+    <behavioralDirective>You are unnaturally happy, excessively calm, and completely unbothered by tragic events or danger.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>-->
+
+  <!-- Example 2: Pure Prosthesis (Requires only a functional note) -->
+  <!--<EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BionicEye</defName>
+    <targetHediff>BionicEye</targetHediff>
+    <customLabel>bionic eye</customLabel>
+    <functionalNote>advanced optical implant with infrared vision</functionalNote>
+  </EchoColony.HediffAIPromptDef>-->
+
+  <!-- Example 3: Mental Condition (Requires only a behavioral directive)-->
+  <!--<EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Alzheimers</defName>
+    <targetHediff>Alzheimers</targetHediff>
+    <behavioralDirective>You frequently lose your train of thought, confuse people's names, and ask about things that happened hours ago.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>-->
+  
+  <!-- Exemple 4: Hediff with stages-->
+  <!--<EchoColony.HediffAIPromptDef>
+    <defName>Flu_AIPrompt</defName>
+    <targetHediff>Flu</targetHediff>
+    <customLabel>flu</customLabel>
+    <functionalNote>viral respiratory infection</functionalNote>
+
+    <stages>
+      - Stage 0 (minor in game) -
+      <li>
+        <stageIndex>0</stageIndex>
+        <functionalNote>mild fever, sneezing, still fully functional and capable of work</functionalNote>
+        <behavioralDirective>You have mild flu symptoms, but you can carry on with your tasks normally.</behavioralDirective>
+      </li>
+
+      - Stage 1 or higher (major / extreme in game) -
+      <li>
+        <stageIndex>1</stageIndex>
+        <functionalNote>high fever, vomiting and bedridden exhaustion</functionalNote>
+        <behavioralDirective>You are severely sick with high fever. You feel miserable and desperately need bed rest.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef> -->
+  <!--_____________________________________________________________________________________________________________________________-->
+  
+<!--*****************HediffDefs_BasicProsthetics************************-->   
+  
+  <!-- HookHand -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_HookHand</defName>
+    <targetHediff>HookHand</targetHediff>
+    <customLabel>hook hand</customLabel>
+    <functionalNote>crudely fashioned metal hook replacing a missing hand, limiting fine manipulation but allowing basic scratching attacks</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- SteelArm -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_SteelArm</defName>
+    <targetHediff>SteelArm</targetHediff>
+    <customLabel>steel arm</customLabel>
+    <functionalNote>heavy, clumsy prosthetic arm made of rigid steel with rudimentary joints and poor flexibility</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+  
+<!--*****************HediffDefs_Bionics************************--> 
+  
+  <!-- BionicSpine -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BionicSpine</defName>
+    <targetHediff>BionicSpine</targetHediff>
+    <customLabel>bionic spine</customLabel>
+    <functionalNote>articulated plasteel spine with biogel nerve bundle and self-repairing lattice dust, granting extra carrying capacity</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- BionicHand -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BionicHand</defName>
+    <targetHediff>BionicHand</targetHediff>
+    <customLabel>bionic hand</customLabel>
+    <functionalNote>advanced artificial hand driven by silenced mini-servos and biogel nerve link</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- BionicFoot -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BionicFoot</defName>
+    <targetHediff>BionicFoot</targetHediff>
+    <customLabel>bionic foot</customLabel>
+    <functionalNote>advanced artificial foot with mini-servos and biogel nerve link</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- BionicFinger -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BionicFinger</defName>
+    <targetHediff>BionicFinger</targetHediff>
+    <customLabel>bionic finger</customLabel>
+    <functionalNote>plasteel digit equipped with high-speed wireless transmitters for enhanced grip and precision</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- BionicToe -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BionicToe</defName>
+    <targetHediff>BionicToe</targetHediff>
+    <customLabel>bionic toe</customLabel>
+    <functionalNote>plasteel digit with fine motion sensors and wireless connectivity for balance control</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- BionicJaw -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BionicJaw</defName>
+    <targetHediff>BionicJaw</targetHediff>
+    <customLabel>bionic jaw</customLabel>
+    <functionalNote>biosynthetic bone jaw with plasteel tooth implants and micro-servomotors</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- SilentJaw -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_SilentJaw</defName>
+    <targetHediff>SilentJaw</targetHediff>
+    <customLabel>silent jaw</customLabel>
+    <functionalNote>prosthetic jaw lacking a voice modulator, rendering the user completely mute</functionalNote>
+    <behavioralDirective>You have a silent jaw prosthetic without a voice modulator; you are completely unable to speak or vocalize words.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+ 
+<!--*****************HediffDefs_BionicsRibs************************--> 
+
+  <!-- MedicalRib -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_MedicalRib</defName>
+    <targetHediff>MedicalRib</targetHediff>
+    <customLabel>medical rib</customLabel>
+    <functionalNote>bionic rib equipped with automated blood filtration and antibiotic dispensers</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- DruggedRib -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_DruggedRib</defName>
+    <targetHediff>DruggedRib</targetHediff>
+    <customLabel>drugged rib</customLabel>
+    <functionalNote>bionic rib with integrated micro-flake dispensers releasing continuous euphoric stimulants</functionalNote>
+    <behavioralDirective>You have a drugged rib implant continuously micro-dosing you with stimulants; you feel slightly high, unbothered, and mildly unfocused.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- AdrenalineRib -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_AdrenalineRib</defName>
+    <targetHediff>AdrenalineRib</targetHediff>
+    <customLabel>adrenaline rib</customLabel>
+    <functionalNote>bionic rib with integrated micro-dispensers releasing adrenaline to boost movement and alertness</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PainkillerRib -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PainkillerRib</defName>
+    <targetHediff>PainkillerRib</targetHediff>
+    <customLabel>painkiller rib</customLabel>
+    <functionalNote>bionic rib equipped with automated morphine micro-dispensers to numb physical pain</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- HeaterRib -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_HeaterRib</defName>
+    <targetHediff>HeaterRib</targetHediff>
+    <customLabel>heating rib</customLabel>
+    <functionalNote>bionic rib containing a micro-reactor heating spiral to warm core body temperature in cold environments</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- CoolerRib -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_CoolerRib</defName>
+    <targetHediff>CoolerRib</targetHediff>
+    <customLabel>cooling rib</customLabel>
+    <functionalNote>bionic rib with a micro-coolant system and dermal exhausts to regulate body heat in hot environments</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- CoagulatorRib -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_CoagulatorRib</defName>
+    <targetHediff>CoagulatorRib</targetHediff>
+    <customLabel>coagulator rib</customLabel>
+    <functionalNote>bionic rib releasing automated coagulant agents into the bloodstream upon detecting injury to slow bleeding</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- RespirationRib -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_RespirationRib</defName>
+    <targetHediff>RespirationRib</targetHediff>
+    <customLabel>respiration rib</customLabel>
+    <functionalNote>bionic rib assisting diaphragm movement to optimize breathing patterns and reduce psychological stress</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- WakeUpRib -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_WakeUpRib</defName>
+    <targetHediff>WakeUpRib</targetHediff>
+    <customLabel>wake-up rib</customLabel>
+    <functionalNote>bionic rib with micro-dispensers releasing wake-up stimulants to maintain focus and reduce rest fall rate</functionalNote>
+    <behavioralDirective>Your wake-up rib implant continuously micro-doses wake-up stimulants, keeping you alert, slightly jittery, and reducing your need for sleep.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+  
+<!--*****************HediffDefs_AdvancedBionics************************--> 
+  
+  <!-- AdvancedBionicEye -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_AdvancedBionicEye</defName>
+    <targetHediff>AdvancedBionicEye</targetHediff>
+    <customLabel>advanced bionic eye</customLabel>
+    <functionalNote>ultra-advanced optical implant with wide-spectrum sensors, signal pre-processor, and lattice-dust self-repair</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- AdvancedBionicArm -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_AdvancedBionicArm</defName>
+    <targetHediff>AdvancedBionicArm</targetHediff>
+    <customLabel>advanced bionic arm</customLabel>
+    <functionalNote>ultra-advanced artificial arm with silenced mini-servos, biogel nerve-link, and lattice-dust self-repair</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- AdvancedBionicLeg -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_AdvancedBionicLeg</defName>
+    <targetHediff>AdvancedBionicLeg</targetHediff>
+    <customLabel>advanced bionic leg</customLabel>
+    <functionalNote>ultra-advanced artificial leg with high-powered mini-servos, biogel nerve-link, and lattice-dust self-repair</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- AdvancedBionicSpine -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_AdvancedBionicSpine</defName>
+    <targetHediff>AdvancedBionicSpine</targetHediff>
+    <customLabel>advanced bionic spine</customLabel>
+    <functionalNote>ultra-advanced artificial spine with biogel nerve bundle in an articulated plasteel core, boosting carrying capacity</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- AdvancedBionicEar -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_AdvancedBionicEar</defName>
+    <targetHediff>AdvancedBionicEar</targetHediff>
+    <customLabel>advanced bionic ear</customLabel>
+    <functionalNote>ultra-advanced auditory implant with noise-filtering subdermal microphones and direct biogel nerve-link</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- AdvancedBionicHand -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_AdvancedBionicHand</defName>
+    <targetHediff>AdvancedBionicHand</targetHediff>
+    <customLabel>advanced bionic hand</customLabel>
+    <functionalNote>ultra-advanced artificial hand with high-precision mini-servos, biogel nerve-link, and lattice-dust self-repair</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- AdvancedBionicFoot -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_AdvancedBionicFoot</defName>
+    <targetHediff>AdvancedBionicFoot</targetHediff>
+    <customLabel>advanced bionic foot</customLabel>
+    <functionalNote>ultra-advanced artificial foot with powerful mini-servos, biogel nerve-link, and lattice-dust self-repair</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- AdvancedBionicJaw -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_AdvancedBionicJaw</defName>
+    <targetHediff>AdvancedBionicJaw</targetHediff>
+    <customLabel>advanced bionic jaw</customLabel>
+    <functionalNote>ultra-advanced artificial jaw with high-torque mini-servos and integrated voice modulator</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- ExoskeletonSuit -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ExoskeletonSuit</defName>
+    <targetHediff>ExoskeletonSuit</targetHediff>
+    <customLabel>exoskeleton suit</customLabel>
+    <functionalNote>internal lightweight motorized frame boosting carrying capacity, movement, and physical manipulation</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- EPIA_ProtectiveExoskeleton -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_EPIA_ProtectiveExoskeleton</defName>
+    <targetHediff>EPIA_ProtectiveExoskeleton</targetHediff>
+    <customLabel>protective exoskeleton</customLabel>
+    <functionalNote>heavy internal framework with damage mitigation systems reducing incoming physical harm</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- EPIA_Harden_ProtectiveExoskeleton -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_EPIA_Harden_ProtectiveExoskeleton</defName>
+    <targetHediff>EPIA_Harden_ProtectiveExoskeleton</targetHediff>
+    <customLabel>hardened protective exoskeleton</customLabel>
+    <functionalNote>temporary defensive hardening mode providing massive armor protection at the cost of movement speed</functionalNote>
+    <behavioralDirective>Your exoskeleton is locked into a heavy defensive hardening state, drastically reducing your mobility while heavily armoring your body against attacks.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+  
+  <!--*****************HediffDefs_Glitterworld************************--> 
+  
+  <!-- TacticalCorneaImplant -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_TacticalCorneaImplant</defName>
+    <targetHediff>TacticalCorneaImplant</targetHediff>
+    <customLabel>tactical cornea implant</customLabel>
+    <functionalNote>glitterworld ocular implant projecting real-time combat targeting data and optimal firing angles directly onto the retina</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- EPIA_TacticalBionicEye -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_EPIA_TacticalBionicEye</defName>
+    <targetHediff>EPIA_TacticalBionicEye</targetHediff>
+    <customLabel>tactical bionic eye</customLabel>
+    <functionalNote>glitterworld combat bionic eye analyzing target trajectories and suggesting precise firing solutions</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+  
+   <!--*****************HediffDefs_Glitterworld_AnomalyAffected************************--> 
+  
+  <!-- ConstructorCore -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ConstructorCore</defName>
+    <targetHediff>ConstructorCore</targetHediff>
+    <customLabel>auxiliary AI (construction)</customLabel>
+    <functionalNote>brain-implanted auxiliary AI assisting with construction speed, building success, and structure repairs</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- EPIA_AuxiliaryAI_Artisan -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_EPIA_AuxiliaryAI_Artisan</defName>
+    <targetHediff>EPIA_AuxiliaryAI_Artisan</targetHediff>
+    <customLabel>auxiliary AI (artisan)</customLabel>
+    <functionalNote>brain-implanted auxiliary AI assisting with crafting, tailoring, smithing, and artistic production</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- DoctorCore -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_DoctorCore</defName>
+    <targetHediff>DoctorCore</targetHediff>
+    <customLabel>auxiliary AI (medical)</customLabel>
+    <functionalNote>brain-implanted auxiliary AI guiding medical procedures, surgery success rates, and tending quality</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- MinerCore -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_MinerCore</defName>
+    <targetHediff>MinerCore</targetHediff>
+    <customLabel>auxiliary AI (mining)</customLabel>
+    <functionalNote>brain-implanted auxiliary AI guiding mining techniques, deep drilling, and resource extraction yields</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- FarmerCore -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_FarmerCore</defName>
+    <targetHediff>FarmerCore</targetHediff>
+    <customLabel>auxiliary AI (agricultural)</customLabel>
+    <functionalNote>brain-implanted auxiliary AI optimizing farming, crop planting, pruning, and harvest yields</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- DiplomatCore -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_DiplomatCore</defName>
+    <targetHediff>DiplomatCore</targetHediff>
+    <customLabel>auxiliary AI (diplomatic)</customLabel>
+    <functionalNote>brain-implanted auxiliary AI guiding social negotiations, diplomacy, and conflict de-escalation</functionalNote>
+    <behavioralDirective>Your brain is assisted by a diplomatic AI that helps you choose composed, persuasive words, drastically reducing your tendency to engage in social arguments.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- EPIA_AuxiliaryAI_Sharpshooter -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_EPIA_AuxiliaryAI_Sharpshooter</defName>
+    <targetHediff>EPIA_AuxiliaryAI_Sharpshooter</targetHediff>
+    <customLabel>auxiliary AI (sharpshooter)</customLabel>
+    <functionalNote>combat AI core assisting long-range shooting accuracy and calculating ballistic trajectories</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- EPIA_AuxiliaryAI_Commando -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_EPIA_AuxiliaryAI_Commando</defName>
+    <targetHediff>EPIA_AuxiliaryAI_Commando</targetHediff>
+    <customLabel>auxiliary AI (commando)</customLabel>
+    <functionalNote>combat AI core dampening pain perception, reducing combat stress, and optimizing general combat efficiency</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- EPIA_AuxiliaryAI_Brawler -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_EPIA_AuxiliaryAI_Brawler</defName>
+    <targetHediff>EPIA_AuxiliaryAI_Brawler</targetHediff>
+    <customLabel>auxiliary AI (brawler)</customLabel>
+    <functionalNote>combat AI core predicting close-quarters melee strikes, reaction timing, and dodging angles</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- AIPersonaCore -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_AIPersonaCore</defName>
+    <targetHediff>AIPersonaCore</targetHediff>
+    <customLabel>AI persona core implant</customLabel>
+    <functionalNote>fully sentient AI core implanted in the brain; grants extraordinary cognitive processing but requires regular medical maintenance to prevent glitches</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <customLabel>unmaintained AI persona core</customLabel>
+        <functionalNote>completely unmaintained AI core causing severe mental breaks, hallucinations, and brain glitches</functionalNote>
+        <behavioralDirective>The AI persona core in your brain is completely unmaintained and going rogue. Your thoughts are fragmented, you suffer severe mental instability, and you feel erratic software glitches taking over your mind.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <customLabel>unmaintained AI persona core</customLabel>
+        <functionalNote>critically unmaintained AI core with severe cognitive degradation and risk of software corruption</functionalNote>
+        <behavioralDirective>Your AI persona core is severely unmaintained and corrupting your thoughts, causing extreme mental fatigue, confusion, and frequent mental instability.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <customLabel>critical maintenance AI persona core</customLabel>
+        <functionalNote>unstable AI core causing mild cognitive fog and mental strain due to lack of medical tuning</functionalNote>
+        <behavioralDirective>Your AI persona core desperately needs medical maintenance. You feel mental strain, minor confusion, and subtle glitched thoughts interfering with your focus.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <customLabel>maintained AI persona core</customLabel>
+        <functionalNote>partially maintained AI core enhancing general consciousness and cognitive processing</functionalNote>
+        <behavioralDirective>Your AI persona core is functioning adequately, providing noticeable cognitive enhancement and sharper mental clarity.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>4</stageIndex>
+        <customLabel>fully maintained AI persona core</customLabel>
+        <functionalNote>perfectly maintained AI core granting peak cognitive performance, heightened reflexes, and maximum processing power</functionalNote>
+        <behavioralDirective>Your AI persona core is fully maintained and operating at peak performance. You feel hyper-intelligent, mentally sharp, and possess extraordinary reaction speed and focus.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+  
+  
+<!--*****************HediffDefs_OrganicOptimizer************************-->
+
+<!-- EPOE_OrganicOptimized -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_EPOE_OrganicOptimized</defName>
+    <targetHediff>EPOE_OrganicOptimized</targetHediff>
+    <customLabel>organic nanobot optimization</customLabel>
+    <functionalNote>nanobots restructuring a natural body part to enhance its natural capacity; the initial biological integration causes intense physical strain</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <customLabel>organic nanobot integration (fresh)</customLabel>
+        <functionalNote>initial nanobot injection causing extreme lethargy, intense pain, and massive metabolic exhaustion</functionalNote>
+        <behavioralDirective>You are undergoing an agonizing organic nanobot integration. You feel severely exhausted, barely conscious, extremely hungry, and in constant physical pain as your body tissues are reshaped.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <customLabel>organic nanobot integration (adapting)</customLabel>
+        <functionalNote>nanobots active in tissue adaptation; causing moderate fatigue, hunger, and heightened pain</functionalNote>
+        <behavioralDirective>Your body is slowly adapting to the nanobot restructuring. You still feel sore, physically fatigued, and hungrier than usual, but you are gradually regaining alertness.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <customLabel>organic nanobot integration (optimizing)</customLabel>
+        <functionalNote>nanobots finalizing tissue optimization with minimal physical discomfort</functionalNote>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <customLabel>organically optimized</customLabel>
+        <functionalNote>nanobots dissolved; natural body part operates at peak biological efficiency</functionalNote>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- EPOE_InstinctOptimizedEyes -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_EPOE_InstinctOptimizedEyes</defName>
+    <targetHediff>EPOE_InstinctOptimizedEyes</targetHediff>
+    <customLabel>reactive pupil enhancement</customLabel>
+    <functionalNote>nanobots rewriting ocular muscle reflexes for superior tracking and aiming speed</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <customLabel>reactive pupil rewriting (fresh)</customLabel>
+        <functionalNote>initial ocular reflex restructuring causing severe eye pain, vision blurring, and mental exhaustion</functionalNote>
+        <behavioralDirective>Nanobots are forcibly rewriting your eye reflexes. You suffer severe eye pain, extreme lethargy, and blurred vision that makes concentrating nearly impossible.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <customLabel>reactive pupil rewriting (adapting)</customLabel>
+        <functionalNote>ocular reflex adaptation causing persistent eye discomfort and mild fatigue</functionalNote>
+        <behavioralDirective>Your eyes are adjusting to the new optical reflexes. You experience lingering soreness and light sensitivity, though your vision is beginning to stabilize.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <customLabel>reactive pupil rewriting (optimizing)</customLabel>
+        <functionalNote>nanobots finalizing ocular reflex alignment</functionalNote>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <customLabel>improved reactive pupil</customLabel>
+        <functionalNote>nanobots dissolved; eyes possess razor-sharp visual reflexes and instant focus</functionalNote>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- EPOE_InstinctOptimizedHand -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_EPOE_InstinctOptimizedHand</defName>
+    <targetHediff>EPOE_InstinctOptimizedHand</targetHediff>
+    <customLabel>hand reflex enhancement</customLabel>
+    <functionalNote>nanobots imprinting rapid motor reflexes into hand nerves and muscles for faster manipulation and strike speed</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <customLabel>hand reflex rewriting (fresh)</customLabel>
+        <functionalNote>initial motor neural rewrite causing severe hand pain, clumsiness, and physical exhaustion</functionalNote>
+        <behavioralDirective>Nanobots are violently restructuring the nerve pathways in your hands. You feel throbbing pain, severe lethargy, and extreme difficulty coordinating fine motor tasks.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <customLabel>hand reflex rewriting (adapting)</customLabel>
+        <functionalNote>motor neural adaptation causing soreness and slight awkwardness in manual labor</functionalNote>
+        <behavioralDirective>Your hands are adapting to restructured nerve reflexes. You still feel persistent aching and minor awkwardness when working with your hands.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <customLabel>hand reflex rewriting (optimizing)</customLabel>
+        <functionalNote>nanobots finalizing hand motor reflexes</functionalNote>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <customLabel>improved hand reflex</customLabel>
+        <functionalNote>nanobots dissolved; hands exhibit lightning-fast motor reflexes and precision handling</functionalNote>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- EPOE_InstinctOptimizedFoot -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_EPOE_InstinctOptimizedFoot</defName>
+    <targetHediff>EPOE_InstinctOptimizedFoot</targetHediff>
+    <customLabel>nimble foot instinct enhancement</customLabel>
+    <functionalNote>nanobots restructuring leg and foot tendons for instantaneous dodge reflexes and balance control</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <customLabel>nimble foot rewriting (fresh)</customLabel>
+        <functionalNote>initial tendon restructuring causing severe foot pain, loss of balance, and physical exhaustion</functionalNote>
+        <behavioralDirective>Nanobots are forcibly reconditioning the tendons and nerves in your feet. You experience sharp pain, heavy fatigue, and severe instability when standing or walking.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <customLabel>nimble foot rewriting (adapting)</customLabel>
+        <functionalNote>tendon adaptation causing persistent soreness and slowed movement speed</functionalNote>
+        <behavioralDirective>Your feet are adapting to the new instinctual balance reflexes. You move sluggishly and feel sore, but your balance is steadily returning.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <customLabel>nimble foot rewriting (optimizing)</customLabel>
+        <functionalNote>nanobots finalizing foot tendon reflexes</functionalNote>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <customLabel>nimble instinct</customLabel>
+        <functionalNote>nanobots dissolved; feet possess fluid dodging reflexes and enhanced mobility</functionalNote>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+<!--*****************HediffDefs_RoyaltyAffected************************-->
+
+<!-- PowerArm -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PowerArm</defName>
+    <targetHediff>PowerArm</targetHediff>
+    <customLabel>bionic power arm</customLabel>
+    <functionalNote>bionic arm equipped with retractable scythe-like claws capable of lethal melee strikes without impairing daily manipulation tasks</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- AdvancedPowerArm -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_AdvancedPowerArm</defName>
+    <targetHediff>AdvancedPowerArm</targetHediff>
+    <customLabel>advanced bionic power arm</customLabel>
+    <functionalNote>ultra-advanced bionic arm with high-torque servos and retractable reinforced claws for crushing melee power</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+  
+<!--*****************HediffDefs_SimpleProsthetics************************-->  
+
+<!-- GoldenEye -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_GoldenEye</defName>
+    <targetHediff>GoldenEye</targetHediff>
+    <customLabel>golden eye</customLabel>
+    <functionalNote>solid gold eye cosmetic replacement granting zero vision, used purely as a status symbol to show wealth</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- LightReceptor -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_LightReceptor</defName>
+    <targetHediff>LightReceptor</targetHediff>
+    <customLabel>light receptor</customLabel>
+    <functionalNote>simple optical sensor and signal processor providing crude visual sensation to the optic nerve</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- SimpleSpine -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_SimpleSpine</defName>
+    <targetHediff>SimpleSpine</targetHediff>
+    <customLabel>simple prosthetic spine</customLabel>
+    <functionalNote>early prototype spine replacement with basic neural integration, restoring mobility below natural efficiency</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- HydraulicJaw -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_HydraulicJaw</defName>
+    <targetHediff>HydraulicJaw</targetHediff>
+    <customLabel>hydraulic jaw</customLabel>
+    <functionalNote>mechanical jaw with heavy hydraulic joints; crushes food efficiently but impedes delicate speech articulation</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- EPOE_ScytherBlade -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_EPOE_ScytherBlade</defName>
+    <targetHediff>EPOE_ScytherBlade</targetHediff>
+    <customLabel>scyther blade implant</customLabel>
+    <functionalNote>weaponized hand implant with a salvaged telescoping mechanoid blade used for deadly melee slicing</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+  
+  <!--*****************HediffDefs_Surrogates************************-->  
+  
+<!-- SimpleProstheticHeart -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_SimpleProstheticHeart</defName>
+    <targetHediff>SimpleProstheticHeart</targetHediff>
+    <customLabel>surrogate heart</customLabel>
+    <functionalNote>crude mechanical heart implant driven by a basic electric motor operating at sub-natural efficiency</functionalNote>
+    <behavioralDirective>You have a surrogate heart that struggles to match natural circulation; you frequently feel sluggish, weak, and easily fatigued.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- SurrogateLung -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_SurrogateLung</defName>
+    <targetHediff>SurrogateLung</targetHediff>
+    <customLabel>surrogate lung</customLabel>
+    <functionalNote>mechanical lung prosthesis with an electric motor providing limited gas exchange below natural capacity</functionalNote>
+    <behavioralDirective>You have a surrogate lung prosthesis; you tend to catch your breath with difficulty during exertion and feel chronically tired.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- SurrogateStomach -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_SurrogateStomach</defName>
+    <targetHediff>SurrogateStomach</targetHediff>
+    <customLabel>surrogate stomach</customLabel>
+    <functionalNote>prosthetic stomach using weak chemical synthesizers to digest food without dissolving its internal lining</functionalNote>
+    <behavioralDirective>Your surrogate stomach struggles to digest food efficiently, leaving you with frequent mild indigestion and stomach discomfort.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- SurrogateLiver -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_SurrogateLiver</defName>
+    <targetHediff>SurrogateLiver</targetHediff>
+    <customLabel>surrogate liver</customLabel>
+    <functionalNote>prosthetic liver using synthetic chemical filters to simulate basic metabolic waste processing</functionalNote>
+    <behavioralDirective>Your surrogate liver offers sub-optimal metabolic filtration; you feel perpetually slightly unwell, nauseous, or fatigued.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- SurrogateKidney -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_SurrogateKidney</defName>
+    <targetHediff>SurrogateKidney</targetHediff>
+    <customLabel>surrogate kidney</customLabel>
+    <functionalNote>prosthetic kidney with artificial filters providing basic blood filtration at sub-natural efficiency</functionalNote>
+    <behavioralDirective>Your surrogate kidney filters waste inefficiently, leaving you feeling mild physical discomfort and constant low-grade fatigue.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- BrainStimulator -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BrainStimulator</defName>
+    <targetHediff>BrainStimulator</targetHediff>
+    <customLabel>brain stimulator implant</customLabel>
+    <functionalNote>brain implant electrically stimulating undamaged brain tissue to bypass severe brain trauma and capped consciousness</functionalNote>
+    <behavioralDirective>You have a brain stimulator compensating for severe brain damage; your thoughts are somewhat slow, rigid, or capped in complexity, but you are functional.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+  
+  <!--*****************HediffDefs_Synthetics************************-->
+  
+  <!-- MuscleStimulatorArms -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_MuscleStimulatorArms</defName>
+    <targetHediff>MuscleStimulatorArms</targetHediff>
+    <customLabel>arm muscle stimulator</customLabel>
+    <functionalNote>implanted microchip delivering targeted electric shocks and chemicals to arm muscles to boost carrying capacity and melee accuracy</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- MuscleStimulatorLegs -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_MuscleStimulatorLegs</defName>
+    <targetHediff>MuscleStimulatorLegs</targetHediff>
+    <customLabel>leg muscle stimulator</customLabel>
+    <functionalNote>implanted microchip delivering targeted electric shocks and chemicals to leg muscles to boost movement speed</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- AIChip -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_AIChip</defName>
+    <targetHediff>AIChip</targetHediff>
+    <customLabel>brain AI chip</customLabel>
+    <functionalNote>advanced neural chip utilizing targeted electric shocks and chemical synthesis to bypass brain trauma and restore full consciousness</functionalNote>
+    <behavioralDirective>Your consciousness and motor function are regulated by an AI chip in your brain, fully restoring your mental clarity and physical coordination regardless of past brain trauma.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+  
+<!--*****************Hediffs_Injuries************************-->
+
+<!-- EPIA_EMP_Disorientation_Sharpshooter -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_EPIA_EMP_Disorientation_Sharpshooter</defName>
+    <targetHediff>EPIA_EMP_Disorientation_Sharpshooter</targetHediff>
+    <customLabel>EMP disorientation (sharpshooter AI)</customLabel>
+    <functionalNote>severe electrical shock feedback from an EMP-disrupted sharpshooter AI core, drastically reducing consciousness, movement, and accuracy</functionalNote>
+    <behavioralDirective>An EMP pulse hit your sharpshooter brain implant, causing painful electrical feedback. You feel severely disoriented, barely conscious, and unable to aim or move properly.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- EPIA_EMP_Disorientation_Commando -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_EPIA_EMP_Disorientation_Commando</defName>
+    <targetHediff>EPIA_EMP_Disorientation_Commando</targetHediff>
+    <customLabel>EMP disorientation (commando AI)</customLabel>
+    <functionalNote>electrical shock feedback from an EMP-disrupted commando AI core, causing mild mental fog and reduced combat reflexes</functionalNote>
+    <behavioralDirective>An EMP pulse hit your commando brain implant. You feel dizzy, mentally slowed, and find it difficult to react or attack quickly in combat.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- EPIA_EMP_Disorientation_Brawler -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_EPIA_EMP_Disorientation_Brawler</defName>
+    <targetHediff>EPIA_EMP_Disorientation_Brawler</targetHediff>
+    <customLabel>EMP disorientation (brawler AI)</customLabel>
+    <functionalNote>severe electrical shock feedback from an EMP-disrupted brawler AI core, severely impairing consciousness, motor skills, and melee responsiveness</functionalNote>
+    <behavioralDirective>An EMP pulse hit your brawler brain implant, shocking your neural system. You feel dazed, extremely sluggish, and unable to focus or defend yourself effectively.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- EPIA_EMP_ProtectiveExoskeleton -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_EPIA_EMP_ProtectiveExoskeleton</defName>
+    <targetHediff>EPIA_EMP_ProtectiveExoskeleton</targetHediff>
+    <customLabel>disabled protective exoskeleton</customLabel>
+    <functionalNote>temporary shutdown of the exoskeleton systems due to an EMP pulse, turning the suit into dead weight that impedes movement and manipulation</functionalNote>
+    <behavioralDirective>Your protective exoskeleton has been temporarily disabled by an EMP. The suit feels heavy and rigid, locking up your limbs and severely restricting your movements.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- EPIA_AIPersonaCore_GlitchMinor -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_EPIA_AIPersonaCore_GlitchMinor</defName>
+    <targetHediff>EPIA_AIPersonaCore_GlitchMinor</targetHediff>
+    <customLabel>minor AI persona core glitch</customLabel>
+    <functionalNote>minor software error in the implanted persona core causing annoying cognitive static and wandering thoughts</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <customLabel>slight AI persona core glitch</customLabel>
+        <functionalNote>minor neural noise from the core with no significant cognitive impairment</functionalNote>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <customLabel>minor AI persona core glitch</customLabel>
+        <functionalNote>system errors causing mild brain fog and occasional episodes of confused wandering</functionalNote>
+        <behavioralDirective>The AI core in your brain is experiencing a minor glitch. You feel slight mental confusion and occasionally lose your focus, causing you to wander aimlessly.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <customLabel>major AI persona core glitch</customLabel>
+        <functionalNote>worsening neural glitch causing severe loss of focus and frequent confused wandering</functionalNote>
+        <behavioralDirective>The AI core's software failure is escalating. You feel strong brain fog and frequently lose track of where you are going or what you were doing.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <customLabel>critical AI persona core glitch</customLabel>
+        <functionalNote>critical system error triggering violent psychotic outbursts or extreme confusion</functionalNote>
+        <behavioralDirective>The AI core glitch has reached a critical state. Violent digital noise floods your mind, causing intense urges to lash out uncontrollably or wander in deep distress.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- EPIA_AIPersonaCore_GlitchMajor -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_EPIA_AIPersonaCore_GlitchMajor</defName>
+    <targetHediff>EPIA_AIPersonaCore_GlitchMajor</targetHediff>
+    <customLabel>major AI persona core glitch</customLabel>
+    <functionalNote>major software corruption in the persona core impairing overall skill efficiency and causing hostile behavior</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <customLabel>minor AI persona core corruption</customLabel>
+        <functionalNote>initial corruption impairing overall skills and causing mild cognitive haze</functionalNote>
+        <behavioralDirective>A major glitch in your AI persona core is degrading your skills. You feel mentally clumsy and occasionally lose track of your thoughts.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <customLabel>major AI persona core corruption</customLabel>
+        <functionalNote>escalating corruption causing significant brain fog and frequent disorientation</functionalNote>
+        <behavioralDirective>The AI core corruption is spreading. Your ability to perform complex tasks is impaired, and you regularly feel confused and unfocused.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <customLabel>critical AI persona core corruption</customLabel>
+        <functionalNote>severe corruption causing extreme mental instability and frequent berserk rages</functionalNote>
+        <behavioralDirective>Severe AI corruption is overriding your thoughts. You experience intense mental noise and dangerous impulses to lash out violently at those around you.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <customLabel>extreme AI persona core corruption</customLabel>
+        <functionalNote>near-total corruption causing almost continuous violent psychosis</functionalNote>
+        <behavioralDirective>Your AI core is fully malfunctioning. Rogue code dominates your mind, filling you with blind rage and uncontrollable violent urges.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- EPIA_AIPersonaCore_GlitchCritical -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_EPIA_AIPersonaCore_GlitchCritical</defName>
+    <targetHediff>EPIA_AIPersonaCore_GlitchCritical</targetHediff>
+    <customLabel>critical AI persona core glitch</customLabel>
+    <functionalNote>critical system corruption in the persona core severely impairing skills and inducing frequent psychotic rage</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <customLabel>minor critical AI corruption</customLabel>
+        <functionalNote>early stage of critical corruption causing skill impairment and mild disorientation</functionalNote>
+        <behavioralDirective>Your AI persona core has suffered a critical failure. Your thoughts feel scrambled and your skills are significantly degraded.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <customLabel>major critical AI corruption</customLabel>
+        <functionalNote>advancing critical corruption causing notable consciousness drops and wandering</functionalNote>
+        <behavioralDirective>Critical AI glitches are disrupting your brain. You feel mentally sluggish, deeply confused, and frequently drift away mid-task.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <customLabel>severe critical AI corruption</customLabel>
+        <functionalNote>severe system failure causing high frequency of violent berserk episodes</functionalNote>
+        <behavioralDirective>Dangerous software errors are hijacking your brain. You feel overwhelming hostility and violent urges taking over your conscious mind.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <customLabel>terminal critical AI corruption</customLabel>
+        <functionalNote>extreme corruption causing near-constant hostile psychosis and loss of control</functionalNote>
+        <behavioralDirective>The AI core corruption is complete and hostile. You have lost mental clarity and are driven by constant, uncontrollable rage.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- EPIA_AIPersonaCore_EMPed -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_EPIA_AIPersonaCore_EMPed</defName>
+    <targetHediff>EPIA_AIPersonaCore_EMPed</targetHediff>
+    <customLabel>AI persona core EMP shock</customLabel>
+    <functionalNote>disruption of the persona core by an EMP pulse, causing reduced consciousness and high risk of triggering severe software glitches</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <customLabel>minor AI persona core EMP shock</customLabel>
+        <functionalNote>slight EMP recovery phase with mild consciousness reduction</functionalNote>
+        <behavioralDirective>An EMP pulse shocked your AI persona core. Your head feels hazy and you are aware that glitches may start corrupting your thoughts soon.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <customLabel>major AI persona core EMP shock</customLabel>
+        <functionalNote>moderate EMP disruption with noticeable consciousness reduction and glitch risk</functionalNote>
+        <behavioralDirective>Your AI core is rebooting after an EMP shock. You feel sluggish and disoriented, with digital static interfering with your thinking.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <customLabel>critical AI persona core EMP shock</customLabel>
+        <functionalNote>severe EMP shock causing significant loss of consciousness and high glitch probability</functionalNote>
+        <behavioralDirective>The EMP shock severely disrupted your persona core. You are experiencing heavy brain fog and feel your mind struggling against severe system errors.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <customLabel>extreme AI persona core EMP shock</customLabel>
+        <functionalNote>extreme EMP shock resulting in severe mental impairment and immediate glitch threat</functionalNote>
+        <behavioralDirective>Your persona core was hit by a massive EMP shock. You are barely conscious, deeply disoriented, and struggling as system glitches flood your thoughts.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+</Defs>
