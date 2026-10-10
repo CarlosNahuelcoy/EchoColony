@@ -262,7 +262,7 @@ namespace EchoColony.SpontaneousMessages
 
         private static string GetRandomLogText(string details)
         {
-            return $"*(You take advantage of a moment during your tasks ({details}) to start a casual conversation with the player)*";
+            return $"*(You take advantage of a moment during your tasks to start a {details} with the player)*";
         }
     }
 }
