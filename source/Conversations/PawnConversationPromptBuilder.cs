@@ -447,17 +447,18 @@ namespace EchoColony.Conversations
 
             int opinionAB = a.relations?.OpinionOf(b) ?? 0;
             int opinionBA = b.relations?.OpinionOf(a) ?? 0;
-            sb.AppendLine($"{a.LabelShort} → {b.LabelShort}: {opinionAB} ({GetOpinionDesc(opinionAB)})");
-            sb.AppendLine($"{b.LabelShort} → {a.LabelShort}: {opinionBA} ({GetOpinionDesc(opinionBA)})");
 
-            var relationsAB = a.relations?.DirectRelations?.Where(r => r.otherPawn == b && r.def != null).Select(r => r.def) ?? Enumerable.Empty<PawnRelationDef>();
-            var relationsBA = b.relations?.DirectRelations?.Where(r => r.otherPawn == a && r.def != null).Select(r => r.def) ?? Enumerable.Empty<PawnRelationDef>();
+            var relationsAB = DefDatabase<PawnRelationDef>.AllDefs.Where(def => def.Worker.InRelation(a, b)).ToList();
+            var relationsBA = DefDatabase<PawnRelationDef>.AllDefs.Where(def => def.Worker.InRelation(b, a)).ToList();
             var allRelDefs = relationsAB.Concat(relationsBA).Distinct().ToList();
 
-            if (allRelDefs.Any())
-                sb.AppendLine($"Relation: {string.Join(", ", allRelDefs.Select(r => r.label))}");
-            else
-                sb.AppendLine("Relation: Acquaintances");
+            // 2. Obtenemos los nombres de roles exactos (Ej: "Father", "Daughter", "Custom Mod Role")
+            string roleB_for_A = RelationsPromptClassifier.GetRoleLabel(relationsAB, b);
+            string roleA_for_B = RelationsPromptClassifier.GetRoleLabel(relationsBA, a);
+
+            // 3. Formato explícito sin número, inyectando el rol y la opinión semántica
+            sb.AppendLine($"{a.LabelShort}'s view of {b.LabelShort} ({roleB_for_A}): Opinion is {GetOpinionDesc(opinionAB)}");
+            sb.AppendLine($"{b.LabelShort}'s view of {a.LabelShort} ({roleA_for_B}): Opinion is {GetOpinionDesc(opinionBA)}");
 
             // LLAMADA CENTRALIZADA
             string familyTone = RelationsPromptClassifier.GetFamilyTone(a, b, allRelDefs, opinionAB, opinionBA);
