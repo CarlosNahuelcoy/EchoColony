@@ -1066,7 +1066,7 @@ namespace EchoColony
             {
                 foreach (var mem in pastMemories)
                 {
-                    sb.AppendLine($"{mem}");
+                    sb.AppendLine($"{mem}\n");
                 }
             }
             else
@@ -1078,10 +1078,12 @@ namespace EchoColony
 
             //--Current day interactions.
 
-            sb.AppendLine("## Today's Ongoing Interactions");
-
-
-            sb.AppendLine(tracker.GetCurrentDayMemoryFormatted());
+            string CurrendayMemory = tracker.GetCurrentDayMemoryFormatted();
+            if (!string.IsNullOrWhiteSpace(CurrendayMemory))
+            {
+                sb.AppendLine("## Today's Ongoing Interactions");
+                sb.AppendLine(CurrendayMemory);
+            }
             
             sb.AppendLine();
             sb.AppendLine("*Important Note: Treat 'Long-Term Memories' as established facts, and 'Today's Interactions' as the immediate context for your current behavior and responses.*");
