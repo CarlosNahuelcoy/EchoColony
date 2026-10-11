@@ -60,7 +60,7 @@ namespace EchoColony
             AddIfNameExists("ParentBirth", relDefs, tones, "Birth Parent (biological surrogate/growth vat origin)");
             if (Has(PawnRelationDefOf.Parent) || Has(PawnRelationDefOf.Child))
             {
-                // AÑADIDO: Lógica nativa para hijo bastardo
+                // ADDED: Native logic for bastard child
                 if (HasName("Bastard"))
                 {
                     AddUniqueTone(tones, "Parent and Illegitimate Child (undercurrent of familial tension, social stigma, or fierce protective loyalty)");
