@@ -207,15 +207,13 @@ namespace EchoColony
             {
                 cachedChatLog = new List<string>(chatLog);
 
-                // Recalculamos las alturas SOLO cuando entra un nuevo mensaje
+                // We recalculate the heights ONLY when a new message arrives.
                 cachedHeights.Clear();
                 cachedViewHeight = 0f;
 
-                // Aseguramos de que el Text tenga las propiedades correctas para calcular
                 Text.Anchor = TextAnchor.UpperLeft;
                 Text.WordWrap = true;
 
-                // Para saber el ancho exacto disponible
                 float scrollBarW = 16f;
                 float effViewW = (inRect.width - 20f) - scrollBarW;
 
@@ -239,7 +237,7 @@ namespace EchoColony
             float scrollBarWidth = 16f;
             float effectiveViewWidth = scrollRect.width - scrollBarWidth;
 
-            // Usamos las alturas cacheadas
+            // We use the cached heights.
             Rect viewRect = new Rect(0f, 0f, effectiveViewWidth, cachedViewHeight + 20f);
 
             Widgets.BeginScrollView(scrollRect, ref scrollPos, viewRect);
@@ -263,8 +261,8 @@ namespace EchoColony
                 Rect messageRect = new Rect(0f, y, effectiveViewWidth, msgHeight);
 
                 // CULLING OPTIMIZATION:
-                // Solo dibujamos el mensaje si está dentro del área visible del scroll.
-                // Si 'y' está más abajo del scroll (invisible por abajo) o el mensaje termina antes de que empiece el scroll (invisible por arriba), lo saltamos.
+                // Only draw the message if it is within the visible scroll area. 
+                // If 'y' is below the scroll area (invisible at the bottom) or the message ends before the scroll area begins (invisible at the top), skip it.
                 if (y + msgHeight >= scrollPos.y && y <= scrollPos.y + chatHeight)
                 {
                     if (msg.StartsWith("[DATE_SEPARATOR]"))
