@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!-- Mindscrew -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Mindscrew</defName>
+    <targetHediff>Mindscrew</targetHediff>
+    <customLabel>mindscrew implant</customLabel>
+    <functionalNote>brain implant designed to cause continuous, agonizing pain</functionalNote>
+    <behavioralDirective>You are in constant, severe physical pain caused by a neural implant in your brain, making you irritable, stressed, and deeply uncomfortable.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- DrillArm -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_DrillArm</defName>
+    <targetHediff>DrillArm</targetHediff>
+    <functionalNote>heavy prosthetic arm equipped with a high-powered industrial drill for rapid mining</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- FieldHand -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_FieldHand</defName>
+    <targetHediff>FieldHand</targetHediff>
+    <functionalNote>specialized agricultural prosthetic hand with telescoping digits for rapid sowing and harvesting</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- HandTalon -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_HandTalon</defName>
+    <targetHediff>HandTalon</targetHediff>
+    <functionalNote>concealed, retractable lethal claw implanted within the hand</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- ElbowBlade -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ElbowBlade</defName>
+    <targetHediff>ElbowBlade</targetHediff>
+    <functionalNote>concealed, retractable razor blade implanted in the forearm and elbow</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- KneeSpike -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_KneeSpike</defName>
+    <targetHediff>KneeSpike</targetHediff>
+    <functionalNote>concealed, retractable armor-piercing spike implanted in the knee</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- VenomFangs -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_VenomFangs</defName>
+    <targetHediff>VenomFangs</targetHediff>
+    <functionalNote>subdermal tooth implants with an integrated venom pump for delivering toxic bites</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- VenomTalon -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_VenomTalon</defName>
+    <targetHediff>VenomTalon</targetHediff>
+    <functionalNote>concealed finger talon connected to a venom pump for toxic slashing attacks</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+<!-- Neurocalculator -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Neurocalculator</defName>
+    <targetHediff>Neurocalculator</targetHediff>
+    <functionalNote>brain-implanted microcomputer providing rapid processing, calculation, and memory assistance</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- LearningAssistant -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_LearningAssistant</defName>
+    <targetHediff>LearningAssistant</targetHediff>
+    <functionalNote>brain implant replaying sensory memories during sleep to accelerate experience retention and learning</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- GastroAnalyzer -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_GastroAnalyzer</defName>
+    <targetHediff>GastroAnalyzer</targetHediff>
+    <functionalNote>bionic nasal implant granting an extraordinarily sensitive sense of smell fine-tuned for culinary preparation</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- Immunoenhancer -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Immunoenhancer</defName>
+    <targetHediff>Immunoenhancer</targetHediff>
+    <functionalNote>kidney implant analyzing pathogens in the bloodstream to accelerate immune system response</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- Coagulator -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Coagulator</defName>
+    <targetHediff>Coagulator</targetHediff>
+    <functionalNote>torso implant releasing rapid-coagulation agents to drastically slow bleeding</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- HealingEnhancer -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_HealingEnhancer</defName>
+    <targetHediff>HealingEnhancer</targetHediff>
+    <functionalNote>torso implant releasing nanomachines to significantly accelerate physical wound recovery</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- ToughskinGland -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ToughskinGland</defName>
+    <targetHediff>ToughskinGland</targetHediff>
+    <functionalNote>subdermal gland hardening skin against damage without altering outward physical appearance</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- ArmorskinGland -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ArmorskinGland</defName>
+    <targetHediff>ArmorskinGland</targetHediff>
+    <functionalNote>subdermal gland creating keratin armor plates that leave the skin visibly leathery and wrinkled</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- StoneskinGland -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_StoneskinGland</defName>
+    <targetHediff>StoneskinGland</targetHediff>
+    <functionalNote>subdermal gland encasing the entire body and face in heavy stone-like keratin armor plates</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- AestheticShaper -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_AestheticShaper</defName>
+    <targetHediff>AestheticShaper</targetHediff>
+    <functionalNote>torso implant using hormones and mechanites to sculpt body muscle and fat into ideal aesthetic proportions</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- AestheticNose -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_AestheticNose</defName>
+    <targetHediff>AestheticNose</targetHediff>
+    <functionalNote>bionic nose reshaped to match heightened standards of facial beauty</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- LoveEnhancer -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_LoveEnhancer</defName>
+    <targetHediff>LoveEnhancer</targetHediff>
+    <functionalNote>torso implant chemically and physically augmenting intimate satisfaction</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- DetoxifierStomach -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_DetoxifierStomach</defName>
+    <targetHediff>DetoxifierStomach</targetHediff>
+    <customLabel>sterilizing stomach</customLabel>
+    <functionalNote>bionic stomach with broad-spectrum filtration system preventing food poisoning and gut parasites</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- ReprocessorStomach -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ReprocessorStomach</defName>
+    <targetHediff>ReprocessorStomach</targetHediff>
+    <functionalNote>bionic stomach breaking down complex nutrients to significantly reduce overall food intake needs</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- NuclearStomach -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_NuclearStomach</defName>
+    <targetHediff>NuclearStomach</targetHediff>
+    <functionalNote>micro-nuclear reactor stomach reducing food intake by 75% and granting food poisoning immunity, but emitting radiation that slowly causes cancer</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- CircadianAssistant -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_CircadianAssistant</defName>
+    <targetHediff>CircadianAssistant</targetHediff>
+    <functionalNote>brain implant flushing neural toxins to reduce rest fall rate</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- CircadianHalfCycler -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_CircadianHalfCycler</defName>
+    <targetHediff>CircadianHalfCycler</targetHediff>
+    <functionalNote>brain implant alternating active brain hemispheres so you never need sleep, at the cost of permanently reduced consciousness</functionalNote>
+    <behavioralDirective>You never need to sleep because your brain hemispheres take turns resting, but operating on half a brain leaves you perpetually sluggish and slightly foggy.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+<!-- PsychicSensitizer -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PsychicSensitizer</defName>
+    <targetHediff>PsychicSensitizer</targetHediff>
+    <functionalNote>brain implant that amplifies neural sensitivity to psychic phenomena and psycasts</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PsychicHarmonizer -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PsychicHarmonizer</defName>
+    <targetHediff>PsychicHarmonizer</targetHediff>
+    <functionalNote>brain implant that psychically projects the user's emotional mood to everyone nearby</functionalNote>
+    <behavioralDirective>Your current emotional state is psychically broadcasted to nearby people, directly influencing their mood with your happiness or misery.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PsychicReader -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PsychicReader</defName>
+    <targetHediff>PsychicReader</targetHediff>
+    <functionalNote>brain implant granting surface-level mind reading during conversations and negotiations</functionalNote>
+    <behavioralDirective>You can subtly sense the surface thoughts, intentions, and emotions of people you speak to, giving you deep insight during social interactions.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+  
+</Defs>

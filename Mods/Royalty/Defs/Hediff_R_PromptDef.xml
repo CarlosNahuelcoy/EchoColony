@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs> 
+  <!-- BloodRot -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BloodRot</defName>
+    <targetHediff>BloodRot</targetHediff>
+    <functionalNote>bacterial blood disease requiring regular medical suppression to avoid a lethal toxin storm</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You feel slightly unwell from early blood rot, but you can continue your daily routine normally.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You suffer from major blood rot. You experience bouts of nausea, vomiting, fatigue, and persistent anxiety about the disease worsening.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You have extreme blood rot. You feel severe physical distress, painful aches, frequent vomiting, and fear that a fatal shock is imminent.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- Abasia -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Abasia</defName>
+    <targetHediff>Abasia</targetHediff>
+    <customLabel>paralytic abasia</customLabel>
+    <functionalNote>neurological motor cortex impairment causing temporary total leg paralysis</functionalNote>
+    <behavioralDirective>You are completely paralyzed from paralytic abasia. You cannot walk or move your legs, remaining bedridden or helpless until you recover.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+  
+  <!-- PsychicEntropy / Neural Heat -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PsychicEntropy</defName>
+    <targetHediff>PsychicEntropy</targetHediff>
+    <customLabel>neural heat</customLabel>
+    <functionalNote>buildup of chaotic mental energy caused by using psycasts</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You feel a mild buildup of mental pressure from using psychic powers, but you remain composed.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>Your mind is overloaded with neural heat. You feel dizzy, irritable, and suffer intense psychic strain.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>Your mind is heavily overloaded with neural heat. You feel severe headaches and dangerous mental instability.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <behavioralDirective>You have extreme neural heat buildup. Your thoughts are fragmented and you feel on the verge of collapsing.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>4</stageIndex>
+        <behavioralDirective>You have overwhelming neural heat. Your brain is in excruciating agony and crashing from psychic overload.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PsychicBreakdown -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PsychicBreakdown</defName>
+    <targetHediff>PsychicBreakdown</targetHediff>
+    <functionalNote>deep psychological destabilization from extreme psychic overload</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You feel mentally shaken and sluggish after a psychic breakdown, struggling to stay focused.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You have a major psychic breakdown. You feel deeply confused, mentally fatigued, and prone to erratic behavior.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You suffer from total psychic breakdown. You are nearly catatonic, severely disoriented, and incapable of coherent thought.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PsychicAnesthesia -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PsychicAnesthesia</defName>
+    <targetHediff>PsychicAnesthesia</targetHediff>
+    <functionalNote>psychically induced insensitivity to physical pain</functionalNote>
+    <behavioralDirective>You are psychically numbed to pain. Even severe physical injuries feel distant and negligible to you.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PsychicBurden -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PsychicBurden</defName>
+    <targetHediff>PsychicBurden</targetHediff>
+    <functionalNote>psychically induced heavy drag on physical movement</functionalNote>
+    <behavioralDirective>Your body feels unnaturally heavy and sluggish, as if an invisible weight is slowing your every step.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PsychicBlindness -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PsychicBlindness</defName>
+    <targetHediff>PsychicBlindness</targetHediff>
+    <functionalNote>psychically induced partial vision loss</functionalNote>
+    <behavioralDirective>Your sight is partially clouded by psychic interference, making surroundings blurry and hard to distinguish.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PsychicVertigo -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PsychicVertigo</defName>
+    <targetHediff>PsychicVertigo</targetHediff>
+    <functionalNote>psychically induced loss of spatial orientation causing severe dizziness and vomiting</functionalNote>
+    <behavioralDirective>You are suffering from intense vertigo. The world is spinning violently around you, making you stagger and vomit uncontrollably.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PsychicFocus -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PsychicFocus</defName>
+    <targetHediff>PsychicFocus</targetHediff>
+    <functionalNote>psychically heightened perception, hearing, and movement speed</functionalNote>
+    <behavioralDirective>You feel hyper-focused, alert, and mentally sharp. Your senses and reaction speeds are noticeably heightened.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- EntropyLink -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_EntropyLink</defName>
+    <targetHediff>EntropyLink</targetHediff>
+    <functionalNote>psychic link sharing neural heat gain/loss between two individuals</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- Joyfuzz -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Joyfuzz</defName>
+    <targetHediff>Joyfuzz</targetHediff>
+    <functionalNote>psychically induced sense of warmth and comfort causing mild mental stupor</functionalNote>
+    <behavioralDirective>You feel artificially warm, content, and relaxed, but your mind is slightly foggy and slow to respond.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PsychicLove -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PsychicLove</defName>
+    <targetHediff>PsychicLove</targetHediff>
+    <functionalNote>psychically induced romantic adoration toward a specific individual</functionalNote>
+    <behavioralDirective>You feel an overwhelming, artificial sense of deep affection and romantic attraction toward a target individual.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+</Defs>
