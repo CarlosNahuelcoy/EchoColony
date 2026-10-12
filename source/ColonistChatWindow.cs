@@ -20,6 +20,8 @@ namespace EchoColony
         private List<string> chatLog => ChatGameComponent.Instance.GetChat(pawn);
 
         private List<string> cachedChatLog = null;
+        private List<float> cachedHeights = new List<float>();
+        private float cachedViewHeight = 0f;
 
         private bool sendRequestedViaEnter = false;
         private bool waitingForResponse = false;
@@ -202,53 +204,76 @@ namespace EchoColony
             TextAnchor savedAnchor = Text.Anchor; //furel - Save the current text anchor state to restore it later.
 
             if (cachedChatLog == null || cachedChatLog.Count != chatLog.Count)
+            {
                 cachedChatLog = new List<string>(chatLog);
+
+                // Recalculamos las alturas SOLO cuando entra un nuevo mensaje
+                cachedHeights.Clear();
+                cachedViewHeight = 0f;
+
+                // Aseguramos de que el Text tenga las propiedades correctas para calcular
+                Text.Anchor = TextAnchor.UpperLeft;
+                Text.WordWrap = true;
+
+                // Para saber el ancho exacto disponible
+                float scrollBarW = 16f;
+                float effViewW = (inRect.width - 20f) - scrollBarW;
+
+                for (int i = 0; i < cachedChatLog.Count; i++)
+                {
+                    string msg = cachedChatLog[i];
+                    float width = msg.StartsWith("[DATE_SEPARATOR]") ? effViewW : effViewW - 200f;
+                    float height = Text.CalcHeight(GetDisplayMessage(msg), width) + 4f;
+
+                    cachedHeights.Add(height);
+                    cachedViewHeight += height + 10f;
+                }
+            }
 
             DrawHeader(inRect);
 
-            // ── Chat area ─────────────────────────────────────────────────────
-            float chatTop    = HeaderHeight + 4f;
+            // ── Chat area ─────────────────────────────────────────────────────  
+            float chatTop = HeaderHeight + 4f;
             float chatHeight = inRect.height - chatTop - 65f;
-            Rect  scrollRect = new Rect(0f, chatTop, inRect.width - 20f, chatHeight);
-            float scrollBarWidth     = 16f;
+            Rect scrollRect = new Rect(0f, chatTop, inRect.width - 20f, chatHeight);
+            float scrollBarWidth = 16f;
             float effectiveViewWidth = scrollRect.width - scrollBarWidth;
 
-            float viewHeight = 0f;
-            var   heights    = new List<float>();
-            Text.Anchor   = TextAnchor.UpperLeft;
-            Text.WordWrap = true;
+            // Usamos las alturas cacheadas
+            Rect viewRect = new Rect(0f, 0f, effectiveViewWidth, cachedViewHeight + 20f);
 
-            for (int i = 0; i < cachedChatLog.Count; i++)
-            {
-                string msg    = cachedChatLog[i];
-                float  width  = msg.StartsWith("[DATE_SEPARATOR]") ? effectiveViewWidth : effectiveViewWidth - 200f;
-                float  height = Text.CalcHeight(GetDisplayMessage(msg), width) + 4f;
-                heights.Add(height);
-                viewHeight += height + 10f;
-            }
-
-            Rect viewRect = new Rect(0f, 0f, effectiveViewWidth, viewHeight + 20f);
             Widgets.BeginScrollView(scrollRect, ref scrollPos, viewRect);
 
             if (forceScrollToBottom)
             {
-                scrollPos.y         = viewHeight;
+                scrollPos.y = cachedViewHeight;
                 forceScrollToBottom = false;
             }
 
             float y = 0f;
-            int   messagesToDraw = Math.Min(cachedChatLog.Count, heights.Count);
+            int messagesToDraw = Math.Min(cachedChatLog.Count, cachedHeights.Count);
+
+            Text.Anchor = TextAnchor.UpperLeft;
+            Text.WordWrap = true;
+
             for (int i = 0; i < messagesToDraw; i++)
             {
-                string msg         = cachedChatLog[i];
-                Rect   messageRect = new Rect(0f, y, effectiveViewWidth, heights[i]);
+                string msg = cachedChatLog[i];
+                float msgHeight = cachedHeights[i];
+                Rect messageRect = new Rect(0f, y, effectiveViewWidth, msgHeight);
 
-                if (msg.StartsWith("[DATE_SEPARATOR]"))
-                    DrawDateSeparator(messageRect, msg);
-                else
-                    DrawRegularMessage(messageRect, msg, i, effectiveViewWidth, cachedChatLog);
+                // CULLING OPTIMIZATION:
+                // Solo dibujamos el mensaje si está dentro del área visible del scroll.
+                // Si 'y' está más abajo del scroll (invisible por abajo) o el mensaje termina antes de que empiece el scroll (invisible por arriba), lo saltamos.
+                if (y + msgHeight >= scrollPos.y && y <= scrollPos.y + chatHeight)
+                {
+                    if (msg.StartsWith("[DATE_SEPARATOR]"))
+                        DrawDateSeparator(messageRect, msg);
+                    else
+                        DrawRegularMessage(messageRect, msg, i, effectiveViewWidth, cachedChatLog);
+                }
 
-                y += heights[i] + 10f;
+                y += msgHeight + 10f;
             }
 
             Widgets.EndScrollView();
