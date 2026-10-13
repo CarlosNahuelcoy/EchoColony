@@ -80,7 +80,7 @@ namespace EchoColony
             // Callback para manejar la respuesta de la IA
             System.Action<string> summaryCallback = (aiSummary) =>
             {
-                if (string.IsNullOrWhiteSpace(aiSummary))
+                if (string.IsNullOrWhiteSpace(aiSummary) || ColonistMemoryHelper.IsApiError(aiSummary))
                 {
                     // Fallback: combinación simple
                     Log.Warning($"[EchoColony] ⚠️ IA devolvió resumen vacío para memoria grupal, usando combinación simple");
@@ -155,6 +155,11 @@ namespace EchoColony
             {
                 memoryCoroutine = GeminiAPI.SendRequestToOpenRouter(prompt, callback);
                 Log.Message("[EchoColony] 🚀 Optimizando memoria grupal con OpenRouter");
+            }
+            else if (MyMod.Settings.modelSource == ModelSource.Custom)
+            {
+                memoryCoroutine = GeminiAPI.SendRequestToCustomProvider(prompt, callback);
+                Log.Message("[EchoColony] 🚀 Optimizando memoria grupal con el proveedor personalizado");
             }
             else // Gemini (por defecto)
             {
