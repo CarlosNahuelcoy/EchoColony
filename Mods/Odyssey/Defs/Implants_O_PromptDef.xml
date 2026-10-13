@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <!-- BloodWarmer -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BloodWarmer</defName>
+    <targetHediff>BloodWarmer</targetHediff>
+    <customLabel>blood warmer</customLabel>
+    <functionalNote>bioferrite kidney implant that actively heats a ghoul's blood to survive in extreme cold</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PilotAssistant -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PilotAssistant</defName>
+    <targetHediff>PilotAssistant</targetHediff>
+    <customLabel>pilot assistant</customLabel>
+    <functionalNote>neural brain interface connecting directly to a vehicle to enhance control and reaction speed</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- VacskinGland -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_VacskinGland</defName>
+    <targetHediff>VacskinGland</targetHediff>
+    <customLabel>vacskin gland</customLabel>
+    <functionalNote>subdermal gland secreting a protective insulating wax barrier against space vacuum and regulating blood oxygen levels</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+  
+</Defs>

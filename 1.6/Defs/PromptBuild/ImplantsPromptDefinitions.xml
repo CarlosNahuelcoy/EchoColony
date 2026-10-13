@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <!-- Example 1: Joywire (Requires functional note AND conduct directive)-->
+  <!--<EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Joywire</defName>
+    <targetHediff>Joywire</targetHediff>
+    <customLabel>joywire neural chip</customLabel>
+    - Short inline text replacing the game's base lore. -
+    <functionalNote>brain implant that forces continuous dopamine release</functionalNote>
+    -Interpretation instruction-
+    <behavioralDirective>You are unnaturally happy, excessively calm, and completely unbothered by tragic events or danger.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>-->
+
+  <!-- Example 2: Pure Prosthesis (Requires only a functional note) -->
+  <!--<EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BionicEye</defName>
+    <targetHediff>BionicEye</targetHediff>
+    <customLabel>bionic eye</customLabel>
+    <functionalNote>advanced optical implant with infrared vision</functionalNote>
+  </EchoColony.HediffAIPromptDef>-->
+
+  <!-- Example 3: Mental Condition (Requires only a behavioral directive)-->
+  <!--<EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Alzheimers</defName>
+    <targetHediff>Alzheimers</targetHediff>
+    <behavioralDirective>You frequently lose your train of thought, confuse people's names, and ask about things that happened hours ago.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>-->
+  
+  <!-- Exemple 4: Hediff with stages-->
+  <!--<EchoColony.HediffAIPromptDef>
+    <defName>Flu_AIPrompt</defName>
+    <targetHediff>Flu</targetHediff>
+    <customLabel>flu</customLabel>
+    <functionalNote>viral respiratory infection</functionalNote>
+
+    <stages>
+      - Stage 0 (minor in game) -
+      <li>
+        <stageIndex>0</stageIndex>
+        <functionalNote>mild fever, sneezing, still fully functional and capable of work</functionalNote>
+        <behavioralDirective>You have mild flu symptoms, but you can carry on with your tasks normally.</behavioralDirective>
+      </li>
+
+      - Stage 1 or higher (major / extreme in game) -
+      <li>
+        <stageIndex>1</stageIndex>
+        <functionalNote>high fever, vomiting and bedridden exhaustion</functionalNote>
+        <behavioralDirective>You are severely sick with high fever. You feel miserable and desperately need bed rest.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef> -->
+  <!--_____________________________________________________________________________________________________________________________-->
+  
+  <!-- PowerClaw -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PowerClaw</defName>
+    <targetHediff>PowerClaw</targetHediff>
+    <functionalNote>prosthetic hand equipped with heavy, retractable lethal claws</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- Joywire -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Joywire</defName>
+    <targetHediff>Joywire</targetHediff>
+    <customLabel>joywire neural chip</customLabel>
+    <functionalNote>brain implant that forces continuous dopamine release</functionalNote>
+    <behavioralDirective>You are unnaturally happy, excessively calm, and completely unbothered by tragic events, discomfort, or danger.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- Painstopper -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Painstopper</defName>
+    <targetHediff>Painstopper</targetHediff>
+    <customLabel>painstopper neural chip</customLabel>
+    <functionalNote>brain implant that completely blocks the sensation of physical pain</functionalNote>
+    <behavioralDirective>You are completely incapable of feeling physical pain and tend to disregard injuries or bodily trauma entirely.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- BionicEye -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BionicEye</defName>
+    <targetHediff>BionicEye</targetHediff>
+    <functionalNote>advanced optical implant with wide-spectrum vision and signal pre-processing</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- BionicEar -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BionicEar</defName>
+    <targetHediff>BionicEar</targetHediff>
+    <functionalNote>advanced auditory implant with hyper-sensitive sound detection and noise filtering</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- BionicStomach -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BionicStomach</defName>
+    <targetHediff>BionicStomach</targetHediff>
+    <functionalNote>advanced artificial stomach immune to gut worms and highly resistant to food poisoning</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- DeathAcidifier -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_DeathAcidifier</defName>
+    <targetHediff>DeathAcidifier</targetHediff>
+    <functionalNote>chest implant that dissolves all worn gear in acid upon the host's death</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+  
+  <!-- ArchotechEye -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ArchotechEye</defName>
+    <targetHediff>ArchotechEye</targetHediff>
+    <functionalNote>transcendent ocular implant perceiving the full electromagnetic spectrum (X-rays, gamma, infrared) with built-in subpersona AI visual processing</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- ArchotechArm -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ArchotechArm</defName>
+    <targetHediff>ArchotechArm</targetHediff>
+    <functionalNote>transcendent arm indistinguishable from natural flesh that self-repairs and possesses extreme physical strength and micro-precision</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- ArchotechLeg -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ArchotechLeg</defName>
+    <targetHediff>ArchotechLeg</targetHediff>
+    <functionalNote>transcendent leg indistinguishable from natural flesh that self-repairs and enables vehicle-like movement speeds</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+  
+  <!-- PsychicAmplifier / Psylink -->
+  <EchoColony.HediffAIPromptDef MayRequireAnyOf="Ludeon.RimWorld.Royalty,Ludeon.RimWorld.Biotech">
+    <defName>Prompt_PsychicAmplifier</defName>
+    <targetHediff>PsychicAmplifier</targetHediff>
+    <customLabel>psylink</customLabel>
+    <functionalNote>organic neural connection to archotech superintelligences allowing the use of psycasts</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <functionalNote>level 1 psylink enabling basic psychic powers</functionalNote>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <functionalNote>level 2 psylink enabling low-level psychic powers</functionalNote>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <functionalNote>level 3 psylink enabling mid-level psychic powers</functionalNote>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <functionalNote>level 4 psylink enabling advanced psychic powers</functionalNote>
+      </li>
+      <li>
+        <stageIndex>4</stageIndex>
+        <functionalNote>level 5 psylink enabling powerful high-level psychic powers</functionalNote>
+      </li>
+      <li>
+        <stageIndex>5</stageIndex>
+        <functionalNote>level 6 master psylink enabling top-tier psychic powers</functionalNote>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+  
+  </Defs>

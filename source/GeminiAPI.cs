@@ -312,7 +312,7 @@ namespace EchoColony
                     else if (isMech)
                         yield return SendRequestToPlayer2WithPrompt(prompt, onResponse, "MECH_CHAT");
                     else
-                        yield return SendRequestToPlayer2(pawn, prompt, onResponse, imageBase64);
+                        yield return SendRequestToPlayer2WithPrompt(prompt, onResponse, "SPONTANEOUS_CHAT");
                     yield break;
 
                 case ModelSource.Local:
@@ -634,7 +634,7 @@ namespace EchoColony
                 : BuildMessagesJson(messages);
 
             if (MyMod.Settings?.debugMode == true)
-                LogPlayer2Debug($"CHAT_{CleanNameForFileName(pawn?.LabelShort)}_","REQUEST", useVision ? "[VISION REQUEST — image payload omitted from log]" : jsonBody); //furel - added name to the txt file name
+                LogPlayer2Debug($"CHAT_{CleanNameForFileName(pawn?.LabelShort)}","REQUEST", useVision ? "[VISION REQUEST — image payload omitted from log]" : jsonBody); //furel - added name to the txt file name
 
             int   maxRetries = 3;
             float retryDelay = 1f;
