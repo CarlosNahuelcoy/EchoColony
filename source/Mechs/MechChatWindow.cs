@@ -14,6 +14,7 @@ namespace EchoColony.Mechs
     {
         private Pawn mech;
         private List<string> chatLog = new List<string>();
+        private readonly ChatHeightCache heightCache = new ChatHeightCache();
         private string userMessage = "";
         private Vector2 scrollPosition = Vector2.zero;
         private Vector2 chatScrollPosition = Vector2.zero;
@@ -177,25 +178,25 @@ namespace EchoColony.Mechs
             Rect chatRect = new Rect(10f, currentY, inRect.width - 20f, chatHeight);
             Widgets.DrawBoxSolid(chatRect, new Color(0.1f, 0.1f, 0.1f, 0.8f));
 
-            List<float> messageHeights = new List<float>();
-            float totalHeight = 0f;
-            
-            for (int i = 0; i < chatLog.Count; i++)
-            {
-                string msg = chatLog[i];
-                float width = chatRect.width - 80f;
-                float height = Text.CalcHeight(msg, width) + 15f;
-                messageHeights.Add(height);
-                totalHeight += height;
-            }
+            float textWidth = chatRect.width - 80f;
+            heightCache.Update(chatLog, textWidth, 0f, msg => Text.CalcHeight(msg, textWidth) + 15f);
+            var   messageHeights = heightCache.Heights;
+            float totalHeight    = heightCache.TotalHeight;
 
             Rect viewRect = new Rect(0, 0, chatRect.width - 16f, Mathf.Max(totalHeight, chatRect.height));
-            
+
             Widgets.BeginScrollView(chatRect, ref chatScrollPosition, viewRect);
-            
+
             float y = 0f;
-            for (int i = 0; i < chatLog.Count; i++)
+            for (int i = 0; i < chatLog.Count && i < messageHeights.Count; i++)
             {
+                // Skip messages outside the visible area; long histories otherwise lag
+                if (!ChatHeightCache.IsVisible(y, messageHeights[i], chatScrollPosition, chatRect.height))
+                {
+                    y += messageHeights[i];
+                    continue;
+                }
+
                 string msg = chatLog[i];
                 bool isUserMessage = msg.StartsWith("You:");
                 bool isMechMessage = msg.StartsWith(mech.LabelShort + ":");

@@ -12,6 +12,8 @@ public class ColonistMemoryViewer : Window
     private Dictionary<int, string> allMemories;
     private Dictionary<int, Vector2> entryScrollPositions = new Dictionary<int, Vector2>();
     private Dictionary<int, bool> entryExpandedStates = new Dictionary<int, bool>();
+    private readonly Dictionary<string, float> expandedHeightCache = new Dictionary<string, float>();
+    private float expandedHeightWidth = -1f;
     
     // Debouncing system for memory editing
     private Dictionary<int, float> lastEditTimes = new Dictionary<int, float>();
@@ -215,6 +217,15 @@ public class ColonistMemoryViewer : Window
 
             // 2. Obtenemos la altura calculada para esta tarjeta específica
             float currentEntryHeight = GetEntryHeight(memory, isExpanded, viewRect.width);
+
+            // Only draw what's visible; many expanded days otherwise lag
+            if (!ChatHeightCache.IsVisible(y, currentEntryHeight, scrollPos, scrollRect.height))
+            {
+                y += currentEntryHeight + spacing;
+                entryIndex++;
+                continue;
+            }
+
             var entryRect = new Rect(0f, y, viewRect.width, currentEntryHeight);
 
             // Alternating background
@@ -410,10 +421,23 @@ public class ColonistMemoryViewer : Window
         // Ancho útil disponible para el texto dentro del recuadro
         float textWidth = width - 50f;
 
-        // Medimos la altura exacta que ocupará la fuente GameFont.Tiny
-        Text.Font = GameFont.Tiny;
-        float requiredTextHeight = Text.CalcHeight(memory ?? "", textWidth);
-        Text.Font = GameFont.Small;
+        // Text.CalcHeight is expensive and this runs twice per GUI event for every expanded day,
+        // so measured heights are cached per memory text and window width.
+        if (!Mathf.Approximately(expandedHeightWidth, textWidth))
+        {
+            expandedHeightCache.Clear();
+            expandedHeightWidth = textWidth;
+        }
+
+        string key = memory ?? "";
+        if (!expandedHeightCache.TryGetValue(key, out float requiredTextHeight))
+        {
+            // Medimos la altura exacta que ocupará la fuente GameFont.Tiny
+            Text.Font = GameFont.Tiny;
+            requiredTextHeight = Text.CalcHeight(key, textWidth);
+            Text.Font = GameFont.Small;
+            expandedHeightCache[key] = requiredTextHeight;
+        }
 
         // Sumamos ~65px para cabeceras, márgenes y botones
         float totalCalculated = requiredTextHeight + 65f;
