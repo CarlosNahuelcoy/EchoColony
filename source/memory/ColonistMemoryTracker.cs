@@ -121,8 +121,12 @@ namespace EchoColony
                 return;
             }
 
-            // We're compiling all the raw data collected today (must happen before the buffer is cleared)
-            string rawJoinedText = GetCurrentDayMemoryFormatted();
+            // We're compiling all the raw data collected today
+            // RawInteraction has no ToString(), so each entry must be formatted explicitly;
+            // joining the objects directly sent "EchoColony.RawInteraction" lines to the AI.
+            string rawJoinedText = string.Join("\n", currentDayInteractions
+                .Where(i => i != null && !string.IsNullOrWhiteSpace(i.text))
+                .Select(i => i.ToPromptFormat()));
 
             // Important: We immediately clear the buffer so that the new day starts fresh 
             // and to prevent data duplication if the AI callback takes a while.
