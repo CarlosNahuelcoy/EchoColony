@@ -67,8 +67,6 @@ namespace EchoColony
                     Log.Warning($"[EchoColony] QuickChat: Vision capture failed for {pawn.LabelShort} — will send text only");
             }
 
-            RebuildHistoryFromLog();
-
             if(ChatGameComponent.Instance.ShouldResetSession(pawn))
             {
                 ColonistMemoryHelper.CheckAndGenerateMemory(pawn,1);
@@ -77,6 +75,11 @@ namespace EchoColony
 
         // ── History ───────────────────────────────────────────────────────────────
 
+        /// <summary>
+        /// Context prompt plus the recent turns of the current session, the same window of
+        /// history the regular chat sends (session-aware, at most the last 14 lines).
+        /// Call it before logging the new message; the coroutine appends that message.
+        /// </summary>
         private void RebuildHistoryFromLog()
         {
             messageHistory = new List<GeminiMessage>
@@ -84,12 +87,29 @@ namespace EchoColony
                 new GeminiMessage("user", BuildContextPrompt())
             };
 
-            foreach (string line in ChatGameComponent.Instance.GetChat(pawn))
+            string userPrefix      = "EchoColony.UserPrefix".Translate().ToString().Trim();
+            string colonistPrefix  = pawn.LabelShort + ":";
+
+            foreach (string line in ChatGameComponent.Instance.GetRecentLines(pawn, 0))
             {
                 if (line.StartsWith("[USER]"))
-                    messageHistory.Add(new GeminiMessage("user", line.Substring(6).Trim()));
-                else if (line.StartsWith(pawn.LabelShort + ":"))
-                    messageHistory.Add(new GeminiMessage("model", line.Substring(pawn.LabelShort.Length + 1).Trim()));
+                {
+                    string text = line.Substring(6).Trim();
+                    if (!string.IsNullOrEmpty(userPrefix) && text.StartsWith(userPrefix))
+                        text = text.Substring(userPrefix.Length).Trim();
+                    if (!string.IsNullOrEmpty(text))
+                        messageHistory.Add(new GeminiMessage("user", text));
+                    continue;
+                }
+
+                // Colonist replies: "[ASSISTANT]Name: text" (current) or "Name: text" (older saves)
+                string reply = line.StartsWith("[ASSISTANT]") ? line.Substring(11).TrimStart() : line;
+                if (reply.StartsWith(colonistPrefix))
+                {
+                    string text = reply.Substring(colonistPrefix.Length).Trim();
+                    if (!string.IsNullOrEmpty(text) && text != "...")
+                        messageHistory.Add(new GeminiMessage("model", text));
+                }
             }
         }
 
@@ -216,11 +236,11 @@ namespace EchoColony
                 apiMsg = userMsg + " [Answer in one sentence, 100 characters max. Be brief.]";
             }
 
+            // History of the previous turns; the new message is appended when the request is built.
+            RebuildHistoryFromLog();
+
             ChatGameComponent.Instance.AddLine(pawn, "[USER] " + "EchoColony.UserPrefix".Translate() + userMsg);
             waitingForResponse = true;
-
-            // Rebuild history to include the message just logged.
-            RebuildHistoryFromLog();
 
             MyStoryModComponent.Instance.StartCoroutine(BuildCoroutine(apiMsg));
             Close();
@@ -259,11 +279,10 @@ namespace EchoColony
             }
             else
             {
-                var apiHistory = new List<GeminiMessage>(messageHistory);
-                if (apiHistory.Count > 0)
+                var apiHistory = new List<GeminiMessage>(messageHistory)
                 {
-                    apiHistory[apiHistory.Count - 1] = new GeminiMessage("user", apiMsg);
-                }
+                    new GeminiMessage("user", apiMsg)
+                };
 
                 string json = BuildGeminiJson(apiHistory);
 
