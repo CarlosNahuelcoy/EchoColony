@@ -12,6 +12,17 @@ namespace EchoColony
     public static class ColonistMemoryHelper
     {
         /// <summary>
+        /// True if an AI response is one of the mod's error messages ("⚠ ERROR: ...") instead of
+        /// real content, so it is never stored as a memory.
+        /// </summary>
+        public static bool IsApiError(string response)
+        {
+            if (string.IsNullOrWhiteSpace(response)) return false;
+            string r = response.TrimStart();
+            return r.StartsWith("⚠") || r.StartsWith("❌") || r.StartsWith("ERROR:") || r.StartsWith("[ERROR]");
+        }
+
+        /// <summary>
         /// Void wrapper method for calls from the UI or synchronous methods (fire-and-forget).
         /// Starts the coroutine in the background without freezing the caller's execution.
         /// </summary>
@@ -48,8 +59,8 @@ namespace EchoColony
                 var tracker = ColonistMemoryManager.GetOrCreate()?.GetTrackerFor(pawn);
                 if (tracker != null)
                 {
-                    // 1. Fallback si la respuesta del LLM viene vacía
-                    if (string.IsNullOrWhiteSpace(summary))
+                    // 1. Fallback si la respuesta del LLM viene vacía o es un mensaje de error de la API
+                    if (string.IsNullOrWhiteSpace(summary) || IsApiError(summary))
                     {
                         summary = $"Conversation during turn {info.CurrentTurn}. " +
                                   $"{combined.Substring(0, System.Math.Min(100, combined.Length))}...";
