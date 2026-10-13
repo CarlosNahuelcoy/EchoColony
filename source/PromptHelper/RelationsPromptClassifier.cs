@@ -14,7 +14,7 @@ namespace EchoColony
             "Spouse", "Fiance", "Lover", "ExSpouse", "ExLover",
             "Parent", "Child", "Sibling", "HalfSibling", "ParentBirth",
             "Grandparent", "Grandchild", "UncleOrAunt", "NephewOrNiece", "Cousin",
-            "Stepparent", "Stepchild", "ParentInLaw", "ChildInLaw"
+            "Stepparent", "Stepchild", "ParentInLaw", "ChildInLaw", "Kin", "Bastard"
         };
 
         private static readonly (string name, string tone)[] ExtendedFamilyRelations = new[]
@@ -59,7 +59,17 @@ namespace EchoColony
             // Immediate family
             AddIfNameExists("ParentBirth", relDefs, tones, "Birth Parent (biological surrogate/growth vat origin)");
             if (Has(PawnRelationDefOf.Parent) || Has(PawnRelationDefOf.Child))
-                AddUniqueTone(tones, "Parent and Child (protective, guiding, or generational dynamic)");
+            {
+                // ADDED: Native logic for bastard child
+                if (HasName("Bastard"))
+                {
+                    AddUniqueTone(tones, "Parent and Illegitimate Child (undercurrent of familial tension, social stigma, or fierce protective loyalty)");
+                }
+                else
+                {
+                    AddUniqueTone(tones, "Parent and Child (protective, guiding, or generational dynamic)");
+                }
+            }
             if (Has(PawnRelationDefOf.Sibling) || Has(PawnRelationDefOf.HalfSibling))
                 AddUniqueTone(tones, "Siblings (shared upbringing, sibling banter, or loyalty)");
 
@@ -114,7 +124,7 @@ namespace EchoColony
                 else customLabel = rel.defName;
             }
 
-            return $"Custom relationship: {customLabel}";
+            return $"Additional dynamic: {customLabel}";
         }
 
         /// <summary>
@@ -146,6 +156,26 @@ namespace EchoColony
         {
             if (relDefs.Any(r => r.defName.Equals(name, StringComparison.OrdinalIgnoreCase)))
                 AddUniqueTone(tones, tone);
+        }
+
+        /// <summary>
+        /// Extracts the specific gender label from the relationship (e.g., "Father" instead of "Parent").
+        /// </summary>
+        public static string GetRoleLabel(IEnumerable<PawnRelationDef> rels, Pawn targetPawn)
+        {
+            var relList = rels.ToList();
+
+            // Si hay más de una relación, "Kin" (Pariente) es redundante y lo filtramos
+            if (relList.Count > 1)
+            {
+                relList.RemoveAll(r => r.defName.Equals("Kin", StringComparison.OrdinalIgnoreCase));
+            }
+
+            var labels = relList.Select(r => r.GetGenderSpecificLabelCap(targetPawn))
+                                .Where(l => !string.IsNullOrWhiteSpace(l))
+                                .ToList();
+
+            return labels.Any() ? string.Join(", ", labels) : "Acquaintance";
         }
     }
 }

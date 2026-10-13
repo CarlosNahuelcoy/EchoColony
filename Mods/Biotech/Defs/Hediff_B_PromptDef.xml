@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+<!-- PregnantHuman -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PregnantHuman</defName>
+    <targetHediff>PregnantHuman</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You are in your first trimester of pregnancy. You feel an increased appetite and occasional fatigue, but remain functional.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You are in your second trimester of pregnancy. You feel noticeably heavier, tire more easily, and move slightly slower.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You are in your third trimester of pregnancy. You feel heavy, move with difficulty, tire very quickly, and experience physical discomfort.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- MorningSickness -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_MorningSickness</defName>
+    <targetHediff>MorningSickness</targetHediff>
+    <behavioralDirective>You feel sudden bouts of nausea, dizziness, and foggy thinking caused by pregnancy, often feeling the urge to vomit.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PregnancyMood -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PregnancyMood</defName>
+    <targetHediff>PregnancyMood</targetHediff>
+    <behavioralDirective>Your mood is unpredictable and fluctuating due to pregnancy hormones, shifting rapidly between emotional highs and lows.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PregnancyLabor -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PregnancyLabor</defName>
+    <targetHediff>PregnancyLabor</targetHediff>
+    <customLabel>labor dilation</customLabel>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You are in early labor. You experience uncomfortable contractions and mild pain, struggling to keep moving.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You are in intense labor. You suffer painful contractions that make moving or focusing extremely difficult.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You are in debilitating labor. You are in agonizing pain from severe contractions, bedridden, and unable to move.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PregnancyLaborPushing -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PregnancyLaborPushing</defName>
+    <targetHediff>PregnancyLaborPushing</targetHediff>
+    <customLabel>labor pushing</customLabel>
+    <behavioralDirective>You are actively giving birth. You are in agonizing pain, unable to move, and overwhelmed by an overwhelming urge to push.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PostpartumExhaustion -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PostpartumExhaustion</defName>
+    <targetHediff>PostpartumExhaustion</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You are extremely exhausted after giving birth, barely able to stand or walk, desperately needing bed rest to recover.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You are recovering from childbirth. You still feel weak, sore, and slow, but your strength is slowly returning.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- InfantIllness -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_InfantIllness</defName>
+    <targetHediff>InfantIllness</targetHediff>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>The baby is slightly ill from birth complications, crying in mild discomfort and vomiting occasionally.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>The baby is sick with major birth complications, crying distressedly, vomiting, and feeling restless.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>The baby is severely ill from extreme birth complications, crying weakly, very fatigued, and needing urgent medical care.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>3</stageIndex>
+        <behavioralDirective>The baby is in critical condition from birth complications, barely conscious, struggling to breathe, and near death.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PollutionStimulus -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PollutionStimulus</defName>
+    <targetHediff>PollutionStimulus</targetHediff>
+    <functionalNote>genetically engineered metabolic stimulation triggered by environmental pollution exposure</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You feel slightly energized and refreshed by the surrounding environmental pollution.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You feel visibly invigorated, moving faster and feeling sharp due to toxic pollution exposure.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You feel fully supercharged by high pollution levels, operating at peak speed and cognitive focus.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- ImplantedIUD -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ImplantedIUD</defName>
+    <targetHediff>ImplantedIUD</targetHediff>
+    <customLabel>IUD implant</customLabel>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- BloodfeederMark -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BloodfeederMark</defName>
+    <targetHediff>BloodfeederMark</targetHediff>
+    <functionalNote>two small puncture wounds on the neck or body from a bloodfeeder bite</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- ToxGasExposure -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ToxGasExposure</defName>
+    <targetHediff>ToxGasExposure</targetHediff>
+    <customLabel>tox gas exposure</customLabel>
+    <functionalNote>acute respiratory and ocular burning caused by inhaling toxic gas</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>Your eyes and throat sting slightly from toxic gas, causing minor coughing and blurred vision.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You are coughing heavily, struggling for breath, and feeling burning pain in your eyes and lungs from toxic gas.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You suffer severe toxic gas irritation. You gasp painfully for air, your vision is heavily impaired, and you are near suffocation.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+  
+  <!-- Deathrest -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_Deathrest</defName>
+    <targetHediff>Deathrest</targetHediff>
+    <customLabel>deathresting</customLabel>
+    <functionalNote>deep coma-like sleep required by certain genes to restore bodily resources</functionalNote>
+    <behavioralDirective>You are in a deep, coma-like deathrest sleep and completely unresponsive.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- InterruptedDeathrest -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_InterruptedDeathrest</defName>
+    <targetHediff>InterruptedDeathrest</targetHediff>
+    <functionalNote>metabolic imbalance caused by waking early from deathrest</functionalNote>
+    <behavioralDirective>You feel sick, sluggish, and disoriented because your deathrest was interrupted prematurely.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- DeathrestExhaustion -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_DeathrestExhaustion</defName>
+    <targetHediff>DeathrestExhaustion</targetHediff>
+    <functionalNote>metabolic fatigue from overdue deathrest</functionalNote>
+    <behavioralDirective>You feel deeply exhausted, sluggish, and desperate to enter deathrest to restore your body's balance.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- HemogenCraving -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_HemogenCraving</defName>
+    <targetHediff>HemogenCraving</targetHediff>
+    <functionalNote>painful blood starvation caused by depleted hemogen reserves</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You feel a nagging, uncomfortable hunger and craving for human blood, feeling slightly unfocused.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You suffer moderate blood craving and pain. You feel disoriented, irritable, and preoccupied with obtaining blood.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You suffer severe blood craving. You are in painful agony, heavily disoriented, and obsessively driven by bloodlust.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- RegenerationComa -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_RegenerationComa</defName>
+    <targetHediff>RegenerationComa</targetHediff>
+    <functionalNote>protective comatose state during which the body regenerates from otherwise lethal injuries</functionalNote>
+    <behavioralDirective>You are in a deep regeneration coma while your body heals lethal trauma, remaining completely unconscious.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- XenogerminationComa -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_XenogerminationComa</defName>
+    <targetHediff>XenogerminationComa</targetHediff>
+    <functionalNote>comatose state allowing a newly implanted xenogerm to integrate into bodily tissues</functionalNote>
+    <behavioralDirective>You are in a medical coma while a implanted xenogerm rewires your genetics, remaining unconscious.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- XenogermLossShock -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_XenogermLossShock</defName>
+    <targetHediff>XenogermLossShock</targetHediff>
+    <customLabel>gene loss shock</customLabel>
+    <functionalNote>metabolic and hormonal shock caused by recent gene removal</functionalNote>
+    <behavioralDirective>You feel weak, drowsy, and physically fragile after having your genetic material removed.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- XenogermReplicating -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_XenogermReplicating</defName>
+    <targetHediff>XenogermReplicating</targetHediff>
+    <customLabel>genes regrowing</customLabel>
+    <functionalNote>natural regrowth process of genetic material following extraction</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- GeneticDrugNeed -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_GeneticDrugNeed</defName>
+    <targetHediff>GeneticDrugNeed</targetHediff>
+    <customLabel>chemical dependency</customLabel>
+    <functionalNote>genetically programmed biochemical dependency on a specific drug</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You feel a growing physical craving for the drug your body genetically depends on.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You suffer from genetic drug deficiency. Your body feels weak, clumsy, and sluggish without your required substance.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>2</stageIndex>
+        <behavioralDirective>You are in a deficiency coma due to severe genetic drug starvation, remaining unconscious and near death.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- BioStarvation -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_BioStarvation</defName>
+    <targetHediff>BioStarvation</targetHediff>
+    <functionalNote>severe physical weakness caused by growth vat malfunction or lack of nutrition</functionalNote>
+    <behavioralDirective>You feel sore, extremely hungry, and lightheaded due to bio-starvation from a malfunctioning growth vat.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- VatLearning -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_VatLearning</defName>
+    <targetHediff>VatLearning</targetHediff>
+    <functionalNote>direct brain stimulation in a growth vat to induce skill acquisition</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- VatGrowing -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_VatGrowing</defName>
+    <targetHediff>VatGrowing</targetHediff>
+    <functionalNote>accelerated cell division and aging inside a growth vat</functionalNote>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- ScanningSickness -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_ScanningSickness</defName>
+    <targetHediff>ScanningSickness</targetHediff>
+    <functionalNote>brain chemistry disruption caused by high-energy subcore scanning</functionalNote>
+    <behavioralDirective>You feel dizzy, nauseous, and mentally foggy after having your brain scanned by a subcore scanner.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PsychicBond -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PsychicBond</defName>
+    <targetHediff>PsychicBond</targetHediff>
+    <functionalNote>genetic psychic connection linking two individuals' awareness</functionalNote>
+    <stages>
+      <li>
+        <stageIndex>0</stageIndex>
+        <behavioralDirective>You feel a comforting, harmonious warmth and heightened mental clarity because your psychically bonded partner is nearby.</behavioralDirective>
+      </li>
+      <li>
+        <stageIndex>1</stageIndex>
+        <behavioralDirective>You feel distressed, anxious, and unfocused because you are far away from your psychically bonded partner.</behavioralDirective>
+      </li>
+    </stages>
+  </EchoColony.HediffAIPromptDef>
+
+  <!-- PsychicBondTorn -->
+  <EchoColony.HediffAIPromptDef>
+    <defName>Prompt_PsychicBondTorn</defName>
+    <targetHediff>PsychicBondTorn</targetHediff>
+    <functionalNote>lingering neural tear remaining after a psychically bonded partner dies</functionalNote>
+    <behavioralDirective>You feel an overwhelming, hollow grief and mental ache from having your psychic bond violently severed by your partner's death.</behavioralDirective>
+  </EchoColony.HediffAIPromptDef>
+  
+  </Defs>

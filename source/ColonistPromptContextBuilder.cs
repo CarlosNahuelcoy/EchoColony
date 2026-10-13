@@ -287,7 +287,7 @@ namespace EchoColony
             sb.AppendLine("# Colonist Context");
             sb.AppendLine(BuildOptimizedDemographics(pawn));
             sb.AppendLine(BuildBackstory(pawn));
-            sb.AppendLine(BuildTraits(pawn));
+            sb.AppendLine(UtilsPromptHelpers.BuildTraits(pawn));
             sb.AppendLine(BuildGeneticsInfo(pawn));
             //sb.AppendLine(BuildHealthInfo(pawn));
             string healthInfo = BuildOptimizedHealthDetails(pawn);
@@ -1066,7 +1066,7 @@ namespace EchoColony
             {
                 foreach (var mem in pastMemories)
                 {
-                    sb.AppendLine($"{mem}");
+                    sb.AppendLine($"{mem}\n");
                 }
             }
             else
@@ -1078,10 +1078,12 @@ namespace EchoColony
 
             //--Current day interactions.
 
-            sb.AppendLine("## Today's Ongoing Interactions");
-
-
-            sb.AppendLine(tracker.GetCurrentDayMemoryFormatted());
+            string CurrendayMemory = tracker.GetCurrentDayMemoryFormatted();
+            if (!string.IsNullOrWhiteSpace(CurrendayMemory))
+            {
+                sb.AppendLine("## Today's Ongoing Interactions");
+                sb.AppendLine(CurrendayMemory);
+            }
             
             sb.AppendLine();
             sb.AppendLine("*Important Note: Treat 'Long-Term Memories' as established facts, and 'Today's Interactions' as the immediate context for your current behavior and responses.*");
@@ -1346,40 +1348,6 @@ namespace EchoColony
                 HasBeenInThisColony(soc.otherPawn)) == true;
 
             return grieving ? "Grieving recent loss from colony" : "";
-        }
-
-        //*furel - improvement* The traits are now formatted and cleaned for better readability in the prompt.
-        private static string BuildTraits(Pawn pawn)
-        {
-            if (pawn.story?.traits == null || !pawn.story.traits.allTraits.Any())
-                return "*Traits:* None";
-
-            var entries = new List<string>();
-
-            foreach (var t in pawn.story.traits.allTraits)
-            {
-                // 1. Obtener la descripción nativa traducida y formateada para el peón
-                string rawDesc = t.CurrentData?.description ?? t.def?.description;
-                string formattedDesc = "";
-
-                if (!string.IsNullOrEmpty(rawDesc))
-                {
-                    formattedDesc = FormatText(rawDesc, pawn);
-                }
-
-                string label = t.LabelCap;
-
-                if (!string.IsNullOrEmpty(formattedDesc))
-                {
-                    entries.Add($"  - {label}: \"{formattedDesc}\"");
-                }
-                else
-                {
-                    entries.Add($"  - {label}");
-                }
-            }
-
-            return "*Traits & Core Identity:*\n" + string.Join("\n", entries);
         }
 
         private static string BuildMoodInfo(Pawn pawn)
