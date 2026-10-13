@@ -21,8 +21,7 @@ namespace EchoColony
         private string      userMessage           = "";
         private bool        sendRequestedViaEnter = false;
         private bool        showParticipantManagement = false;
-        private List<float> cachedHeights = new List<float>();
-        private string lastMessageTextSeen = null; //*furel - hight calculation sistem* New variable for control.												  
+        private readonly ChatHeightCache heightCache = new ChatHeightCache();
         private Vector2 portraitsScrollPos = Vector2.zero;
         //private HashSet<Pawn> KickedOut => session.KickedOutColonists; *furel - Deleted Kickout list*
         private Pawn          initiator;
@@ -358,42 +357,25 @@ namespace EchoColony
 
 			if (viewW < 50f) return;						
 
-            string currentLastMsg = session.History.Count > 0 ? session.History.Last() : null;
-
-            if (currentLastMsg != lastMessageTextSeen || lastMessageTextSeen != currentLastMsg)
-            {
-                cachedHeights.Clear();
-
-                Text.Font = GameFont.Small; 
-                foreach (string m in session.History)
-                {
-                    cachedHeights.Add(CalculateMessageHeight(m, viewW));
-                }
-                lastMessageTextSeen = currentLastMsg;
-            }
-
-            if (cachedHeights.Count > session.History.Count)
-            {
-                cachedHeights.RemoveRange(session.History.Count, cachedHeights.Count - session.History.Count);
-            }
-
-            while (cachedHeights.Count < session.History.Count) 												
-            {
-                int index = cachedHeights.Count;               
-                string msg = session.History[index];            
-                cachedHeights.Add(CalculateMessageHeight(msg, viewW)); 						 
-            }
-           
-            float viewH    = cachedHeights.Sum() + cachedHeights.Count * 6f; 
+            Text.Font = GameFont.Small;
+            heightCache.Update(session.History, viewW, 6f, m => CalculateMessageHeight(m, viewW));
+            var   heights = heightCache.Heights;
+            float viewH   = heightCache.TotalHeight;
             Rect  viewRect = new Rect(0, 0, viewW, viewH);
 
             Widgets.BeginScrollView(scrollRect, ref scrollPos, viewRect);
 
             float lineY = 0;
-            for (int i = 0; i < session.History.Count; i++)
+            for (int i = 0; i < session.History.Count && i < heights.Count; i++)
             {
+                float  lineH   = heights[i];
+                // Only draw what's visible; long histories otherwise lag
+                if (!ChatHeightCache.IsVisible(lineY, lineH, scrollPos, scrollRect.height))
+                {
+                    lineY += lineH + 6f;
+                    continue;
+                }
                 string msg     = session.History[i];
-                float  lineH   = cachedHeights[i]; 
                 Rect   lineRect = new Rect(0, lineY, viewW, lineH);
 
                 if (msg.StartsWith("[DATE_SEPARATOR]"))
@@ -652,7 +634,6 @@ namespace EchoColony
                         session.History.Last() == next.LabelShort + ": ...")
 						{
 							session.History.RemoveAt(session.History.Count - 1);
-							cachedHeights.RemoveAt(cachedHeights.Count - 1);
 						}
 
                     if (!string.IsNullOrWhiteSpace(response) && response.Trim().Length >= 3)
@@ -1128,7 +1109,6 @@ namespace EchoColony
                 () =>
                 {
                     session.History.Clear();
-					cachedHeights.Clear();																						  
                     session.AddSystemMessage("EchoColony.GCWClearConfirmation".Translate());
                     Messages.Message("EchoColony.GCWClearConfirmation".Translate(), MessageTypeDefOf.NeutralEvent);
                 }));
@@ -1238,8 +1218,7 @@ namespace EchoColony
         public override void PostOpen()
         {
             base.PostOpen();
-            cachedHeights.Clear();
-            lastMessageTextSeen = null;
+            heightCache.Invalidate();
         }
     }
 }

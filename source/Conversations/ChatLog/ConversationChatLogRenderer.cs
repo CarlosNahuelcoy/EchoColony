@@ -167,6 +167,13 @@ namespace EchoColony.Conversations
                 var entry = entries[i];
                 float h   = (_lineHeights != null && i < _lineHeights.Length) ? _lineHeights[i] : 14f;
 
+                // Only draw what's visible inside the scroll area
+                if (!ChatHeightCache.IsVisible(y, h, _scroll, content.height))
+                {
+                    y += h;
+                    continue;
+                }
+
                 if (entry.Kind == ChatLogEntryKind.Separator)
                 {
                     // Thin horizontal rule centered vertically in SepH

@@ -32,6 +32,7 @@ namespace EchoColony
     public class MainTabWindow_StorytellerChat : Window
     {
         private Vector2 scrollPos = Vector2.zero;
+        private readonly ChatHeightCache heightCache = new ChatHeightCache();
         private string input = "";
         private Storyteller currentStoryteller;
         private string storytellerDefName => currentStoryteller?.def?.defName ?? "Unknown";
@@ -159,19 +160,14 @@ namespace EchoColony
             float chatHeight = inRect.height - 110f;
             Rect scrollRect = new Rect(0, 45f, inRect.width - 20f, chatHeight);
 
-            float viewHeight = 0f;
-            List<float> heights = new List<float>();
             Text.Anchor = TextAnchor.UpperLeft;
             Text.WordWrap = true;
 
-            foreach (string msg in chatLog)
-            {
-                float width = scrollRect.width - 200f;
-                string displayText = GetDisplayMessage(msg);
-                float height = Text.CalcHeight(displayText, width) + 10f;
-                heights.Add(height);
-                viewHeight += height + 10f;
-            }
+            var   log       = chatLog;
+            float textWidth = scrollRect.width - 200f;
+            heightCache.Update(log, textWidth, 10f, msg => Text.CalcHeight(GetDisplayMessage(msg), textWidth) + 10f);
+            var   heights    = heightCache.Heights;
+            float viewHeight = heightCache.TotalHeight;
 
             Rect viewRect = new Rect(0, 0, scrollRect.width - 16f, viewHeight);
             Widgets.BeginScrollView(scrollRect, ref scrollPos, viewRect);
@@ -183,10 +179,11 @@ namespace EchoColony
             }
 
             float y = 0;
-            for (int i = 0; i < chatLog.Count; i++)
+            for (int i = 0; i < log.Count && i < heights.Count; i++)
             {
-                string msg = chatLog[i];
-                DrawMessage(new Rect(0, y, viewRect.width, heights[i]), msg, i, viewRect.width);
+                // Only draw what's visible; long histories otherwise lag
+                if (ChatHeightCache.IsVisible(y, heights[i], scrollPos, scrollRect.height))
+                    DrawMessage(new Rect(0, y, viewRect.width, heights[i]), log[i], i, viewRect.width);
                 y += heights[i] + 10f;
             }
 
