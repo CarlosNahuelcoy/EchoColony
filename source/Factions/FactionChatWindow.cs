@@ -30,6 +30,7 @@ namespace EchoColony.Factions
 
         private List<string> chatLog => FactionChatGameComponent.Instance.GetChat(faction, isPlayerMode);
         private List<string> cachedChatLog = null;
+        private readonly ChatHeightCache heightCache = new ChatHeightCache();
 
         private string  input               = "";
         private bool    waitingForResponse  = false;
@@ -277,15 +278,10 @@ namespace EchoColony.Factions
             Text.Anchor   = TextAnchor.UpperLeft;
             Text.Font     = GameFont.Small;
 
-            var heights = new List<float>();
-            float totalHeight = 0f;
-
-            foreach (var msg in cachedChatLog)
-            {
-                float h = Text.CalcHeight(GetDisplayText(msg), effectiveViewWidth - 10f) + 4f;
-                heights.Add(h);
-                totalHeight += h + 6f;
-            }
+            heightCache.Update(cachedChatLog, effectiveViewWidth, 6f,
+                msg => Text.CalcHeight(GetDisplayText(msg), effectiveViewWidth - 10f) + 4f);
+            var   heights     = heightCache.Heights;
+            float totalHeight = heightCache.TotalHeight;
 
             Rect viewRect = new Rect(0, 0, effectiveViewWidth, totalHeight + 20f);
             Widgets.BeginScrollView(rect, ref scrollPos, viewRect);
@@ -299,10 +295,13 @@ namespace EchoColony.Factions
             float y = 0;
             for (int i = 0; i < cachedChatLog.Count && i < heights.Count; i++)
             {
-                string msg      = cachedChatLog[i];
-                Rect   lineRect = new Rect(5f, y, effectiveViewWidth - 10f, heights[i]);
-
-                DrawMessageLine(lineRect, msg);
+                // Only draw what's visible; long histories otherwise lag
+                if (ChatHeightCache.IsVisible(y, heights[i], scrollPos, rect.height))
+                {
+                    string msg      = cachedChatLog[i];
+                    Rect   lineRect = new Rect(5f, y, effectiveViewWidth - 10f, heights[i]);
+                    DrawMessageLine(lineRect, msg);
+                }
                 y += heights[i] + 6f;
             }
 

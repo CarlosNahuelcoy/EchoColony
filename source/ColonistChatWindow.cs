@@ -20,8 +20,7 @@ namespace EchoColony
         private List<string> chatLog => ChatGameComponent.Instance.GetChat(pawn);
 
         private List<string> cachedChatLog = null;
-        private List<float> cachedHeights = new List<float>();
-        private float cachedViewHeight = 0f;
+        private readonly ChatHeightCache heightCache = new ChatHeightCache();
 
         private bool sendRequestedViaEnter = false;
         private bool waitingForResponse = false;
@@ -204,40 +203,29 @@ namespace EchoColony
             TextAnchor savedAnchor = Text.Anchor; //furel - Save the current text anchor state to restore it later.
 
             if (cachedChatLog == null || cachedChatLog.Count != chatLog.Count)
-            {
                 cachedChatLog = new List<string>(chatLog);
-
-                // We recalculate the heights ONLY when a new message arrives.
-                cachedHeights.Clear();
-                cachedViewHeight = 0f;
-
-                Text.Anchor = TextAnchor.UpperLeft;
-                Text.WordWrap = true;
-
-                float scrollBarW = 16f;
-                float effViewW = (inRect.width - 20f) - scrollBarW;
-
-                for (int i = 0; i < cachedChatLog.Count; i++)
-                {
-                    string msg = cachedChatLog[i];
-                    float width = msg.StartsWith("[DATE_SEPARATOR]") ? effViewW : effViewW - 200f;
-                    float height = Text.CalcHeight(GetDisplayMessage(msg), width) + 4f;
-
-                    cachedHeights.Add(height);
-                    cachedViewHeight += height + 10f;
-                }
-            }
 
             DrawHeader(inRect);
 
-            // ── Chat area ─────────────────────────────────────────────────────  
+            // ── Chat area ─────────────────────────────────────────────────────
             float chatTop = HeaderHeight + 4f;
             float chatHeight = inRect.height - chatTop - 65f;
             Rect scrollRect = new Rect(0f, chatTop, inRect.width - 20f, chatHeight);
             float scrollBarWidth = 16f;
             float effectiveViewWidth = scrollRect.width - scrollBarWidth;
 
-            // We use the cached heights.
+            Text.Anchor = TextAnchor.UpperLeft;
+            Text.WordWrap = true;
+
+            // Heights are re-measured only for new or changed messages, or when the window is resized.
+            heightCache.Update(cachedChatLog, effectiveViewWidth, 10f, msg =>
+            {
+                float width = msg.StartsWith("[DATE_SEPARATOR]") ? effectiveViewWidth : effectiveViewWidth - 200f;
+                return Text.CalcHeight(GetDisplayMessage(msg), width) + 4f;
+            });
+            var   heights          = heightCache.Heights;
+            float cachedViewHeight = heightCache.TotalHeight;
+
             Rect viewRect = new Rect(0f, 0f, effectiveViewWidth, cachedViewHeight + 20f);
 
             Widgets.BeginScrollView(scrollRect, ref scrollPos, viewRect);
@@ -249,21 +237,17 @@ namespace EchoColony
             }
 
             float y = 0f;
-            int messagesToDraw = Math.Min(cachedChatLog.Count, cachedHeights.Count);
-
-            Text.Anchor = TextAnchor.UpperLeft;
-            Text.WordWrap = true;
+            int messagesToDraw = Math.Min(cachedChatLog.Count, heights.Count);
 
             for (int i = 0; i < messagesToDraw; i++)
             {
                 string msg = cachedChatLog[i];
-                float msgHeight = cachedHeights[i];
+                float msgHeight = heights[i];
                 Rect messageRect = new Rect(0f, y, effectiveViewWidth, msgHeight);
 
                 // CULLING OPTIMIZATION:
-                // Only draw the message if it is within the visible scroll area. 
-                // If 'y' is below the scroll area (invisible at the bottom) or the message ends before the scroll area begins (invisible at the top), skip it.
-                if (y + msgHeight >= scrollPos.y && y <= scrollPos.y + chatHeight)
+                // Only draw the message if it is within the visible scroll area (plus a small margin).
+                if (ChatHeightCache.IsVisible(y, msgHeight, scrollPos, chatHeight))
                 {
                     if (msg.StartsWith("[DATE_SEPARATOR]"))
                         DrawDateSeparator(messageRect, msg);
@@ -772,6 +756,7 @@ namespace EchoColony
 
                         chatLog[index] = "[ASSISTANT]" + pawn.LabelShort + ": " + cleanEdit;
                     }
+                    editingIndex = -1; editedMessage = ""; cachedChatLog = null;
                 }
                 if (Widgets.ButtonText(new Rect(viewWidth - 90f, rect.y + 5f, 80f, 25f), "EchoColony.CancelButton".Translate()))
                 { editingIndex = -1; editedMessage = ""; }
