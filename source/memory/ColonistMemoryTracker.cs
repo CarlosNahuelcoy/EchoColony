@@ -122,11 +122,21 @@ namespace EchoColony
             }
 
             // We're compiling all the raw data collected today
-            string rawJoinedText = string.Join("\n", currentDayInteractions);
+            // RawInteraction has no ToString(), so each entry must be formatted explicitly;
+            // joining the objects directly sent "EchoColony.RawInteraction" lines to the AI.
+            string rawJoinedText = string.Join("\n", currentDayInteractions
+                .Where(i => i != null && !string.IsNullOrWhiteSpace(i.text))
+                .Select(i => i.ToPromptFormat()));
 
             // Important: We immediately clear the buffer so that the new day starts fresh 
             // and to prevent data duplication if the AI callback takes a while.
             ClearDayMemBuffer();
+
+            if (string.IsNullOrWhiteSpace(rawJoinedText))
+            {
+                Log.Message($"[EchoColony] No usable interactions to summarize for {pawn?.LabelShort ?? "Unknown"} on day {dayToProcess}.");
+                return;
+            }
 
             Log.Message($"[EchoColony] Triggering AI summary for {pawn?.LabelShort ?? "Unknown"} (Day {dayToProcess}) with {rawJoinedText.Length} chars of raw logs.");
 
@@ -156,7 +166,7 @@ namespace EchoColony
             System.Action<string> summaryCallback = (aiSummary) =>
             {
 
-                if (!string.IsNullOrWhiteSpace(aiSummary))
+                if (!string.IsNullOrWhiteSpace(aiSummary) && !ColonistMemoryHelper.IsApiError(aiSummary))
                 {
                     // We save the optimized summary in the historical entry for the processed day
                     memories[day] = $"[{dateHeader}]\n{aiSummary.Trim()}";
@@ -211,7 +221,7 @@ namespace EchoColony
             // Callback to save result
             System.Action<string> summaryCallback = (aiResponse) =>
             {
-                if (!string.IsNullOrWhiteSpace(aiResponse))
+                if (!string.IsNullOrWhiteSpace(aiResponse) && !ColonistMemoryHelper.IsApiError(aiResponse))
                 {
                     memories[day] = $"[{dateHeader}]\n{aiResponse.Trim()}";
                     Log.Message($"[EchoColony] AI rewrote the memory of day {day} for {pawn?.LabelShort}");
@@ -275,6 +285,11 @@ namespace EchoColony
             {
                 memoryCoroutine = GeminiAPI.SendRequestToOpenRouter(prompt, callback);
                 Log.Message("[EchoColony] Optimizing memory with OpenRouter");
+            }
+            else if (MyMod.Settings.modelSource == ModelSource.Custom)
+            {
+                memoryCoroutine = GeminiAPI.SendRequestToCustomProvider(prompt, callback);
+                Log.Message("[EchoColony] Optimizing memory with custom provider");
             }
             else // Gemini (default)
             {
