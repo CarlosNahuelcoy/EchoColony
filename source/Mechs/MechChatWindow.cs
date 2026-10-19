@@ -338,7 +338,7 @@ namespace EchoColony.Mechs
 
             if (!isWaitingForResponse)
             {
-                userMessage = GUI.TextArea(inputRect, userMessage, 500, textStyle);
+                userMessage = GUI.TextArea(inputRect, userMessage, PromptTextArea.MaxChatInputLength, textStyle);
             }
             else
             {

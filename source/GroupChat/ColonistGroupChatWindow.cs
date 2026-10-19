@@ -483,7 +483,7 @@ namespace EchoColony
 
             Rect inputRect = new Rect(10f, y, inRect.width - btnW - gap - 20f, 60f);
             GUI.SetNextControlName("GroupChatInput");
-            userMessage = GUI.TextArea(inputRect, userMessage, 500, new GUIStyle(GUI.skin.textArea)
+            userMessage = GUI.TextArea(inputRect, userMessage, PromptTextArea.MaxChatInputLength, new GUIStyle(GUI.skin.textArea)
             {
                 fontSize = 14,
                 padding  = new RectOffset(6, 6, 6, 6)

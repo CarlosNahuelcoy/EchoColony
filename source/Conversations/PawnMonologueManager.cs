@@ -105,6 +105,7 @@ namespace EchoColony.Conversations
             // Pawn must be able to speak and be conscious
             if (pawn.Dead || pawn.Downed) return false;
             if (!pawn.health.capacities.CanBeAwake) return false;
+            if (!pawn.Awake()) return false; // no self-talk while sleeping
 
             float talking = pawn.health.capacities.GetLevel(PawnCapacityDefOf.Talking);
             if (talking < 0.1f) return false;

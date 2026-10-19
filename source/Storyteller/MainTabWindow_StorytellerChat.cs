@@ -215,7 +215,7 @@ namespace EchoColony
                 fontSize = 14,
                 padding = new RectOffset(6, 6, 6, 6)
             };
-            input = GUI.TextArea(inputRect, input, 500, textStyle);
+            input = GUI.TextArea(inputRect, input, PromptTextArea.MaxChatInputLength, textStyle);
 
             // Send button
             Rect sendRect = new Rect(inRect.width - 100f, inRect.height - 60f, 100f, 30f);
