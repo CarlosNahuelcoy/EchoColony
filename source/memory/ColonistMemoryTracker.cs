@@ -470,6 +470,7 @@ namespace EchoColony
         {
             int count = memories.Count;
             memories.Clear();
+            ClearDayMemBuffer(); // today's in-progress interactions too, or they come back as a memory
             ChatGameComponent.Instance.ClearGroupHistory(pawn);
             Log.Message($"[EchoColony] {count} memories removed for {pawn?.LabelShort ?? "Unknown"}");
         }
