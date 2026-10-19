@@ -372,7 +372,16 @@ public class ColonistMemoryViewer : Window
                     // ✅ CORREGIDO: Usar GetOrCreate()
                     var manager = ColonistMemoryManager.GetOrCreate();
                     var tracker = manager?.GetTrackerFor(pawn);
-                    tracker?.RemoveMemoryForDay(day);
+
+                    // Today's entry is built live from the day's interactions (see LoadMemories),
+                    // not stored as a memory. Clear those too, or it reappears when the window is
+                    // reopened and gets summarized into a memory at the end of the day anyway.
+                    bool isToday = day == GenDate.DaysPassed;
+                    if (isToday)
+                        tracker?.ClearDayMemBuffer();
+                    if (!isToday || tracker?.GetAllMemories().ContainsKey(day) == true)
+                        tracker?.RemoveMemoryForDay(day);
+
                     allMemories.Remove(day);
                     entryScrollPositions.Remove(day);
                     entryExpandedStates.Remove(day);
