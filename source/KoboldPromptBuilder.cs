@@ -150,8 +150,8 @@ namespace EchoColony
             string customPrompt = ColonistPromptManager.GetPrompt(pawn);
 
             // ── Chat history ──────────────────────────────────────────────────────
-            List<string> chatLog = ChatGameComponent.Instance.GetChat(pawn);
-            string chatHistory   = string.Join("\n", chatLog.TakeLast(10));
+            // Plain "Player:" / "Name:" lines; raw [USER]/[ASSISTANT] tags break the prompt
+            string chatHistory = LocalChatHistory.Format(pawn, 10, userMessage);
 
             // ════════════════════════════════════════════════════════════════════
             // BUILD PROMPT
@@ -231,7 +231,7 @@ namespace EchoColony
                 }
             }
 
-            if (chatLog.Any())
+            if (!string.IsNullOrWhiteSpace(chatHistory))
             {
                 sb.AppendLine("Recent conversation with the player:");
                 sb.AppendLine(chatHistory);

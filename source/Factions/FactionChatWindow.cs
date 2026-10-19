@@ -390,7 +390,7 @@ namespace EchoColony.Factions
                 fontSize = 14,
                 padding  = new RectOffset(6, 6, 6, 6)
             };
-            input = GUI.TextArea(inputRect, input, 500, style);
+            input = GUI.TextArea(inputRect, input, PromptTextArea.MaxChatInputLength, style);
 
             // Send button
             Rect sendRect  = new Rect(rect.xMax - 100f, rect.y, 100f, rect.height / 2f);
