@@ -10,6 +10,9 @@ namespace EchoColony
     /// </summary>
     public static class PromptTextArea
     {
+        /// <summary>Maximum length of a message typed in any chat window.</summary>
+        public const int MaxChatInputLength = 2000;
+
         public static string Draw(Rect rect, string text, string controlName)
         {
             GUI.SetNextControlName(controlName);
