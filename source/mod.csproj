@@ -50,4 +50,48 @@
     <PackageReference Include="Krafs.Rimworld.Ref" Version="1.7.4982-unstable" />
     <PackageReference Include="Lib.Harmony.Ref" Version="3.0.0-rc.3" />
   </ItemGroup>
+
+  <!-- ═══ Despliegue a la carpeta del mod en RimWorld ═══════════════════════════
+       Después de cada build deja la carpeta del mod igual que el repo, lista para
+       probar o subir a Steam. Borra antes lo desplegado para que no queden archivos
+       viejos (Defs/idiomas duplicados se cargarían dos veces).
+       - Nunca toca 1.5/ (versión congelada que solo existe en la copia publicada).
+       - Solo corre si existe la carpeta Mods de RimWorld y no estamos en CI.
+       - Otra ruta:     dotnet build source/mod.csproj -p:RimWorldModDir="D:\...\Mods\EchoColony"
+       - Desactivarlo:  dotnet build source/mod.csproj -p:DeployToRimWorld=false -->
+  <PropertyGroup>
+    <ModRoot>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/..'))</ModRoot>
+    <RimWorldModDir Condition="'$(RimWorldModDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\EchoColony</RimWorldModDir>
+    <DeployToRimWorld Condition="'$(DeployToRimWorld)' == '' AND '$(CI)' != 'true'">true</DeployToRimWorld>
+    <RimWorldVersion Condition="'$(TargetFramework)' == 'net472'">1.6</RimWorldVersion>
+    <RimWorldVersion Condition="'$(TargetFramework)' == 'net10.0'">1.7</RimWorldVersion>
+  </PropertyGroup>
+
+  <Target Name="DeployToRimWorld" AfterTargets="Build"
+          Condition="'$(DeployToRimWorld)' == 'true' AND '$(RimWorldVersion)' != '' AND Exists('$([System.IO.Path]::GetDirectoryName($(RimWorldModDir)))')">
+    <!-- Cada versión despliega su DLL; lo compartido lo despliega el build de 1.6 -->
+    <PropertyGroup>
+      <DeployShared>false</DeployShared>
+      <DeployShared Condition="'$(RimWorldVersion)' == '1.6'">true</DeployShared>
+    </PropertyGroup>
+    <ItemGroup>
+      <VersionFiles Include="$(ModRoot)/$(RimWorldVersion)/**/*" />
+      <AboutFiles   Include="$(ModRoot)/About/**/*"    Condition="'$(DeployShared)' == 'true'" />
+      <CommonFiles  Include="$(ModRoot)/Common/**/*"   Condition="'$(DeployShared)' == 'true'" />
+      <ModsFiles    Include="$(ModRoot)/Mods/**/*"     Condition="'$(DeployShared)' == 'true'" />
+      <TextureFiles Include="$(ModRoot)/Textures/**/*" Condition="'$(DeployShared)' == 'true'" />
+      <RootFiles    Include="$(ModRoot)/LoadFolders.xml" Condition="'$(DeployShared)' == 'true'" />
+    </ItemGroup>
+
+    <RemoveDir Directories="$(RimWorldModDir)\$(RimWorldVersion)" />
+    <RemoveDir Directories="$(RimWorldModDir)\Common;$(RimWorldModDir)\Mods;$(RimWorldModDir)\Textures" Condition="'$(DeployShared)' == 'true'" />
+
+    <Copy SourceFiles="@(VersionFiles)" DestinationFiles="@(VersionFiles->'$(RimWorldModDir)\$(RimWorldVersion)\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(AboutFiles)"   DestinationFiles="@(AboutFiles->'$(RimWorldModDir)\About\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(CommonFiles)"  DestinationFiles="@(CommonFiles->'$(RimWorldModDir)\Common\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(ModsFiles)"    DestinationFiles="@(ModsFiles->'$(RimWorldModDir)\Mods\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(TextureFiles)" DestinationFiles="@(TextureFiles->'$(RimWorldModDir)\Textures\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(RootFiles)"    DestinationFolder="$(RimWorldModDir)" />
+    <Message Importance="high" Text="📦 EchoColony $(RimWorldVersion) desplegado en $(RimWorldModDir)" />
+  </Target>
 </Project>
