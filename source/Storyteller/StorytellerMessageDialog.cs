@@ -30,16 +30,22 @@ namespace EchoColony
             this.message = message;
             this.storytellerDefName = storytellerDefName;
             this.kind = kind;
-            this.creationTime = Time.time;
+            this.creationTime = Time.realtimeSinceStartup;
             
             // ✅ Configuración para notificación NO invasiva
             this.forcePause = false; // NO pausar el juego
             this.preventCameraMotion = false; // Permitir movimiento de cámara
             this.absorbInputAroundWindow = false; // NO bloquear clicks
+            // Aparece sin aviso: no debe robar el foco ni cerrarse con Escape, Enter o
+            // un clic fuera, que el jugador estaba usando para otra cosa. Solo se cierra
+            // con sus propios botones o con el cierre automático.
+            this.focusWhenOpened = false;
+            this.closeOnCancel = false;
+            this.closeOnAccept = false;
+            this.closeOnClickedOutside = false;
             this.soundAppear = SoundDefOf.CommsWindow_Open;
             this.doCloseX = true;
             this.doCloseButton = false;
-            this.closeOnClickedOutside = true;
             this.draggable = false; // NO se puede arrastrar
             
             // Reproducir sonido si está habilitado
@@ -120,7 +126,7 @@ namespace EchoColony
         // ✅ Posición en la esquina superior derecha
         public override Vector2 InitialSize => new Vector2(NOTIFICATION_WIDTH, NOTIFICATION_HEIGHT);
 
-        public override void SetInitialSizeAndPosition()
+        protected override void SetInitialSizeAndPosition()
         {
             // Esquina superior derecha con margen
             windowRect = new Rect(
@@ -268,7 +274,8 @@ namespace EchoColony
             // Auto-cerrar después del delay configurado
             if (MyMod.Settings?.storytellerMessageAutoClose == true)
             {
-                float elapsedTime = Time.time - creationTime;
+                // Tiempo real: el cierre no depende de la velocidad del juego ni de la pausa
+                float elapsedTime = Time.realtimeSinceStartup - creationTime;
                 float autoCloseDelay = MyMod.Settings?.storytellerMessageAutoCloseSeconds ?? 8f;
 
                 if (elapsedTime >= autoCloseDelay)

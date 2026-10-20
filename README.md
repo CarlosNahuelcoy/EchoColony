@@ -47,7 +47,7 @@ Player2 is a free desktop app that provides both AI text and voice without needi
 
 ## 📋 Requirements
 
-- **RimWorld 1.5+**
+- **RimWorld 1.6 or 1.7** (1.5 is kept on its last version)
 - **Harmony** (auto-installed)
 - **Internet connection** (for cloud AI providers) or **Player2 app** (for Player2 provider)
 
@@ -86,12 +86,15 @@ While the mod is fully functional and tested, contributors should expect to enco
 ### 📁 Project Structure:
 ```
 EchoColony/
-├── Source/              # C# source code (mixed EN/ES documentation)
+├── source/             # C# source code (one project, builds 1.6 and 1.7)
 ├── About/              # Mod metadata
-├── Defs/               # XML game definitions  
-├── Assemblies/         # Compiled DLLs
-└── Languages/          # Localization files
+├── Common/             # Defs, Languages, Patches, Textures shared by 1.6 and 1.7
+├── Mods/               # Content loaded only when a DLC/mod is active
+├── 1.6/Assemblies/     # DLL for RimWorld 1.6 (net472)
+└── 1.7/Assemblies/     # DLL for RimWorld 1.7 (net10.0)
 ```
+
+**RimWorld 1.6 and 1.7 are built from the same code.** Version-specific code goes in `#if RW17` blocks or in `source/Compat/RW16|RW17`, and CI builds both versions on every PR. Read [CONTRIBUTING.md](CONTRIBUTING.md) before changing code.
 
 ### 🚀 How to Contribute:
 1. Fork this repository

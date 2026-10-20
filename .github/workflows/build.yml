@@ -1,0 +1,32 @@
+# Compila las dos DLL (RimWorld 1.6 = net472 y RimWorld 1.7 = net10.0) en cada PR y en cada push a main.
+# Si un cambio rompe una de las dos versiones, este check falla antes de fusionar.
+name: Build 1.6 + 1.7
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # .NET 10 SDK compila ambos targets. Las referencias de net472 vienen de los
+      # paquetes NuGet (Krafs.Rimworld.Ref y Microsoft.NETFramework.ReferenceAssemblies,
+      # que el SDK agrega solo), así que no hace falta Windows ni el juego instalado.
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build (net472 → 1.6, net10.0 → 1.7)
+        run: dotnet build source/mod.csproj -c Release
+
+      - name: Check both DLLs were produced
+        run: |
+          ls -la 1.6/Assemblies 1.7/Assemblies
+          test -f 1.6/Assemblies/EchoColony.dll
+          test -f 1.7/Assemblies/EchoColony.dll
+          test ! -f 1.6/Assemblies/0Harmony.dll
+          test ! -f 1.7/Assemblies/0Harmony.dll

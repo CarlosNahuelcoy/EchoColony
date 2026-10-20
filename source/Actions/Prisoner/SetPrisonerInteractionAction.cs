@@ -48,7 +48,11 @@ namespace EchoColony.Actions.Prisoner
             
             if (pawn.guest != null)
             {
-                pawn.guest.interactionMode = interactionMode;
+                // API pública del juego (el campo interactionMode es privado)
+                if (interactionMode.isNonExclusiveInteraction)
+                    pawn.guest.ToggleNonExclusiveInteraction(interactionMode, true);
+                else
+                    pawn.guest.SetExclusiveInteraction(interactionMode);
                 
                 Messages.Message(
                     $"{pawn.LabelShort}'s interaction mode set to {interactionMode.label}",

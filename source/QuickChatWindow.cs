@@ -31,7 +31,7 @@ namespace EchoColony
         // ── Window setup ──────────────────────────────────────────────────────────
 
         public override Vector2 InitialSize => new Vector2(360f, 52f);
-        public override float Margin => 4f;
+        protected override float Margin => 4f;
 
         public QuickChatWindow(Pawn pawn)
         {
