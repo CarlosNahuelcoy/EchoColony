@@ -11,6 +11,7 @@ EchoColony se publica para **RimWorld 1.6 y 1.7 desde el mismo código**. No hay
 
 - Hace falta el **SDK de .NET 10** (compila los dos targets). En Windows, `.vscode/build.bat` usa `%LOCALAPPDATA%\Microsoft\dotnet10\dotnet.exe` si existe.
 - Desde la raíz del repo: `dotnet build source/mod.csproj` o la tarea "build dll" de VS Code.
+- **Despliegue automático:** después de compilar, el proyecto deja `RimWorld\Mods\EchoColony` igual que el repo. Primero borra lo desplegado antes (salvo `1.5/`), así no quedan Defs ni traducciones viejas duplicadas, y la carpeta queda lista para probar o subir a Steam. Otra ruta: `-p:RimWorldModDir="..."`. Desactivarlo: `-p:DeployToRimWorld=false`. En CI no se ejecuta.
 - **No se publica `0Harmony.dll`**: el mod depende de Harmony (`brrainz.harmony`). Se usa `Lib.Harmony.Ref`, que solo sirve para compilar.
 - No se usa un Assembly-CSharp "publicizado". Si necesitas un campo o método privado del juego, usa la inyección de Harmony (`___campo`), `AccessTools` o `Traverse`. Si algo de la API pública del juego hace lo mismo, mejor.
 
