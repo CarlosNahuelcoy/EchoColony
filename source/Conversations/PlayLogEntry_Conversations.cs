@@ -20,7 +20,7 @@ namespace EchoColony.Conversations
             displayText = text;
         }
 
-        public override string ToGameStringFromPOV_Worker(Thing pov, bool forceLog)
+        protected override string ToGameStringFromPOV_Worker(Thing pov, bool forceLog)
             => displayText ?? "";
 
         public new string ToGameStringFromPOV(Thing pov, bool forceLog = false)

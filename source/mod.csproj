@@ -1,43 +1,97 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <!-- Un solo proyecto, dos DLL (mismo código fuente):
+         net472   → RimWorld 1.6 (Unity, Harmony 2)  → ../1.6/Assemblies
+         net10.0  → RimWorld 1.7 (Waylith, Harmony 3) → ../1.7/Assemblies
+       Defs, idiomas, parches y texturas compartidos viven en ../Common (ver LoadFolders.xml).
+       Código específico de una versión: #if RW17 ... #endif  (ver CONTRIBUTING.md).
+       net10.0 necesita el SDK de .NET 10 (build.bat usa %LOCALAPPDATA%\Microsoft\dotnet10 si existe). -->
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>net472</TargetFramework>
-    <PlatformTarget>x64</PlatformTarget>
+    <TargetFrameworks>net472;net10.0</TargetFrameworks>
     <RootNamespace>EchoColony</RootNamespace>
     <AssemblyName>EchoColony</AssemblyName>
-    <OutputPath>../1.6/Assemblies</OutputPath>
     <VersionPrefix>0.1.0.0</VersionPrefix>
+    <LangVersion>latest</LangVersion>
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <BaseOutputPath>D:\rimworld 1.6\EchoColony-main\EchoColony-main\1.6\Assemblies</BaseOutputPath>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Include="../Source/**/*.cs" />
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net472'">
+    <PlatformTarget>x64</PlatformTarget>
+    <OutputPath>../1.6/Assemblies</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <OutputPath>../1.7/Assemblies</OutputPath>
+    <DefineConstants>$(DefineConstants);RW17</DefineConstants>
+  </PropertyGroup>
+
+  <!-- Los .cs de esta carpeta se incluyen solos (glob por defecto del SDK).
+       Código que solo existe para una versión: source/Compat/RW16 o source/Compat/RW17. -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+    <Compile Remove="Compat/RW17/**" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <Compile Remove="Compat/RW16/**" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.4850" GeneratePathProperty="true" />
-    <PackageReference Include="Lib.Harmony" Version="2.4.2" />
-    <PackageReference Include="TaskPubliciser" Version="1.0.3" />
+  <!-- RimWorld 1.6. Lib.Harmony.Ref: solo referencia; 0Harmony.dll lo aporta el mod Harmony (brrainz.harmony) -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.4871" />
+    <PackageReference Include="Lib.Harmony.Ref" Version="2.4.2" />
   </ItemGroup>
 
-  <Target Name="UsePublicisedAssembly" BeforeTargets="ResolveReferences">
+  <!-- RimWorld 1.7: referencias de la rama unstable mientras 1.7 no sea estable -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.7.4982-unstable" />
+    <PackageReference Include="Lib.Harmony.Ref" Version="3.0.0-rc.3" />
+  </ItemGroup>
+
+  <!-- ═══ Despliegue a la carpeta del mod en RimWorld ═══════════════════════════
+       Después de cada build deja la carpeta del mod igual que el repo, lista para
+       probar o subir a Steam. Borra antes lo desplegado para que no queden archivos
+       viejos (Defs/idiomas duplicados se cargarían dos veces).
+       - Nunca toca 1.5/ (versión congelada que solo existe en la copia publicada).
+       - Solo corre si existe la carpeta Mods de RimWorld y no estamos en CI.
+       - Otra ruta:     dotnet build source/mod.csproj -p:RimWorldModDir="D:\...\Mods\EchoColony"
+       - Desactivarlo:  dotnet build source/mod.csproj -p:DeployToRimWorld=false -->
+  <PropertyGroup>
+    <ModRoot>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/..'))</ModRoot>
+    <RimWorldModDir Condition="'$(RimWorldModDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\EchoColony</RimWorldModDir>
+    <DeployToRimWorld Condition="'$(DeployToRimWorld)' == '' AND '$(CI)' != 'true'">true</DeployToRimWorld>
+    <RimWorldVersion Condition="'$(TargetFramework)' == 'net472'">1.6</RimWorldVersion>
+    <RimWorldVersion Condition="'$(TargetFramework)' == 'net10.0'">1.7</RimWorldVersion>
+  </PropertyGroup>
+
+  <Target Name="DeployToRimWorld" AfterTargets="Build"
+          Condition="'$(DeployToRimWorld)' == 'true' AND '$(RimWorldVersion)' != '' AND Exists('$([System.IO.Path]::GetDirectoryName($(RimWorldModDir)))')">
+    <!-- Cada versión despliega su DLL; lo compartido lo despliega el build de 1.6 -->
     <PropertyGroup>
-      <AssemblyCSharp>$(PkgKrafs_Rimworld_Ref)\ref\net472\Assembly-CSharp.dll</AssemblyCSharp>
-      <PubliciseOutputPath>$(PkgKrafs_Rimworld_Ref)\ref\net472\</PubliciseOutputPath>
-      <AssemblyCSharp_Publicised>$(PubliciseOutputPath)Assembly-CSharp_publicised.dll</AssemblyCSharp_Publicised>
+      <DeployShared>false</DeployShared>
+      <DeployShared Condition="'$(RimWorldVersion)' == '1.6'">true</DeployShared>
     </PropertyGroup>
-
-    <Message Importance="high" Text="🔧 Publicising Assembly-CSharp..." />
-    <Publicise TargetAssemblyPath="$(AssemblyCSharp)" OutputPath="$(PubliciseOutputPath)" />
-
     <ItemGroup>
-      <Reference Include="$(AssemblyCSharp_Publicised)">
-        <HintPath>$(AssemblyCSharp_Publicised)</HintPath>
-        <Private>false</Private>
-      </Reference>
+      <VersionFiles Include="$(ModRoot)/$(RimWorldVersion)/**/*" />
+      <AboutFiles   Include="$(ModRoot)/About/**/*"    Condition="'$(DeployShared)' == 'true'" />
+      <CommonFiles  Include="$(ModRoot)/Common/**/*"   Condition="'$(DeployShared)' == 'true'" />
+      <ModsFiles    Include="$(ModRoot)/Mods/**/*"     Condition="'$(DeployShared)' == 'true'" />
+      <TextureFiles Include="$(ModRoot)/Textures/**/*" Condition="'$(DeployShared)' == 'true'" />
+      <RootFiles    Include="$(ModRoot)/LoadFolders.xml" Condition="'$(DeployShared)' == 'true'" />
     </ItemGroup>
+
+    <RemoveDir Directories="$(RimWorldModDir)\$(RimWorldVersion)" />
+    <RemoveDir Directories="$(RimWorldModDir)\Common;$(RimWorldModDir)\Mods;$(RimWorldModDir)\Textures" Condition="'$(DeployShared)' == 'true'" />
+
+    <Copy SourceFiles="@(VersionFiles)" DestinationFiles="@(VersionFiles->'$(RimWorldModDir)\$(RimWorldVersion)\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(AboutFiles)"   DestinationFiles="@(AboutFiles->'$(RimWorldModDir)\About\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(CommonFiles)"  DestinationFiles="@(CommonFiles->'$(RimWorldModDir)\Common\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(ModsFiles)"    DestinationFiles="@(ModsFiles->'$(RimWorldModDir)\Mods\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(TextureFiles)" DestinationFiles="@(TextureFiles->'$(RimWorldModDir)\Textures\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(RootFiles)"    DestinationFolder="$(RimWorldModDir)" />
+    <Message Importance="high" Text="📦 EchoColony $(RimWorldVersion) desplegado en $(RimWorldModDir)" />
   </Target>
 </Project>

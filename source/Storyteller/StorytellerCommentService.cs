@@ -291,7 +291,10 @@ namespace EchoColony
                 return;
             }
 
+            // Si el jugador cierra la ventana sin leerla, el comentario no se pierde:
+            // queda en el historial del chat del narrador y en Historial → Mensajes
             Current.Game.GetComponent<StorytellerChatData>()?.AddMessage(storytellerDefName, "[STORYTELLER] " + comment);
+            ArchiveComment(comment, storytellerDefName);
 
             // No acumular ventanas infinitas si el jugador está lejos del teclado
             var open = Find.WindowStack.Windows.OfType<StorytellerMessageDialog>().ToList();
@@ -300,6 +303,19 @@ namespace EchoColony
 
             Find.WindowStack.Add(new StorytellerMessageDialog(comment, storytellerDefName, kind));
             DebugMessage($"Storyteller {kind} comment shown: {comment}");
+        }
+
+        private static void ArchiveComment(string comment, string storytellerDefName)
+        {
+            try
+            {
+                string name = DefDatabase<StorytellerDef>.GetNamedSilentFail(storytellerDefName)?.label?.CapitalizeFirst() ?? storytellerDefName;
+                Find.Archive.Add(new Message($"{name}: {comment}", MessageTypeDefOf.SilentInput));
+            }
+            catch (Exception ex)
+            {
+                DebugMessage($"Could not archive storyteller comment: {ex.Message}");
+            }
         }
 
         private static bool IsErrorReply(string reply)

@@ -62,7 +62,7 @@ namespace EchoColony.SpontaneousMessages
             Find.LetterStack.RemoveLetter(this);
         }
 
-        public override string GetMouseoverText()
+        protected override string GetMouseoverText()
         {
             // Preview del mensaje en el hover
             string preview = messageText;
